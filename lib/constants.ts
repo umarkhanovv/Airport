@@ -23,6 +23,18 @@ export const AIRPORT_COORDS = {
 export const AIRPORT_ALIASES = ['Хазрет Султан', 'Khazret Sultan', 'Hazret Sultan'] as const;
 
 /**
+ * Link to eOtinish, the state e-appeals portal, which spec §9 requires to be
+ * preserved from the legacy site.
+ *
+ * Deliberately null. The exact URL must be copied from hsairport.kz during the
+ * Stage 8 content migration — the same rule the IATA codes above follow. This
+ * one matters more than most: it routes citizens to a government service with a
+ * legally registered response, and a guessed address is worse than no link. The
+ * feedback page renders the eOtinish block only once this is set.
+ */
+export const EOTINISH_URL: string | null = null;
+
+/**
  * The seven top-level sections of the reorganised information architecture
  * (spec §5). Subsection labels are deliberately absent: plan §1.4 charters
  * Stage 8 to reconcile the full 74-page inventory against this IA before any

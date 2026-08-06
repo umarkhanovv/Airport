@@ -9,7 +9,13 @@ import { logout } from './login/actions';
  * tree sits outside the locale segment, so the i18n Link would prefix every
  * href with a language and 404.
  */
-export function AdminNav({ current }: { current: 'dashboard' | 'schedule' }) {
+export function AdminNav({
+  current,
+  unreadFeedback = 0,
+}: {
+  current: 'dashboard' | 'schedule' | 'feedback';
+  unreadFeedback?: number;
+}) {
   const linkClass = (active: boolean) =>
     active
       ? 'text-text font-medium'
@@ -29,6 +35,20 @@ export function AdminNav({ current }: { current: 'dashboard' | 'schedule' }) {
             className={`px-3 py-1.5 ${linkClass(current === 'schedule')}`}
           >
             Schedule
+          </Link>
+          <Link
+            href="/admin/feedback"
+            className={`px-3 py-1.5 ${linkClass(current === 'feedback')}`}
+          >
+            Feedback
+            {unreadFeedback > 0 ? (
+              <span
+                data-testid="unread-badge"
+                className="bg-brand text-on-brand ms-1.5 rounded-full px-1.5 py-0.5 text-xs font-medium"
+              >
+                {unreadFeedback}
+              </span>
+            ) : null}
           </Link>
         </nav>
 

@@ -130,6 +130,48 @@ export const newsPosts = sqliteTable(
   ]
 );
 
+/**
+ * Feedback submissions (spec §9, plan §3.3).
+ *
+ * The database is the delivery mechanism, not a backup of one: with no SMTP
+ * configured — which is the default, and may stay the default forever — a
+ * submission stored here and read in the admin inbox *is* the feature. Email is
+ * an optional notification layered on top.
+ *
+ * The sender's IP is stored hashed and never raw (plan §9.1). It exists to let
+ * staff recognise a flood from one source, which a hash serves equally well,
+ * and storing raw addresses would make this table a small pile of personal data
+ * for no added benefit.
+ */
+export const feedbackSubmissions = sqliteTable(
+  'feedback_submissions',
+  {
+    id: text('id').primaryKey(),
+
+    name: text('name').notNull(),
+    email: text('email'),
+    phone: text('phone'),
+    subject: text('subject'),
+    message: text('message').notNull(),
+
+    /** Which language the form was filled in, so replies can match it. */
+    locale: text('locale', { enum: ['ru', 'en', 'kk'] }).notNull(),
+
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    isRead: integer('is_read', { mode: 'boolean' }).notNull().default(false),
+
+    /** SHA-256 of the sender's IP with a server-side secret. Never the address. */
+    ipHash: text('ip_hash'),
+  },
+  (table) => [
+    // The inbox: unread first, then newest.
+    index('feedback_is_read_created').on(table.isRead, table.createdAt),
+    index('feedback_created').on(table.createdAt),
+  ]
+);
+
 /** The locales a news post can be written in — same set as the site's. */
 export type NewsLocale = 'ru' | 'en' | 'kk';
 
@@ -140,3 +182,6 @@ export type ScheduleUpload = typeof scheduleUploads.$inferSelect;
 export type NewScheduleUpload = typeof scheduleUploads.$inferInsert;
 export type FlightEntryRow = typeof flightEntries.$inferSelect;
 export type NewFlightEntryRow = typeof flightEntries.$inferInsert;
+
+export type FeedbackSubmission = typeof feedbackSubmissions.$inferSelect;
+export type NewFeedbackSubmission = typeof feedbackSubmissions.$inferInsert;

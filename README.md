@@ -22,14 +22,16 @@ content migration, PWA/SEO, hardening) are not started.
 | 4     | Board extras — pin, .ics, weather                   | Done                                         |
 | 5     | News                                                | Done                                         |
 | 6     | Admin — auth, upload → preview → publish            | Done                                         |
-| 7–10  | Feedback, content migration, PWA/SEO, hardening     | Not started                                  |
+| 7     | Feedback form, optional SMTP, admin inbox           | Done                                         |
+| 8–10  | Content migration, PWA/SEO, hardening               | Not started                                  |
 
-Everything above is green: 239 unit tests and 62 end-to-end tests, plus
+Everything above is green: 270 unit tests and 72 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node.
 
-Stage 6 carries two outstanding items that its exit criteria do not cover: news
-CRUD from the admin panel, and the feedback inbox — the latter blocked until
-Stage 7 creates the feedback table.
+Two items remain outstanding from Stage 6: news CRUD from the admin panel, and
+the eOtinish link on the contacts page — the latter deliberately left out until
+Stage 8 copies the real URL from the legacy site, rather than guessing the
+address of a government appeals service.
 
 ## Stack
 
@@ -45,6 +47,12 @@ Stage 7 creates the feedback table.
 
 There are no user accounts anywhere in the system. Admin access is a single
 password from the environment.
+
+Production dependencies are kept to what the application actually needs. The
+feedback form's optional SMTP notification is written directly against
+`node:net` and `node:tls` rather than adding a mail library — email there is a
+copy of something already stored in the database, so every failure path
+degrades to the documented default of reading it in the admin panel.
 
 ## Getting started
 
@@ -87,6 +95,7 @@ app/            routes — [locale]/* for the public site, admin/* outside it
 components/     UI components
 lib/flights/    workbook reader, parser, normalizers, import transaction
 lib/admin/      session, rate limiting, upload staging
+lib/feedback/   validation, anti-spam, storage, optional SMTP
 lib/db/         schema and migrations
 content/        MDX static pages, per locale
 tests/unit/     Vitest — parser, normalizers, contrast, i18n, admin

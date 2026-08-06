@@ -135,6 +135,34 @@
     "twogis": "2GIS",
     "thirdPartyNote": "The interactive map loads from Google's servers."
   },
+  "Feedback": {
+    "title": "Write to us",
+    "intro": "Report a problem, ask a question, or send a suggestion. Every message is read.",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "subject": "Subject",
+    "message": "Message",
+    "optionalHint": "optional",
+    "submit": "Send message",
+    "sending": "Sending…",
+    "successTitle": "Thank you — your message has been received.",
+    "successBody": "The airport has it, and will reply if you left contact details.",
+    "sendAnother": "Send another message",
+    "errors": {
+      "required": "Please fill this in.",
+      "tooShort": "This is too short.",
+      "tooLong": "This is too long.",
+      "invalidEmail": "Check the email address.",
+      "tooFast": "That was submitted too quickly. Please try again.",
+      "expired": "This form has been open too long. Please reload the page.",
+      "rateLimited": "Too many messages from this connection. Please try again later.",
+      "failed": "The message could not be sent. Please try again."
+    },
+    "eotinishTitle": "Official appeals",
+    "eotinishBody": "For a formal appeal with a registered response, use the state e-appeals portal.",
+    "eotinishLink": "Open eOtinish"
+  },
   "NotFound": {
     "title": "Page not found",
     "description": "The page may have been moved, or its address may have changed.",

@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import { requireAdmin } from '@/lib/admin/auth';
 import { listScheduleUploads } from '@/lib/admin/queries';
+import { countUnreadFeedback } from '@/lib/feedback/store';
 import { getActiveSchedule } from '@/lib/flights/queries';
 
 import { AdminNav } from './admin-nav';
@@ -27,7 +28,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<'/a
 
   return (
     <>
-      <AdminNav current="dashboard" />
+      <AdminNav current="dashboard" unreadFeedback={countUnreadFeedback()} />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
         <h1 className="text-2xl font-semibold">Overview</h1>
