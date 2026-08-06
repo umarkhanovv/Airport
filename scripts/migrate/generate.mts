@@ -27,7 +27,10 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { ALIASES, MAPPING, type Decision } from '../../migration/mapping.mts';
+import { loadMapping } from './load-mapping.mts';
+import type { Decision } from './mapping-types.mts';
+
+const { ALIASES, MAPPING } = await loadMapping();
 
 const ROOT = process.cwd();
 const MIGRATION_DIR = path.join(ROOT, 'migration');

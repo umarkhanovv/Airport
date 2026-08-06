@@ -14,7 +14,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { MAPPING, type Decision } from '../../migration/mapping.mts';
+import { loadMapping } from './load-mapping.mts';
+import type { Decision } from './mapping-types.mts';
+
+const { MAPPING } = await loadMapping();
 
 interface InventoryRecord {
   url: string;
