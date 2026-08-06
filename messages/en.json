@@ -1,0 +1,157 @@
+{
+  "Site": {
+    "name": "Turkistan International Airport",
+    "shortName": "Turkistan Airport",
+    "location": "Türkistan, Kazakhstan",
+    "description": "Flight schedule, airport services and passenger information for Turkistan International Airport."
+  },
+  "Nav": {
+    "label": "Main navigation",
+    "menu": "Menu",
+    "close": "Close",
+    "skipToContent": "Skip to content",
+    "languageLabel": "Language",
+    "flights": "Flights",
+    "airport": "At the airport",
+    "passengers": "Passengers",
+    "about": "About",
+    "partners": "Partners",
+    "press": "Press centre",
+    "contacts": "Contacts"
+  },
+  "Sections": {
+    "flights": {
+      "title": "Flights",
+      "description": "Arrivals and departures board, seasonal schedule, check-in and information desk."
+    },
+    "airport": {
+      "title": "At the airport",
+      "description": "Terminal services: food and drink, parking, first aid, prayer rooms and more."
+    },
+    "passengers": {
+      "title": "Passengers",
+      "description": "Rules and preparation for departing and arriving travellers."
+    },
+    "about": {
+      "title": "About",
+      "description": "History, safety, standards and airport policy."
+    },
+    "partners": {
+      "title": "Partners",
+      "description": "Procurement, tariffs, advertising and business information."
+    },
+    "press": {
+      "title": "Press centre",
+      "description": "Airport news and job openings."
+    },
+    "contacts": {
+      "title": "Contacts",
+      "description": "Feedback, addresses, phone numbers and social media."
+    }
+  },
+  "Home": {
+    "title": "Turkistan International Airport",
+    "intro": "Flight schedule, airport services and passenger information.",
+    "sectionsHeading": "Browse the site",
+    "terminalPhotoAlt": "The Turkistan airport terminal at dusk. Its façade is clad in perforated geometric screens, lit warmly from within.",
+    "terminalPhotoCaption": "The terminal. Its façade follows traditional lattice geometry — the same pattern is used as a texture across this site."
+  },
+  "Board": {
+    "today": "Today",
+    "arrivals": "Arrivals",
+    "departures": "Departures",
+    "scheduledTimesNote": "scheduled times",
+    "noArrivalsToday": "No more arrivals today.",
+    "noDeparturesToday": "No more departures today.",
+    "seeFullBoard": "Full board",
+    "noSchedule": "No schedule published yet",
+    "noScheduleHint": "Flights will appear here once the airport uploads the weekly schedule.",
+    "staleTitle": "No schedule for today",
+    "staleRange": "The published schedule covers {from} to {to}. This week's schedule has not been uploaded yet.",
+    "title": "Flight board",
+    "directionLabel": "Direction",
+    "viewLabel": "Period",
+    "viewToday": "Today",
+    "viewWeek": "Week",
+    "trafficLabel": "Flight type",
+    "trafficAll": "All",
+    "domestic": "Domestic",
+    "international": "International",
+    "columnTime": "Time",
+    "columnOrigin": "From",
+    "columnDestination": "To",
+    "columnFlight": "Flight",
+    "columnAircraft": "Aircraft",
+    "columnType": "Type",
+    "searchLabel": "Search flights",
+    "searchPlaceholder": "Flight number or city",
+    "searchSubmit": "Search",
+    "searchResults": "{count} flights found",
+    "searchNoResults": "Nothing found",
+    "downloadExcel": "Download schedule (Excel)",
+    "asOf": "Schedule uploaded: {date}",
+    "columnActions": "Actions",
+    "pin": "Pin flight",
+    "unpin": "Unpin flight",
+    "pinFlight": "Pin flight {flight}",
+    "addToCalendar": "Add to calendar",
+    "addToCalendarFor": "Add flight {flight} to calendar",
+    "share": "Share",
+    "shareFlight": "Share flight {flight}",
+    "sharedToClipboard": "Copied to clipboard",
+    "weatherIn": "Weather in {city}"
+  },
+  "News": {
+    "title": "News",
+    "description": "News from Turkistan International Airport.",
+    "empty": "No news has been published yet.",
+    "backToNews": "All news",
+    "alsoAvailableIn": "This story is also available in:",
+    "pagination": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {total}"
+  },
+  "Appearance": {
+    "label": "Display",
+    "textSize": "Text size",
+    "size0": "Normal",
+    "size1": "Large",
+    "size2": "Largest",
+    "theme": "Theme",
+    "system": "System",
+    "light": "Light",
+    "dark": "Dark",
+    "contrast": "Contrast",
+    "normal": "Normal",
+    "high": "High"
+  },
+  "Map": {
+    "airportLabel": "Turkistan International Airport",
+    "showInteractive": "Show interactive map",
+    "interactiveTitle": "Interactive map of the airport location",
+    "google": "Google Maps",
+    "yandex": "Yandex Maps",
+    "twogis": "2GIS",
+    "thirdPartyNote": "The interactive map loads from Google's servers."
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The page may have been moved, or its address may have changed.",
+    "backHome": "Back to home"
+  },
+  "Content": {
+    "translationPending": "This page has not been translated yet. Showing the Russian version.",
+    "machineTranslated": "This page was machine-translated and is awaiting review.",
+    "lastReviewed": "Page reviewed: {date}"
+  },
+  "Placeholder": {
+    "underConstruction": "Section in progress",
+    "explanation": "Content for this section is being migrated from the previous site. The navigation structure is already in place."
+  },
+  "Footer": {
+    "rights": "Turkistan International Airport",
+    "coordinates": "Airport coordinates",
+    "quickLinks": "Quick links"
+  }
+}

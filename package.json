@@ -1,0 +1,55 @@
+{
+  "name": "turkistan-airport",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Turkistan International Airport — website and PWA (hsairport.kz rebuild)",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build && node scripts/prepare-standalone.mjs",
+    "start": "node .next/standalone/server.js",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "db:generate": "drizzle-kit generate",
+    "schedule:import": "node --conditions=react-server scripts/import-schedule.mts",
+    "e2e:seed": "rm -rf .e2e-data && DATA_DIR=.e2e-data npm run schedule:import -- data/sample_weekly_schedule.xlsx && DATA_DIR=.e2e-data node --conditions=react-server scripts/seed-news-fixture.mts",
+    "news:seed": "node --conditions=react-server scripts/seed-news.mts",
+    "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test"
+  },
+  "dependencies": {
+    "@mdx-js/mdx": "^3.1.1",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.2",
+    "gray-matter": "^4.0.3",
+    "next": "16.3.0",
+    "next-intl": "^4.13.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1",
+    "xlsx": "file:vendor/xlsx-0.20.3.tgz"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.10",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^4.1.10"
+  }
+}

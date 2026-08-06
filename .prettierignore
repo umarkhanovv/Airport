@@ -1,0 +1,16 @@
+# Source specification documents — authored by hand, not ours to reformat.
+PROJECT_turkistan_airport.md
+CLAUDE_CODE_prompt.md
+README.md
+IMPLEMENTATION_PLAN.md
+BRIEF_ru.md
+
+# Generated / vendored
+.next/
+node_modules/
+package-lock.json
+next-env.d.ts
+playwright-report/
+test-results/
+data/
+graphify-out/

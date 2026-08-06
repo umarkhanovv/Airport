@@ -1,0 +1,72 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# runtime state (DATA_DIR).
+# NOTE: `data/` itself is NOT ignored — it holds the committed sample workbook
+# that the parser is built and tested against. Only generated artefacts are.
+/data/app.db
+/data/app.db-journal
+/data/app.db-wal
+/data/app.db-shm
+/data/uploads/
+
+# e2e throwaway state
+/.e2e-data/
+
+# graphify knowledge graph — derived from the tree, rebuildable with `graphify update .`
+/graphify-out/
+
+# Internal planning package. Kept out of the public repository: these are
+# client-facing working documents (risk register, assumptions recorded while
+# the airport was not yet consulted, assessment of the existing site) rather
+# than project documentation. They stay on disk and are read during development.
+/PROJECT_turkistan_airport.md
+/CLAUDE_CODE_prompt.md
+/IMPLEMENTATION_PLAN.md
+/BRIEF_ru.md

@@ -1,0 +1,132 @@
+import 'server-only';
+
+import crypto from 'node:crypto';
+
+import { eq, ne } from 'drizzle-orm';
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+
+import * as schema from '../db/schema.ts';
+import { flightEntries, scheduleUploads } from '../db/schema.ts';
+
+import type { ParseResult } from './types.ts';
+
+export type FlightsDb = BetterSQLite3Database<typeof schema>;
+
+export interface ImportMeta {
+  originalFilename: string;
+  /** Path on disk, relative to DATA_DIR. Written before the transaction. */
+  storedPath: string;
+  sha256: string;
+}
+
+export interface ImportOutcome {
+  uploadId: string;
+  entryCount: number;
+  weekStart: string | null;
+  weekEnd: string | null;
+}
+
+export class ImportRefusedError extends Error {
+  readonly diagnostics: ParseResult['diagnostics'];
+  constructor(diagnostics: ParseResult['diagnostics']) {
+    super('Refusing to publish a schedule that failed validation.');
+    this.name = 'ImportRefusedError';
+    this.diagnostics = diagnostics;
+  }
+}
+
+export function sha256(buffer: Buffer | Uint8Array): string {
+  return crypto.createHash('sha256').update(buffer).digest('hex');
+}
+
+/** SQLite's default variable ceiling is 999; 200 rows × 13 columns stays clear. */
+const INSERT_CHUNK = 200;
+
+/**
+ * Publishes a parsed schedule (plan §5.8).
+ *
+ * The ordering matters and is not incidental:
+ *
+ *   BEGIN
+ *     insert the new upload, inactive
+ *     insert its flight entries
+ *     deactivate every other upload
+ *     activate this one
+ *   COMMIT
+ *
+ * The previous schedule is never deleted, and is not even deactivated until
+ * the replacement is fully written. If anything fails — a malformed row, a
+ * disk error, a crash — the transaction rolls back and the board carries on
+ * serving exactly what it served before. A flight board must never go blank
+ * because an upload failed at 2am.
+ *
+ * Old uploads are retained deliberately: their original workbooks stay
+ * downloadable, and a bad publish is undone by flipping `is_active` back.
+ */
+export function publishSchedule(
+  db: FlightsDb,
+  parsed: ParseResult,
+  meta: ImportMeta
+): ImportOutcome {
+  if (!parsed.ok || parsed.entries.length === 0) {
+    throw new ImportRefusedError(parsed.diagnostics);
+  }
+
+  const uploadId = crypto.randomUUID();
+
+  return db.transaction((tx) => {
+    tx.insert(scheduleUploads)
+      .values({
+        id: uploadId,
+        originalFilename: meta.originalFilename,
+        storedPath: meta.storedPath,
+        sha256: meta.sha256,
+        uploadedAt: new Date().toISOString(),
+        weekStart: parsed.weekStart,
+        weekEnd: parsed.weekEnd,
+        entryCount: parsed.entries.length,
+        warnings: JSON.stringify(parsed.diagnostics),
+        isActive: false,
+      })
+      .run();
+
+    const rows = parsed.entries.map((entry) => ({
+      id: crypto.randomUUID(),
+      uploadId,
+      kind: entry.kind,
+      date: entry.date,
+      flightNo: entry.flightNo,
+      flightNoNorm: entry.flightNoNorm,
+      cityRaw: entry.cityRaw,
+      cityKey: entry.cityKey,
+      scheduledTime: entry.scheduledTime,
+      intl: entry.intl,
+      aircraft: entry.aircraft,
+      turnaroundKey: entry.turnaroundKey,
+      sourceRow: entry.sourceRow,
+    }));
+
+    for (let i = 0; i < rows.length; i += INSERT_CHUNK) {
+      tx.insert(flightEntries)
+        .values(rows.slice(i, i + INSERT_CHUNK))
+        .run();
+    }
+
+    // Only now is the previous schedule stood down.
+    tx.update(scheduleUploads)
+      .set({ isActive: false })
+      .where(ne(scheduleUploads.id, uploadId))
+      .run();
+    tx.update(scheduleUploads)
+      .set({ isActive: true })
+      .where(eq(scheduleUploads.id, uploadId))
+      .run();
+
+    return {
+      uploadId,
+      entryCount: rows.length,
+      weekStart: parsed.weekStart,
+      weekEnd: parsed.weekEnd,
+    };
+  });
+}

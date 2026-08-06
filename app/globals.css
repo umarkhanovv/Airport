@@ -1,0 +1,419 @@
+@import 'tailwindcss';
+
+/* ===========================================================================
+   TYPEFACE — Golos Text (Paratype), self-hosted, variable 400–900
+   ---------------------------------------------------------------------------
+   Chosen because it is Cyrillic-first: it was drawn for a national public
+   services portal, which is the same job this site does — dense civic
+   information read quickly by people who are not enjoying themselves.
+
+   The four subsets matter. Russian fits entirely inside `cyrillic`, but eight
+   of the nine Kazakh letters (ә ғ қ ң ө ұ ү һ) live in `cyrillic-ext`. Subset
+   to `cyrillic` alone — the obvious move for a Russian-language site — and
+   Kazakh silently falls back mid-word (plan §6.3). Verified in
+   tests/e2e/typography.spec.ts.
+
+   The browser downloads only the subsets a page actually uses.
+   =========================================================================== */
+
+@font-face {
+  font-family: 'Golos Text';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/golos-text-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Golos Text';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/golos-text-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Golos Text';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/golos-text-latin-ext.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Golos Text';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url('/fonts/golos-text-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ===========================================================================
+   COLOUR — taken from the airport itself
+   ---------------------------------------------------------------------------
+   #CE7B44 is the exact colour of the HSA monogram in the airport's own logo.
+   The second accent is the turquoise of the terminal's Kazakh signage, and the
+   dark surface is the dusk sky behind it rather than a neutral grey — see
+   public/media/terminal-dusk.jpg.
+
+   Terracotta marks departures, turquoise marks arrivals. That is not
+   decoration: the legacy site had "Вылет" pointing at /incoming-flights/ and
+   "Прилёт" at /outbound-flights/ (spec §5). Making the two directions
+   unmistakable at a glance is a fix for a real defect. Colour never carries
+   that meaning alone — every use is paired with a label and an icon.
+
+   Every ratio below is asserted in tests/unit/design-tokens.test.ts.
+   =========================================================================== */
+
+:root {
+  --surface: #ffffff;
+  --surface-raised: #f8f6f4;
+  --surface-sunken: #f1ede9;
+  --text: #1a1613;
+  --text-muted: #5b524d;
+  --border: #e4ded8;
+  --border-strong: #918275; /* 3.71:1 on white — interactive boundaries (WCAG 1.4.11) */
+
+  /* Departures — the logo terracotta */
+  --brand: #ce7b44; /* 3.21:1 on white — large text, icons, borders, fills */
+  --brand-text: #a56236; /* 4.77:1 — links and small text */
+  --brand-text-strong: #9a5c33; /* 5.31:1 — body-size brand text */
+  --on-brand: #000000; /* 6.54:1 on --brand */
+
+  /* Arrivals — the terminal signage turquoise */
+  --arrival: #0f7a73; /* 5.18:1 on white — safe everywhere */
+  --arrival-soft: #ecf7f5; /* tinted fill */
+  --on-arrival: #ffffff;
+
+  --focus: #9a5c33;
+
+  --font-sans: 'Golos Text', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Driven by the accessibility panel (§17.7). */
+  --font-scale: 1;
+}
+
+/* Twilight, not grey — the sky in the terminal photograph. */
+@media (prefers-color-scheme: dark) {
+  :root:not(.theme-light) {
+    --surface: #0d1219;
+    --surface-raised: #141b24;
+    --surface-sunken: #090d13;
+    --text: #ececed;
+    --text-muted: #a3a6ad;
+    --border: #232b36;
+    --border-strong: #5f6d82; /* 3.58:1 on the twilight surface */
+    --brand: #ce7b44;
+    --brand-text: #e3874b;
+    --brand-text-strong: #e3874b;
+    --on-brand: #000000;
+    --arrival: #3fc7bd;
+    --arrival-soft: #10262a;
+    --on-arrival: #06120f;
+    --focus: #e3874b;
+  }
+}
+
+:root.theme-dark {
+  --surface: #0d1219;
+  --surface-raised: #141b24;
+  --surface-sunken: #090d13;
+  --text: #ececed;
+  --text-muted: #a3a6ad;
+  --border: #232b36;
+  --border-strong: #5f6d82; /* 3.58:1 on the twilight surface */
+  --brand: #ce7b44;
+  --brand-text: #e3874b;
+  --brand-text-strong: #e3874b;
+  --on-brand: #000000;
+  --arrival: #3fc7bd;
+  --arrival-soft: #10262a;
+  --on-arrival: #06120f;
+  --focus: #e3874b;
+}
+
+/* Accessibility panel: maximum contrast for low vision (§17.7). */
+:root.contrast-high {
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: #ffffff;
+  --text: #000000;
+  --text-muted: #1f1a17;
+  --border: #000000;
+  --border-strong: #000000;
+  --brand-text: #7a4826;
+  --brand-text-strong: #6b3f21;
+  --arrival: #044b46;
+  --focus: #000000;
+}
+
+:root.theme-dark.contrast-high {
+  --surface: #000000;
+  --surface-raised: #000000;
+  --surface-sunken: #000000;
+  --text: #ffffff;
+  --text-muted: #e6e6e6;
+  --border: #ffffff;
+  --border-strong: #ffffff;
+  --brand-text: #f0a068;
+  --brand-text-strong: #f0a068;
+  --arrival: #7ce6dc;
+  --focus: #ffffff;
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-brand: var(--brand);
+  --color-brand-text: var(--brand-text);
+  --color-brand-text-strong: var(--brand-text-strong);
+  --color-on-brand: var(--on-brand);
+  --color-arrival: var(--arrival);
+  --color-arrival-soft: var(--arrival-soft);
+  --color-on-arrival: var(--on-arrival);
+  --color-focus: var(--focus);
+  --font-sans: var(--font-sans);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-size: calc(100% * var(--font-scale));
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--surface);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Times, dates and flight numbers must align in columns and never reflow as
+     digits change. This is the one place the type does real work. */
+  .tabular {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  h1,
+  h2,
+  h3 {
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* WCAG AA requires focus to be visible, not tasteful (plan §9.3). */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  /* -------------------------------------------------------------------------
+     The façade lattice.
+
+     The terminal is clad in perforated geometric screens — the airport's own
+     architectural signature. This is that geometry, reduced to two overlapping
+     squares forming an eight-point star, and used in exactly one place: behind
+     the masthead. Kept near-invisible so it is texture, never pattern.
+     ------------------------------------------------------------------------- */
+  .lattice {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23CE7B44' stroke-width='1'%3E%3Cpath d='M52 30 30 52 8 30 30 8Z'/%3E%3Cpath d='M45.6 14.4v31.2H14.4V14.4z'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 60px 60px;
+    opacity: 0.07;
+  }
+
+  @media (prefers-contrast: more) {
+    .lattice {
+      display: none;
+    }
+  }
+
+  /* -------------------------------------------------------------------------
+     Flight board.
+
+     A timetable is tabular data, so it stays a real <table> with column
+     headers. Below 640px the rows are restyled into cards (spec §6.4 asks for
+     cards rather than a dense grid on phones); because `display: block` would
+     strip the implicit table roles, every element in the markup carries its
+     role explicitly, so screen readers keep row/column navigation either way.
+     ------------------------------------------------------------------------- */
+  /* Fallbacks that only exist for browsers without scripting. The `js` class
+     is set by the inline head script before first paint. */
+  :root.js [data-no-js-only] {
+    display: none;
+  }
+
+  /* Controls that only work with scripting. */
+  :root:not(.js) [data-js-only] {
+    display: none;
+  }
+
+  .board-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* 44px hit area: this audience includes people with poor dexterity. */
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    border-radius: 0.375rem;
+    color: var(--text-muted);
+  }
+  .board-icon-button:hover {
+    color: var(--brand-text);
+    background-color: var(--surface-sunken);
+  }
+  .board-icon-button[aria-pressed='true'] {
+    color: var(--brand-text-strong);
+  }
+  .board-icon-button[aria-pressed='true'] svg path {
+    fill: currentColor;
+  }
+
+  /* A pinned row is marked by a rule and a tint, never by colour alone —
+     the pin button's aria-pressed state carries the same meaning. */
+  .board-row[data-pinned] {
+    background-color: var(--surface-raised);
+    box-shadow: inset 3px 0 0 0 var(--brand);
+  }
+
+  /* Pinned rows are lifted above their day heading, so they state their own
+     date; otherwise a bare "10:30" at the top of a week view is ambiguous. */
+  .board-row[data-pinned] .board-time::after {
+    content: attr(data-date-label);
+    display: block;
+    margin-top: 0.125rem;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    color: var(--text-muted);
+  }
+
+  .board-weather {
+    margin-inline-start: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  .board-th {
+    padding: 0.5rem 0.75rem 0.5rem 0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .board-td {
+    padding: 0.75rem 0.75rem 0.75rem 0;
+    vertical-align: baseline;
+  }
+
+  .board-day-cell {
+    padding: 1.25rem 0 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  .board-row:hover {
+    background-color: var(--surface-raised);
+  }
+
+  @media (max-width: 639px) {
+    .board,
+    .board tbody,
+    .board tr,
+    .board td {
+      display: block;
+      width: 100%;
+    }
+
+    /* Column headers are read by assistive tech but would be meaningless
+       above a stack of cards, so they are visually removed only. */
+    .board thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    .board .board-row {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      column-gap: 0.875rem;
+      align-items: baseline;
+      border: 1px solid var(--border);
+      border-radius: 0.625rem;
+      padding: 0.75rem 0.875rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .board .board-td {
+      padding: 0;
+    }
+
+    .board .board-time {
+      grid-column: 1;
+      grid-row: 1 / span 2;
+    }
+    .board .board-city {
+      grid-column: 2;
+      grid-row: 1;
+    }
+    .board .board-flight {
+      grid-column: 2;
+      grid-row: 2;
+      font-size: 0.875rem;
+    }
+    .board .board-type {
+      grid-column: 2;
+      grid-row: 3;
+      margin-top: 0.375rem;
+    }
+
+    /* Aircraft type is the least useful field on a phone. */
+    .board .board-col-optional {
+      display: none;
+    }
+
+    .board .board-day {
+      display: block;
+      border: 0;
+    }
+    .board .board-day-cell {
+      display: block;
+      padding: 1rem 0 0.5rem;
+    }
+  }
+}
