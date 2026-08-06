@@ -23,10 +23,18 @@ content migration, PWA/SEO, hardening) are not started.
 | 5     | News                                                | Done                                         |
 | 6     | Admin — auth, upload → preview → publish            | Done                                         |
 | 7     | Feedback form, optional SMTP, admin inbox           | Done                                         |
-| 8–10  | Content migration, PWA/SEO, hardening               | Not started                                  |
+| 8     | Content migration from the legacy site              | Steps 1–4, 6 done; step 5 is human proofread |
+| 9–10  | PWA/SEO, hardening                                  | Not started                                  |
 
-Everything above is green: 270 unit tests and 72 end-to-end tests, plus
+Everything above is green: 282 unit tests and 72 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node.
+
+The migrated content in `content/` is **unproofed**. Every page carries
+`translationStatus: pending`, an empty `lastReviewed`, and a `migrationNotes`
+list recording anything the converter could not decide — pages whose legacy
+body was empty, images that could not be fetched, embeds that were dropped, and
+where the legacy slug disagreed with the page it named. Stage 8 step 5 is a
+human reading pass, budgeted separately from development.
 
 Two items remain outstanding from Stage 6: news CRUD from the admin panel, and
 the eOtinish link on the contacts page — the latter deliberately left out until

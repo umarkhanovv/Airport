@@ -304,10 +304,23 @@ async function main(): Promise<void> {
     [...headingFrequency].filter(([, n]) => n >= pages.length * 0.3).map(([text]) => text)
   );
 
+  // Several pages open with an instructional sentence marked up as a heading —
+  // "Чтобы подключиться … Вам надо осуществить эти действия:" sits in an <h2>
+  // above the page's real <h3> title. Length alone does not separate them (that
+  // one is 76 characters), but word count does, so a heading that reads like a
+  // sentence is ranked below every heading that reads like a title regardless
+  // of its level.
+  const TITLE_MAX_WORDS = 6;
+  const wordCount = (text: string) => text.split(/\s+/).filter(Boolean).length;
+
   for (const page of pages) {
     const own = page.headings
       .filter((h) => h.text !== '' && !widgetHeadings.has(h.text))
-      .sort((a, b) => a.level - b.level)[0];
+      .map((h) => ({ ...h, sentence: wordCount(h.text) > TITLE_MAX_WORDS ? 1 : 0 }))
+      .sort(
+        (a, b) => a.sentence - b.sentence || a.level - b.level || a.text.length - b.text.length
+      )[0];
+
     page.record.heading = own?.text ?? '';
   }
 
