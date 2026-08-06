@@ -12,9 +12,20 @@ export const AIRPORT_COORDS = {
   longitude: 68.54065,
 } as const;
 
-// NOTE: IATA/ICAO codes are intentionally absent. They are needed for
-// `schema.org/Airport` in Stage 9 and must be verified against an
-// authoritative source before use — not recalled from memory.
+/**
+ * Airport codes, for `schema.org/Airport` (spec §5, plan Stage 9).
+ *
+ * Left blank until Stage 9 on purpose: these had to be verified rather than
+ * recalled. The source is the operator's own statement on hsairport.kz —
+ * "Код аэропорта: ICAO – UAIT, IATA – HSA" — published with the airport's
+ * certification announcement and read out of the Stage 8 crawl. The same
+ * paragraph gives the runway as 3300 × 45 m and the aerodrome as ICAO
+ * category 4D, if that is ever needed.
+ */
+export const AIRPORT_CODES = {
+  iata: 'HSA',
+  icao: 'UAIT',
+} as const;
 
 /**
  * The airport's alternate name, still in public use. Registered as an SEO

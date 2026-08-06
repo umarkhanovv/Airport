@@ -6,6 +6,8 @@ import { MdxContent } from '@/components/mdx-content';
 import { getPage, listSlugs } from '@/lib/content';
 import { formatLongDate } from '@/lib/date';
 import { routing } from '@/i18n/routing';
+import { alternatesFor } from '@/lib/seo';
+import type { Locale } from '@/i18n/routing';
 
 /**
  * Static information pages, resolved from `content/{locale}/…`.
@@ -26,6 +28,7 @@ export async function generateMetadata(props: PageProps<'/[locale]/[...slug]'>):
   return {
     title: page.frontmatter.title,
     description: page.frontmatter.description,
+    alternates: alternatesFor(locale as Locale, `/${slug.join('/')}`),
   };
 }
 

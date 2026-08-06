@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 
 import { isSection, SECTIONS } from '@/lib/constants';
 import { routing } from '@/i18n/routing';
+import { alternatesFor } from '@/lib/seo';
+import type { Locale } from '@/i18n/routing';
 
 /**
  * Placeholder pages for the seven top-level IA sections (spec §5), so the
@@ -35,6 +37,7 @@ export async function generateMetadata(props: PageProps<'/[locale]/[section]'>):
   return {
     title: t(`${section}.title`),
     description: t(`${section}.description`),
+    alternates: alternatesFor(locale as Locale, `/${section}`),
   };
 }
 

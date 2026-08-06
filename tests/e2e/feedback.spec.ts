@@ -1,5 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
+import { ADMIN_STORAGE_STATE } from './admin-session';
+
 /**
  * Feedback form and admin inbox — Stage 7 (spec §9, plan §9.1).
  *
@@ -10,7 +12,6 @@ import { expect, test, type Page } from '@playwright/test';
  */
 
 const CONTACTS = '/ru/contacts';
-const ADMIN_PASSWORD = 'e2e-admin-password';
 
 /** Unique per test run, so parallel tests never read each other's messages. */
 function uniqueMessage(label: string): string {
@@ -22,14 +23,18 @@ async function fillForm(page: Page, message: string, name = 'Айгүл Сері
   await page.locator('#message').fill(message);
 }
 
-async function signInToAdmin(page: Page) {
-  await page.goto('/admin/login');
-  await page.locator('#password').fill(ADMIN_PASSWORD);
-  await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
-}
-
+/**
+ * Each describe submits from its own address.
+ *
+ * The form allows five submissions per IP (plan §9.1), and the whole suite
+ * otherwise shares one — so the sixth test to submit was refused and failed,
+ * the limiter behaving exactly as designed. Distinct `x-forwarded-for` values
+ * model what these tests actually represent: different members of the public,
+ * which is also how the limiter sees real traffic behind the reverse proxy.
+ */
 test.describe('the public form', () => {
+  test.use({ extraHTTPHeaders: { 'x-forwarded-for': '198.51.100.11' } });
+
   test('renders on the contacts page in every locale', async ({ page }) => {
     for (const path of ['/ru/contacts', '/en/contacts', '/kz/contacts']) {
       await page.goto(path);
@@ -98,6 +103,11 @@ test.describe('the public form', () => {
 });
 
 test.describe('anti-spam', () => {
+  test.use({
+    storageState: ADMIN_STORAGE_STATE,
+    extraHTTPHeaders: { 'x-forwarded-for': '198.51.100.12' },
+  });
+
   test('a filled honeypot looks successful but stores nothing', async ({ page }) => {
     const message = uniqueMessage('Honeypot');
 
@@ -110,7 +120,6 @@ test.describe('anti-spam', () => {
     // The bot is told what a person would be told; nothing is revealed.
     await expect(page.getByRole('status')).toContainText('Спасибо');
 
-    await signInToAdmin(page);
     await page.goto('/admin/feedback');
     await expect(page.getByText(message)).toHaveCount(0);
   });
@@ -139,6 +148,15 @@ test.describe('the admin inbox', () => {
     await page.goto('/admin/feedback');
     await expect(page).toHaveURL(/\/admin\/login/);
   });
+});
+
+test.describe('the admin inbox, signed in', () => {
+  // One shared session from auth.setup: signing in per test would trip the
+  // login rate limiter, which counts every attempt from this address.
+  test.use({
+    storageState: ADMIN_STORAGE_STATE,
+    extraHTTPHeaders: { 'x-forwarded-for': '198.51.100.13' },
+  });
 
   test('shows a submission and marks it read', async ({ page }) => {
     const message = uniqueMessage('Inbox');
@@ -151,7 +169,6 @@ test.describe('the admin inbox', () => {
     await page.getByRole('button', { name: 'Отправить' }).click();
     await expect(page.getByRole('status')).toBeVisible();
 
-    await signInToAdmin(page);
     await page.goto('/admin/feedback');
 
     const item = page.locator('[data-testid="feedback-item"]', { hasText: message });
@@ -178,7 +195,6 @@ test.describe('the admin inbox', () => {
     await page.getByRole('button', { name: 'Отправить' }).click();
     await expect(page.getByRole('status')).toBeVisible();
 
-    await signInToAdmin(page);
     await page.goto('/admin/feedback');
 
     const item = page.locator('[data-testid="feedback-item"]', { hasText: 'XSS' });

@@ -10,8 +10,8 @@ scheduled time, labelled as such.
 
 ## Status
 
-Built and green through **Stage 6 (admin panel)**. Stages 7–10 (feedback form,
-content migration, PWA/SEO, hardening) are not started.
+Built and green through **Stage 9 (PWA, SEO, accessibility)**. Stage 10,
+hardening and handover, is not started.
 
 | Stage | Scope                                              | State                                        |
 | ----- | -------------------------------------------------- | -------------------------------------------- |
@@ -24,10 +24,17 @@ content migration, PWA/SEO, hardening) are not started.
 | 6     | Admin — auth, upload → preview → publish            | Done                                         |
 | 7     | Feedback form, optional SMTP, admin inbox           | Done                                         |
 | 8     | Content migration from the legacy site              | Steps 1–4, 6 done; step 5 is human proofread |
-| 9–10  | PWA/SEO, hardening                                  | Not started                                  |
+| 9     | PWA, SEO, accessibility                             | Done                                         |
+| 10    | Hardening and handover                              | Not started                                  |
 
-Everything above is green: 282 unit tests and 72 end-to-end tests, plus
-typecheck, lint, format and a production build on plain Node.
+Everything above is green: 282 unit tests and 89 end-to-end tests, plus
+typecheck, lint, format and a production build on plain Node. The end-to-end
+suite includes an axe pass over every public page, the admin panel and the
+feedback form in its error state, and asserts the flight board still renders
+offline with the date its schedule was loaded.
+
+The keyboard and screen-reader passes plan §9.3 also asks for are manual and
+have **not** been done; no automated check substitutes for them.
 
 The migrated content in `content/` is **unproofed**. Every page carries
 `translationStatus: pending`, an empty `lastReviewed`, and a `migrationNotes`

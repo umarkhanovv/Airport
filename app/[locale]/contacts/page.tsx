@@ -7,6 +7,8 @@ import { EOTINISH_URL } from '@/lib/constants';
 import { issueFormToken } from '@/lib/feedback/antispam';
 import { isFeedbackLocale } from '@/lib/feedback/validate';
 import { routing } from '@/i18n/routing';
+import { alternatesFor } from '@/lib/seo';
+import type { Locale } from '@/i18n/routing';
 
 /**
  * Contacts (spec §5.7) and the feedback form (spec §9).
@@ -29,7 +31,11 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata(props: PageProps<'/[locale]/contacts'>): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: 'Sections' });
-  return { title: t('contacts.title'), description: t('contacts.description') };
+  return {
+    title: t('contacts.title'),
+    description: t('contacts.description'),
+    alternates: alternatesFor(locale as Locale, '/contacts'),
+  };
 }
 
 export default async function ContactsPage({ params }: PageProps<'/[locale]/contacts'>) {

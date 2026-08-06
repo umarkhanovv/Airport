@@ -24,6 +24,7 @@ import { airportToday, formatLongDate } from '@/lib/date';
 import { env } from '@/lib/env';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
+import { alternatesFor } from '@/lib/seo';
 
 /**
  * The flight board (spec §6.4).
@@ -41,7 +42,11 @@ export const revalidate = 60;
 export async function generateMetadata(props: PageProps<'/[locale]/flights'>): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: 'Sections' });
-  return { title: t('flights.title'), description: t('flights.description') };
+  return {
+    title: t('flights.title'),
+    description: t('flights.description'),
+    alternates: alternatesFor(locale as Locale, '/flights'),
+  };
 }
 
 export default async function FlightsPage({

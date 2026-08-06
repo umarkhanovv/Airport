@@ -5,6 +5,8 @@ import { listNews, NEWS_PAGE_SIZE } from '@/lib/news/queries';
 import type { NewsLocale } from '@/lib/db/schema';
 import { formatLongDate } from '@/lib/date';
 import { Link } from '@/i18n/navigation';
+import { alternatesFor } from '@/lib/seo';
+import type { Locale } from '@/i18n/routing';
 
 /**
  * News list (spec §7).
@@ -18,7 +20,11 @@ export const revalidate = 300;
 export async function generateMetadata(props: PageProps<'/[locale]/news'>): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: 'News' });
-  return { title: t('title'), description: t('description') };
+  return {
+    title: t('title'),
+    description: t('description'),
+    alternates: alternatesFor(locale as Locale, '/news'),
+  };
 }
 
 export default async function NewsPage({ params, searchParams }: PageProps<'/[locale]/news'>) {

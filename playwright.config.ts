@@ -18,7 +18,19 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
 
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    /**
+     * Signs in once and stores the session. Specs that exercise the admin
+     * panel reuse it rather than each logging in, which would trip the login
+     * rate limiter — see tests/e2e/auth.setup.ts.
+     */
+    { name: 'setup', testMatch: /.*\.setup\.ts/ },
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'],
+    },
+  ],
 
   /**
    * Tests run against the real standalone bundle under plain `node server.js`
