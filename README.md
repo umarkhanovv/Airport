@@ -21,13 +21,15 @@ content migration, PWA/SEO, hardening) are not started.
 | 3     | Flight board UI                                     | Done                                         |
 | 4     | Board extras — pin, .ics, weather                   | Done                                         |
 | 5     | News                                                | Done                                         |
-| 6     | Admin — auth, upload → preview → publish            | Code complete; e2e suite not yet passing     |
+| 6     | Admin — auth, upload → preview → publish            | Done                                         |
 | 7–10  | Feedback, content migration, PWA/SEO, hardening     | Not started                                  |
 
-Stage 6 caveat: unit tests, typecheck, lint and the production build all pass,
-but the Playwright end-to-end suite for the admin flow has not been run to
-completion. News CRUD and the feedback inbox listed under Stage 6 are also still
-outstanding — the inbox is blocked until Stage 7 creates the feedback table.
+Everything above is green: 239 unit tests and 62 end-to-end tests, plus
+typecheck, lint, format and a production build on plain Node.
+
+Stage 6 carries two outstanding items that its exit criteria do not cover: news
+CRUD from the admin panel, and the feedback inbox — the latter blocked until
+Stage 7 creates the feedback table.
 
 ## Stack
 

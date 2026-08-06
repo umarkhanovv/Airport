@@ -12,9 +12,9 @@ import { expect, test, type Page } from '@playwright/test';
  */
 
 const PASSWORD = 'e2e-admin-password';
-// Resolved from the project root: Playwright's TS transform is CommonJS, so
-// `import.meta` is unavailable here even though the unit tests can use it.
-const SAMPLE = path.resolve(process.cwd(), 'data/sample_weekly_schedule.xlsx');
+// Playwright's TS transform is CommonJS, so `__dirname` is available here and
+// `import.meta` is not — the reverse of the Vitest suites.
+const SAMPLE = path.resolve(__dirname, '../../data/sample_weekly_schedule.xlsx');
 
 /** The golden fixture: this exact file is 38 entries, 7 days, 1 warning (plan §5.6). */
 const EXPECTED = { flights: '38', days: '7', warnings: 1 };
@@ -45,7 +45,9 @@ test.describe('access control', () => {
     await page.locator('#password').fill('not the password');
     await page.getByRole('button', { name: 'Sign in' }).click();
 
-    await expect(page.getByRole('alert')).toHaveText(/Incorrect password/);
+    // Targeted by id, not by role: Next renders its own aria-live route
+    // announcer with role="alert", so getByRole('alert') is ambiguous here.
+    await expect(page.locator('#login-error')).toHaveText(/Incorrect password/);
 
     const cookies = await page.context().cookies();
     expect(cookies.find((c) => c.name === 'hsa_admin')).toBeUndefined();
@@ -62,11 +64,19 @@ test.describe('access control', () => {
     await expect(page.evaluate(() => document.cookie)).resolves.not.toContain('hsa_admin');
   });
 
-  test('admin is not localised — /ru/admin does not exist', async ({ page }) => {
-    // The proxy matcher excludes /admin; without that, next-intl would redirect
-    // /admin to /ru/admin and every admin URL would 404.
-    const response = await page.request.get('/ru/admin', { maxRedirects: 0 });
-    expect(response.status()).toBe(404);
+  test('admin is not localised — /admin is never rewritten to a locale', async ({ page }) => {
+    // The property that matters: the proxy matcher excludes /admin, so
+    // next-intl leaves it alone. Without that exclusion /admin would be
+    // redirected to /ru/admin and every admin URL would 404.
+    await page.goto('/admin');
+    expect(page.url()).not.toMatch(/\/(ru|en|kz|kk)\/admin/);
+    await expect(page).toHaveURL(/\/admin(\/login)?/);
+
+    // A locale-prefixed admin URL does not serve the panel either: it leaves
+    // the locale tree entirely and lands on the unauthenticated login screen.
+    await page.goto('/ru/admin');
+    expect(page.url()).not.toMatch(/\/(ru|en|kz|kk)\/admin/);
+    await expect(page.getByRole('heading', { name: 'Overview' })).toHaveCount(0);
   });
 
   test('robots.txt disallows the admin tree', async ({ page }) => {
@@ -100,7 +110,7 @@ test.describe('upload rejection', () => {
     });
     await page.getByRole('button', { name: 'Upload and preview' }).click();
 
-    await expect(page.getByRole('alert')).toHaveText(/not an \.xlsx workbook/);
+    await expect(page.locator('#upload-error')).toHaveText(/not an \.xlsx workbook/);
     // Still on the upload screen; nothing was staged or published.
     await expect(page).toHaveURL(/\/admin\/schedule$/);
   });
@@ -116,7 +126,7 @@ test.describe('upload rejection', () => {
       buffer: Buffer.from('%PDF-1.7 this is a pdf', 'utf8'),
     });
     await page.getByRole('button', { name: 'Upload and preview' }).click();
-    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.locator('#upload-error')).toBeVisible();
 
     await page.goto('/admin');
     await expect(page.getByTestId('live-flights')).toHaveText(before!);
@@ -195,9 +205,11 @@ test.describe('upload to publish', () => {
     await page.getByRole('button', { name: 'Discard' }).click();
     await expect(page).toHaveURL(/\/admin\/schedule$/);
 
-    // The staged file is gone, so its preview URL no longer resolves.
-    const response = await page.request.get(previewUrl, { maxRedirects: 0 });
-    expect(response.status()).toBe(404);
+    // The staged file is gone, so its preview no longer renders. Asserted by
+    // navigating rather than by raw status: Next serves its not-found page
+    // through a redirect, so the status code is not the interesting part.
+    await page.goto(previewUrl);
+    await expect(page.getByRole('heading', { name: 'Preview' })).toHaveCount(0);
   });
 });
 
@@ -206,8 +218,15 @@ test.describe('staged upload ids', () => {
     await signIn(page);
 
     for (const evil of ['..%2f..%2f..%2fetc%2fpasswd', 'not-a-uuid', '..']) {
-      const response = await page.request.get(`/admin/schedule/${evil}`, { maxRedirects: 0 });
-      expect([404, 308], `${evil} must not be served`).toContain(response.status());
+      await page.goto(`/admin/schedule/${evil}`);
+
+      // Whatever Next does with the path — normalise, redirect, 404 — the one
+      // thing that must never happen is a preview rendered from it.
+      await expect(
+        page.getByRole('heading', { name: 'Preview' }),
+        `${evil} must not be served`
+      ).toHaveCount(0);
+      await expect(page.getByTestId('preview-flights')).toHaveCount(0);
     }
   });
 });

@@ -2,7 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # Both names are listed so CI runs regardless of which the repository
+    # settles on. Without this, a repo defaulting to `master` never runs CI at
+    # all — the checks silently do not exist rather than visibly fail.
+    branches: [main, master]
   pull_request:
 
 concurrency:
