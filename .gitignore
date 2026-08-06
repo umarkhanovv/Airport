@@ -70,3 +70,13 @@ next-env.d.ts
 /CLAUDE_CODE_prompt.md
 /IMPLEMENTATION_PLAN.md
 /BRIEF_ru.md
+
+# Stage 8 migration working files.
+#
+# The whole directory stays out of the public repository. It holds a crawled
+# copy of the legacy site, the inventory, and the reconciliation table — and
+# that table is an assessment of the client's existing site (defects,
+# mislabelled pages, placeholder text, content gaps), the same class of
+# material as the planning documents above. The tooling that produces it lives
+# in scripts/migrate/ and is public; the findings are not.
+/migration/
