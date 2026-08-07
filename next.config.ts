@@ -33,6 +33,83 @@ const nextConfig: NextConfig = {
   async redirects() {
     return legacyRedirects;
   },
+
+  /**
+   * Security headers (plan §9.1, Stage 10).
+   *
+   * Set here rather than only at the reverse proxy so they survive a change of
+   * proxy, and so `npm start` on a bare server is not materially less safe than
+   * the documented deployment. HSTS is the exception and stays at the proxy:
+   * it is a statement about the certificate and the domain, and an application
+   * that is reachable over plain HTTP in development must not assert it.
+   */
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          /**
+           * Nothing here needs a camera, a microphone or a location — the
+           * airport's coordinates are a constant, not a lookup of the reader's.
+           */
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
+          },
+          { key: 'Content-Security-Policy', value: CSP },
+        ],
+      },
+    ];
+  },
 };
+
+/**
+ * The content security policy.
+ *
+ * `script-src` carries `'unsafe-inline'`, and that is a deliberate, recorded
+ * trade rather than an oversight. The framework emits its own inline bootstrap
+ * on every page — `self.__next_f.push(…)`, whose contents differ per route —
+ * so hashes cannot cover it. The alternative is a per-request nonce, which in
+ * Next has to come from middleware, which makes every page dynamic: it would
+ * turn 145 statically generated pages into server renders to harden the one
+ * attack surface this site does not have. The stored-XSS paths that do exist —
+ * the feedback inbox and news, both fed by text people type — render as text
+ * and are covered by tests that assert a script payload is not parsed into
+ * elements.
+ *
+ * What the policy does buy is real: no plugins, no injected `<base>`, no
+ * framing, no form posting anything to a third party, and no connection to a
+ * host that is not this one.
+ *
+ * `frame-src` admits Google Maps because the contacts page's map facade loads
+ * that iframe, but only after a click (plan §6.6).
+ */
+const development = process.env.NODE_ENV !== 'production';
+
+const CSP = [
+  "default-src 'self'",
+  /**
+   * `'unsafe-eval'` and the websocket source are development only, and are the
+   * reason this is computed rather than a constant: React's development build
+   * uses `eval` to reconstruct stack traces, and hot reload talks over a
+   * websocket. Shipping a policy that silently only works in production would
+   * be found by whoever next runs `npm run dev`, at the cost of an afternoon.
+   */
+  `script-src 'self' 'unsafe-inline'${development ? " 'unsafe-eval'" : ''}`,
+  // Tailwind emits a stylesheet, but Next inlines critical styles as a <style>.
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self'",
+  `connect-src 'self'${development ? ' ws: wss:' : ''}`,
+  'frame-src https://www.google.com https://maps.google.com',
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+  // Omitted in development, where the server is plainly http://localhost.
+  ...(development ? [] : ['upgrade-insecure-requests']),
+].join('; ');
 
 export default withNextIntl(nextConfig);

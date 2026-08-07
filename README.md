@@ -27,7 +27,7 @@ hardening and handover, is not started.
 | 9     | PWA, SEO, accessibility                             | Done                                         |
 | 10    | Hardening and handover                              | Not started                                  |
 
-Everything above is green: 300 unit tests and 105 end-to-end tests, plus
+Everything above is green: 300 unit tests and 116 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node. The end-to-end
 suite includes an axe pass over every public page, the admin panel and the
 feedback form in its error state, and asserts the flight board still renders
@@ -107,6 +107,101 @@ first — see `.env.example` for the full environment reference.
 | `npm run schedule:import`  | Import a workbook from the command line             |
 | `npm run db:generate`      | Generate a Drizzle migration                        |
 | `npm run migrate:verify`   | Re-check migrated pages against the legacy site     |
+
+## Running it on the airport's server
+
+Requires Node 22 and a C toolchain, because `better-sqlite3` compiles a native
+module. On Debian or Ubuntu: `apt install build-essential python3`.
+
+```bash
+npm ci && npm run build
+```
+
+Set the environment, then start it:
+
+```bash
+ADMIN_PASSWORD=… SESSION_SECRET=… SITE_URL=https://hsairport.kz DATA_DIR=/var/lib/hsairport npm start
+```
+
+`.env.example` is the full reference; only those four matter to begin with.
+Generate the session secret rather than inventing one:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+The server listens on `PORT`, default 3000, and expects a reverse proxy in
+front of it terminating TLS. The proxy is also where **HSTS** belongs — the
+application sets the other security headers itself (see `next.config.ts`), but
+not that one: it is a promise about the certificate, and an application that
+also runs on `http://localhost` must not make it.
+
+Set `X-Forwarded-For` at the proxy. Both rate limiters — the admin login and
+the feedback form — key on it, and without it every visitor shares one bucket.
+
+### Where the data lives
+
+Everything that cannot be rebuilt from this repository is under `DATA_DIR`:
+
+```
+$DATA_DIR/app.db              SQLite: flights, news, feedback
+$DATA_DIR/uploads/schedules/  every weekly workbook ever published
+$DATA_DIR/uploads/news/       cover images for news posts
+```
+
+Set `DATA_DIR` to an absolute path outside the checkout. The default is
+`./data`, which is fine for development and wrong for production: the
+standalone server changes directory into `.next/standalone` at startup, and a
+build directory is deleted on the next deploy. `lib/env.ts` unwinds that and
+refuses a path under `.next`, but the argument for an absolute path is that
+nobody should have to know any of this.
+
+### Backups
+
+One directory, no dump step:
+
+```bash
+sqlite3 /var/lib/hsairport/app.db ".backup '/backup/app.db'" && tar czf /backup/hsairport-$(date +%F).tgz -C /var/lib hsairport
+```
+
+`.backup` is used rather than copying the file because it is safe while the
+server is running. Restoring is putting the directory back and restarting.
+
+Nothing else needs backing up. The pages, the translations and the redirects
+are in git.
+
+### Deploying a new version
+
+```bash
+git pull && npm ci && npm run build && systemctl restart hsairport
+```
+
+Schema changes apply themselves on startup — `lib/db/migrate.ts` runs the
+Drizzle migrations before the first query. There is no separate migrate step to
+forget.
+
+## For the people running the site
+
+Everything below happens at `/<your-domain>/admin`, signed in with
+`ADMIN_PASSWORD`. There are no user accounts: one password, shared by whoever
+needs it, changed by changing the environment variable and restarting.
+
+**Publishing the weekly schedule.** Admin → Schedule → choose the `.xlsx` file.
+The next screen shows what the file contains — how many flights, which days,
+and anything the parser could not make sense of — and publishes nothing until
+it is confirmed. If a file is rejected, the board keeps showing the previous
+week; it is never left empty. Old workbooks stay downloadable.
+
+**Writing news.** Admin → News → Write a post. Nothing is public until
+*Published* is ticked, so an announcement can be prepared in advance. The text
+is Markdown. The address of a post is fixed when it is created, so links keep
+working — fixing a headline does not move the page. A story written in more
+than one language should be linked with "Same story in another language", which
+is what makes the public page offer readers the other versions.
+
+**Reading feedback.** Admin → Feedback. Everything submitted through the
+contacts form is here, whether or not e-mail is configured; SMTP only adds a
+copy by mail.
 
 ## Layout
 

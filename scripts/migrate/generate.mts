@@ -27,6 +27,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { slugify } from '../../lib/slug.ts';
+
 import { contentRegion, decodeEntities, stripPostListing } from './html.mts';
 import { loadMapping } from './load-mapping.mts';
 import type { Decision } from './mapping-types.mts';
@@ -81,7 +83,29 @@ function escapeMdx(text: string): string {
     .trim();
 }
 
-function inlineToMdx(html: string): string {
+/**
+ * Resolves a legacy `href` against the page it was written on.
+ *
+ * The legacy site links some of its own files with a root-relative path —
+ * `/wp-content/uploads/2021/01/LOT01.pdf`. Carried across verbatim those
+ * resolve against the *new* domain, where nothing of the sort exists, so four
+ * tender documents arrived as links that were broken on the day they were
+ * written rather than on the day the old site is switched off.
+ *
+ * Anything already absolute, and anything that is not a path at all — `mailto:`,
+ * `tel:`, a fragment — is left exactly as it was.
+ */
+function resolveHref(href: string, sourceUrl: string): string {
+  if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('#')) return href;
+
+  try {
+    return new URL(href, sourceUrl).toString();
+  } catch {
+    return href;
+  }
+}
+
+function inlineToMdx(html: string, sourceUrl: string): string {
   return (
     escapeMdx(
       decodeEntities(
@@ -90,7 +114,7 @@ function inlineToMdx(html: string): string {
           .replace(/<(em|i)\b[^>]*>([\s\S]*?)<\/\1>/gi, (_, __, inner) => `_${inner}_`)
           .replace(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (_, href, inner) => {
             const label = inner.replace(/<[^>]+>/g, '').trim();
-            return label ? `[${label}](${href})` : '';
+            return label ? `[${label}](${resolveHref(href, sourceUrl)})` : '';
           })
           .replace(/<br\s*\/?>/gi, ' ')
           .replace(/<[^>]+>/g, '')
@@ -162,7 +186,7 @@ function htmlToMdx(region: string, sourceUrl: string, dropHeading = ''): Convers
     const gap = cleaned.slice(cursor, upTo);
     cursor = upTo;
 
-    const text = inlineToMdx(gap);
+    const text = inlineToMdx(gap, sourceUrl);
     if (/\p{L}/u.test(text)) blocks.push(text);
   };
 
@@ -186,7 +210,7 @@ function htmlToMdx(region: string, sourceUrl: string, dropHeading = ''): Convers
     ] = match;
 
     if (hTag) {
-      const text = inlineToMdx(hInner!);
+      const text = inlineToMdx(hInner!, sourceUrl);
       if (!text) continue;
 
       if (headingToDrop && normalise(text) === headingToDrop) {
@@ -202,7 +226,7 @@ function htmlToMdx(region: string, sourceUrl: string, dropHeading = ''): Convers
     }
 
     if (pTag) {
-      const text = inlineToMdx(pInner!);
+      const text = inlineToMdx(pInner!, sourceUrl);
       if (text) blocks.push(text);
       continue;
     }
@@ -210,7 +234,7 @@ function htmlToMdx(region: string, sourceUrl: string, dropHeading = ''): Convers
     if (listTag) {
       const marker = listTag.toLowerCase() === 'ol' ? '1.' : '-';
       const items = [...listInner!.matchAll(/<li\b[^>]*>([\s\S]*?)<\/li>/gi)]
-        .map((li) => inlineToMdx(li[1]!))
+        .map((li) => inlineToMdx(li[1]!, sourceUrl))
         .filter(Boolean);
       if (items.length > 0) blocks.push(items.map((item) => `${marker} ${item}`).join('\n'));
       continue;
@@ -219,7 +243,7 @@ function htmlToMdx(region: string, sourceUrl: string, dropHeading = ''): Convers
     if (tableTag) {
       const rows = [...tableInner!.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map((tr) =>
         [...tr[1]!.matchAll(/<(td|th)\b[^>]*>([\s\S]*?)<\/\1>/gi)].map((cell) =>
-          inlineToMdx(cell[2]!)
+          inlineToMdx(cell[2]!, sourceUrl)
         )
       );
       const width = Math.max(0, ...rows.map((r) => r.length));
@@ -301,6 +325,109 @@ async function downloadImage(url: string): Promise<boolean> {
     await new Promise((resolve) => setTimeout(resolve, 100));
   } catch {
     ok = false;
+  }
+
+  attempted.set(url, ok);
+  return ok;
+}
+
+// ---------------------------------------------------------------------------
+// Attachments
+// ---------------------------------------------------------------------------
+
+/**
+ * Documents linked from a page — 207 of them across the site, 188 on the
+ * announcements page alone.
+ *
+ * They are the one class of legacy asset that a reader loses entirely when
+ * hsairport.kz is switched off: an image that fails to load leaves a page that
+ * still reads, but a procurement notice is the whole point of the line that
+ * links to it. So they are copied into this repository rather than left
+ * pointing at a host that is going away.
+ */
+const DOCUMENT_EXTENSIONS = /\.(pdf|docx?|xlsx?|pptx?|zip)$/i;
+
+function documentLinksIn(mdx: string): string[] {
+  return [
+    ...new Set(
+      [...mdx.matchAll(/\]\((https?:\/\/[^)\s]+)\)/g)]
+        .map((match) => match[1]!)
+        .filter((url) => DOCUMENT_EXTENSIONS.test(new URL(url).pathname))
+    ),
+  ];
+}
+
+/** Assigned names, so two different documents never claim the same path. */
+const documentPaths = new Map<string, string>();
+const takenDocumentPaths = new Map<string, string>();
+
+/**
+ * Where one attachment is re-hosted.
+ *
+ * Unlike images, which nobody sees the filename of, a document's name is what
+ * appears in the reader's downloads folder — so it is transliterated rather
+ * than hashed, under the rule `lib/slug.ts` sets out for news slugs: the legacy
+ * site's percent-encoded Cyrillic is unreadable and breaks when copied into
+ * plain text.
+ *
+ * The upload month from the legacy path leads the name. It disambiguates the
+ * eleven separate files called `приказ.docx` while remaining something a person
+ * can read, which a hash would not be.
+ */
+function localDocumentPath(url: string): string {
+  const existing = documentPaths.get(url);
+  if (existing) return existing;
+
+  const decoded = decodeURIComponent(new URL(url).pathname);
+  const extension = (path.extname(decoded) || '.pdf').toLowerCase();
+  const stem = slugify(path.basename(decoded, path.extname(decoded))) || 'document';
+  const month = /\/(\d{4})\/(\d{2})\//.exec(decoded);
+
+  let candidate = `/documents/legacy/${month ? `${month[1]}-${month[2]}-` : ''}${stem}${extension}`;
+
+  // Same month, same name, different file: two of the tender protocols do this.
+  const owner = takenDocumentPaths.get(candidate);
+  if (owner && owner !== url) {
+    const suffix = crypto.createHash('sha1').update(url).digest('hex').slice(0, 6);
+    candidate = candidate.replace(extension, `-${suffix}${extension}`);
+  }
+
+  takenDocumentPaths.set(candidate, url);
+  documentPaths.set(url, candidate);
+  return candidate;
+}
+
+async function downloadDocument(url: string): Promise<boolean> {
+  const target = path.join(ROOT, 'public', localDocumentPath(url).replace(/^\//, ''));
+  if (fs.existsSync(target)) return true;
+
+  const previous = attempted.get(url);
+  if (previous !== undefined) return previous;
+
+  let ok = false;
+
+  // Retried, unlike images. These are large files over a single connection to a
+  // shared-hosting WordPress site, and a first sweep lost 38 of 207 to resets
+  // that a second attempt recovered.
+  for (let attempt = 0; attempt < 3 && !ok; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        headers: { 'user-agent': 'hsairport-migration/1.0' },
+        redirect: 'follow',
+        signal: AbortSignal.timeout(60_000),
+      });
+      if (response.ok) {
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        fs.writeFileSync(target, Buffer.from(await response.arrayBuffer()));
+        ok = true;
+      } else if (response.status === 404) {
+        break;
+      }
+    } catch {
+      ok = false;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, ok ? 100 : 1000));
   }
 
   attempted.set(url, ok);
@@ -395,6 +522,7 @@ async function main(): Promise<void> {
   const redirects: Array<{ source: string; destination: string; permanent: boolean }> = [];
   const allWarnings: Array<{ page: string; warning: string }> = [];
   let imagesFetched = 0;
+  let documentsFetched = 0;
 
   for (const [slug, decision] of Object.entries(MAPPING) as Array<[string, Decision]>) {
     // Redirects for every legacy URL, in all three locales, whatever the action.
@@ -517,6 +645,23 @@ async function main(): Promise<void> {
         }
       }
 
+      // Attachments are re-hosted rather than dropped: unlike an image, the
+      // document *is* the content of the line that links to it. One that cannot
+      // be fetched keeps its legacy URL — a link that works until the old site
+      // goes is better than one that never worked — and says so in the notes.
+      for (const document of documentLinksIn(mdx)) {
+        if (dryRun) continue;
+
+        if (await downloadDocument(document)) {
+          documentsFetched += 1;
+          mdx = mdx.replaceAll(`](${document})`, `](${localDocumentPath(document)})`);
+        } else {
+          warnings.push(
+            `attachment could not be downloaded and still points at the legacy site: ${document}`
+          );
+        }
+      }
+
       const locale = LOCALE_OF_PREFIX[prefix];
       present.push(locale);
 
@@ -549,9 +694,6 @@ async function main(): Promise<void> {
           // not published; only a neutral, actionable instruction ships inside
           // the content tree.
           ...(decision.proofread ? [decision.proofread] : []),
-          ...(record.files.length > 0
-            ? [`${record.files.length} attachment(s) on the legacy page still need re-hosting`]
-            : []),
         ],
       });
 
@@ -691,6 +833,7 @@ ${
   console.log(`\n${dryRun ? 'Dry run — nothing written.\n' : ''}`);
   console.log(`  ${written.length} MDX pages`);
   console.log(`  ${imagesFetched} images downloaded`);
+  console.log(`  ${documentsFetched} attachments re-hosted`);
   console.log(`  ${redirects.length} redirects`);
   console.log(`  ${gaps.length} pages missing a translation`);
   console.log(`  ${allWarnings.length} migration warnings for proofreading\n`);
