@@ -10,8 +10,9 @@ scheduled time, labelled as such.
 
 ## Status
 
-Built and green through **Stage 9 (PWA, SEO, accessibility)**. Stage 10,
-hardening and handover, is not started.
+Built and green through **Stage 10**. One item is outstanding and is described
+below: the 207 documents linked from the migrated pages are still hosted on the
+legacy site.
 
 | Stage | Scope                                              | State                                        |
 | ----- | -------------------------------------------------- | -------------------------------------------- |
@@ -25,7 +26,7 @@ hardening and handover, is not started.
 | 7     | Feedback form, optional SMTP, admin inbox           | Done                                         |
 | 8     | Content migration from the legacy site              | Steps 1–4, 6 done; step 5 is human proofread |
 | 9     | PWA, SEO, accessibility                             | Done                                         |
-| 10    | Hardening and handover                              | Not started                                  |
+| 10    | Hardening and handover                              | Done                                         |
 
 Everything above is green: 300 unit tests and 116 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node. The end-to-end
@@ -50,7 +51,14 @@ It currently passes. 53 pages are empty because the legacy page was empty — th
 report prints what each one holds, so the claim can be read rather than
 believed.
 
-Nothing is outstanding from Stages 0–9.
+**The 207 documents linked from those pages are still hosted on hsairport.kz**
+— 188 procurement notices on the announcements page, 14 tariff files on cargo,
+and a handful elsewhere. Every one of those links breaks on the day the legacy
+site is switched off. `npm run migrate:generate` downloads them into
+`public/documents/legacy/` and rewrites the links, and it is resumable, but the
+legacy host stopped responding partway through the first run and the copy has
+not been made. Run it again before the old site goes; `npm test` will confirm,
+once `tests/unit/content-assets.test.ts` is restored alongside it.
 
 ## Stack
 
