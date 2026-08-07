@@ -27,7 +27,7 @@ hardening and handover, is not started.
 | 9     | PWA, SEO, accessibility                             | Done                                         |
 | 10    | Hardening and handover                              | Not started                                  |
 
-Everything above is green: 282 unit tests and 89 end-to-end tests, plus
+Everything above is green: 282 unit tests and 94 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node. The end-to-end
 suite includes an axe pass over every public page, the admin panel and the
 feedback form in its error state, and asserts the flight board still renders
@@ -43,10 +43,14 @@ body was empty, images that could not be fetched, embeds that were dropped, and
 where the legacy slug disagreed with the page it named. Stage 8 step 5 is a
 human reading pass, budgeted separately from development.
 
-Two items remain outstanding from Stage 6: news CRUD from the admin panel, and
-the eOtinish link on the contacts page — the latter deliberately left out until
-Stage 8 copies the real URL from the legacy site, rather than guessing the
-address of a government appeals service.
+That the pages came across *completely* is checkable without a human, and is
+checked: `npm run migrate:verify` re-fetches all 148 of them from the live
+legacy site and compares their visible text against the MDX that replaced them.
+It currently passes. 53 pages are empty because the legacy page was empty — the
+report prints what each one holds, so the claim can be read rather than
+believed.
+
+News CRUD from the admin panel remains outstanding from Stage 6.
 
 ## Stack
 
@@ -102,6 +106,7 @@ first — see `.env.example` for the full environment reference.
 | `npm run test:e2e`         | End-to-end tests (Playwright)                       |
 | `npm run schedule:import`  | Import a workbook from the command line             |
 | `npm run db:generate`      | Generate a Drizzle migration                        |
+| `npm run migrate:verify`   | Re-check migrated pages against the legacy site     |
 
 ## Layout
 

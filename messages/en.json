@@ -49,6 +49,18 @@
       "description": "Feedback, addresses, phone numbers and social media."
     }
   },
+  "Contacts": {
+    "detailsTitle": "Contact details",
+    "legalAddress": "Registered address",
+    "legalAddressValue": "78 A. Ussenov street, Turkistan, Turkistan region, 161200, Republic of Kazakhstan",
+    "airportAddress": "Airport address",
+    "airportAddressValue": "Shaga rural district, Sauran district, Turkistan region — Turkistan city airport",
+    "callCentre": "Call centre",
+    "landlineHint": "landline",
+    "mobileHint": "mobile",
+    "email": "E-mail",
+    "social": "Find us on social media"
+  },
   "Home": {
     "title": "Turkistan International Airport",
     "intro": "Flight schedule, airport services and passenger information.",

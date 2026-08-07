@@ -37,13 +37,45 @@ export const AIRPORT_ALIASES = ['Хазрет Султан', 'Khazret Sultan', '
  * Link to eOtinish, the state e-appeals portal, which spec §9 requires to be
  * preserved from the legacy site.
  *
- * Deliberately null. The exact URL must be copied from hsairport.kz during the
- * Stage 8 content migration — the same rule the IATA codes above follow. This
- * one matters more than most: it routes citizens to a government service with a
- * legally registered response, and a guessed address is worse than no link. The
- * feedback page renders the eOtinish block only once this is set.
+ * Copied from the legacy footer rather than recalled, under the rule the IATA
+ * codes above follow: this one routes citizens to a government service with a
+ * legally registered response, and a guessed address would be worse than no
+ * link at all. The legacy anchor carries the portal's own referral campaign
+ * parameters and a `/kk` path; both are dropped, so the portal picks the
+ * language rather than being forced into Kazakh for a reader who chose Russian.
  */
-export const EOTINISH_URL: string | null = null;
+export const EOTINISH_URL: string | null = 'https://eotinish.kz/';
+
+/**
+ * Published contact details, read out of the legacy site's footer during the
+ * Stage 8 crawl. Addresses are translated and live in the message catalogues;
+ * only what is the same in every language is here.
+ *
+ * The three legacy footers do not agree with each other, and the airport should
+ * settle these before launch:
+ *
+ *   - the mobile number is +7 702 047 07 68 in English and Kazakh but
+ *     +7 701 234 45 17 in Russian. The number below is the one two of the three
+ *     agree on.
+ *   - the e-mail is office@hsairport.kz in Russian and English but
+ *     info.hsa@tia.com.kz in Kazakh. The airport's own domain is used here;
+ *     tia.com.kz belongs to a different operator, and the images the legacy
+ *     site hotlinks from it have already gone.
+ *
+ * The landline is the same in all three, allowing for the trunk prefix.
+ */
+export const AIRPORT_CONTACTS = {
+  /** Call centre, landline. `tel` values are E.164; labels are for reading. */
+  phone: { tel: '+77253352909', label: '+7 72533 5 29 09' },
+  /** Call centre, mobile. */
+  mobile: { tel: '+77020470768', label: '+7 702 047 07 68' },
+  email: 'office@hsairport.kz',
+  social: [
+    { name: 'Instagram', url: 'https://www.instagram.com/turkistan_airport/' },
+    { name: 'Facebook', url: 'https://www.facebook.com/turkistaninternationalairport' },
+    { name: 'X', url: 'https://twitter.com/turkistanairprt' },
+  ],
+} as const;
 
 /**
  * The seven top-level sections of the reorganised information architecture

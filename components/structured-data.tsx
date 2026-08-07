@@ -1,17 +1,21 @@
 import { getTranslations } from 'next-intl/server';
 
-import { AIRPORT_ALIASES, AIRPORT_CODES, AIRPORT_COORDS } from '@/lib/constants';
+import { AIRPORT_ALIASES, AIRPORT_CODES, AIRPORT_CONTACTS, AIRPORT_COORDS } from '@/lib/constants';
 import { env } from '@/lib/env';
 import { routing } from '@/i18n/routing';
 
 /**
  * `schema.org/Airport` structured data (plan Stage 9).
  *
- * Only facts that were verified go in. The airport's codes and coordinates come
- * from the operator's own published material (see `lib/constants.ts`); the
- * postal address and telephone numbers do not appear here because they arrive
- * with the content migration and have not been confirmed — a wrong address in
- * structured data is worse than none, since search engines will repeat it.
+ * Only facts that were verified go in, because a wrong one here is worse than a
+ * missing one: search engines repeat it. The codes and coordinates come from the
+ * operator's own published material, and the address, telephone and e-mail from
+ * the footer the operator publishes on every page of the legacy site (see
+ * `lib/constants.ts`).
+ *
+ * The street address is the one a visitor needs — the aerodrome itself — rather
+ * than the registered office in the city, which is where the company is
+ * incorporated and not where the aircraft are.
  *
  * The alternate names matter locally: the airport is still widely called
  * Хазрет Султан, so someone searching that name should find this site
@@ -19,6 +23,7 @@ import { routing } from '@/i18n/routing';
  */
 export async function AirportStructuredData({ locale }: { locale: string }) {
   const t = await getTranslations({ locale, namespace: 'Site' });
+  const tContacts = await getTranslations({ locale, namespace: 'Contacts' });
 
   const localePath = locale === routing.defaultLocale ? '' : `/${locale === 'kk' ? 'kz' : locale}`;
 
@@ -40,7 +45,11 @@ export async function AirportStructuredData({ locale }: { locale: string }) {
       '@type': 'PostalAddress',
       addressCountry: 'KZ',
       addressLocality: t('location'),
+      streetAddress: tContacts('airportAddressValue'),
     },
+    telephone: AIRPORT_CONTACTS.phone.tel,
+    email: AIRPORT_CONTACTS.email,
+    sameAs: AIRPORT_CONTACTS.social.map((account) => account.url),
   };
 
   return (
