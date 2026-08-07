@@ -47,8 +47,10 @@ export async function AirportStructuredData({ locale }: { locale: string }) {
       addressLocality: t('location'),
       streetAddress: tContacts('airportAddressValue'),
     },
-    telephone: AIRPORT_CONTACTS.phone.tel,
-    email: AIRPORT_CONTACTS.email,
+    // One of each: schema.org takes a list, but a search result showing three
+    // numbers and two addresses helps nobody decide which to use.
+    telephone: AIRPORT_CONTACTS.phones[0].tel,
+    email: AIRPORT_CONTACTS.emails[0],
     sameAs: AIRPORT_CONTACTS.social.map((account) => account.url),
   };
 

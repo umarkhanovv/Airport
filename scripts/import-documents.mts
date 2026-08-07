@@ -1,24 +1,30 @@
 /**
- * Bulk-import a folder of documents onto a content page.
+ * Import a folder of documents downloaded from the legacy site.
  *
- *   npm run documents:import -- ./downloads --page=press/announcements
- *   npm run documents:import -- ./downloads --page=flights/cargo --dry-run
+ *   npm run documents:import -- --dry-run     # show what would happen
+ *   npm run documents:import                  # do it
  *
- * Exists because the announcements page carries 188 files. Uploading those
- * through the admin form once, to seed the library from the legacy site, would
- * be an afternoon of clicking; after that the form is the right tool, which is
- * why this is a one-off script rather than a feature.
+ * One folder, no sorting. Put every file from hsairport.kz into
+ * `documents-inbox/` and run this: each one is filed against the page it was
+ * published on and given the title it was published under, both read out of
+ * the migrated content tree.
  *
- * Titles are not taken from filenames where something better is available. The
- * migrated pages in `content/` still hold the legacy captions — "Приказ КД от
- * 04.08.2026 года." — recovered from the old site's markup, and each sits next
- * to a link whose filename identifies the document. So a file called
- * `приказКД-10.docx` is titled from the caption that was printed above it,
- * rather than from a name nobody wrote for a reader.
+ * That works because Stage 8 kept the evidence. Every legacy page in `content/`
+ * still holds the links it had — `.../приказКД-10.docx` — and the captions
+ * printed above them, recovered from the old site's markup. So a filename
+ * identifies a document uniquely, and the page and caption follow from it. A
+ * file the tree does not mention is reported rather than guessed at; it can be
+ * filed by hand in /admin/documents, which is a handful of clicks rather than
+ * two hundred.
  *
- * Run against the airport's DATA_DIR:
+ * Options:
+ *   --folder=<path>   default `documents-inbox`
+ *   --page=<path>     where to file anything the tree does not mention
+ *   --dry-run         print the plan and write nothing
  *
- *   DATA_DIR=/var/lib/hsairport npm run documents:import -- ./downloads --page=press/announcements
+ * Against the airport's own data directory:
+ *
+ *   DATA_DIR=/var/lib/hsairport npm run documents:import
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,121 +33,178 @@ import { createDocument, listAllDocuments } from '../lib/documents/queries.ts';
 import { storeDocument } from '../lib/documents/storage.ts';
 import { DOCUMENT_TYPES, displayFilename, titleFromFilename } from '../lib/documents/types.ts';
 
-const CONTENT_DIR = path.join(process.cwd(), 'content');
+const ROOT = process.cwd();
+const CONTENT_DIR = path.join(ROOT, 'content');
 
 const args = process.argv.slice(2);
-const dryRun = args.includes('--dry-run');
-const folder = args.find((arg) => !arg.startsWith('--'));
-const pagePath = args.find((arg) => arg.startsWith('--page='))?.slice('--page='.length);
+const flag = (name: string) => args.find((arg) => arg.startsWith(`--${name}=`))?.split('=')[1];
 
-if (!folder || !pagePath) {
-  console.error(
-    'Usage: npm run documents:import -- <folder> --page=<section/page> [--dry-run]\n' +
-      '  e.g. npm run documents:import -- ./downloads --page=press/announcements'
-  );
-  process.exit(1);
+const dryRun = args.includes('--dry-run');
+const folder = path.resolve(
+  ROOT,
+  flag('folder') ?? args.find((a) => !a.startsWith('--')) ?? 'documents-inbox'
+);
+const fallbackPage = flag('page') ?? null;
+
+interface Placement {
+  pagePath: string;
+  caption?: string;
 }
 
-if (!fs.existsSync(path.join(CONTENT_DIR, 'ru', `${pagePath}.mdx`))) {
-  console.error(`No such content page: content/ru/${pagePath}.mdx`);
-  process.exit(1);
+// ---------------------------------------------------------------------------
+// What the legacy pages say about each file
+// ---------------------------------------------------------------------------
+
+function contentFiles(): string[] {
+  const walk = (dir: string): string[] =>
+    fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) return walk(full);
+      return entry.name.endsWith('.mdx') ? [full] : [];
+    });
+
+  return fs.existsSync(CONTENT_DIR) ? walk(CONTENT_DIR) : [];
 }
 
 /**
- * Captions from the migrated page, keyed by the filename they linked to.
+ * Filename → the page it was published on, and what it was called there.
  *
- * The legacy markup put each caption in a paragraph immediately above the table
- * row holding its link, which is how the converter emitted them — so the
- * nearest preceding non-empty line that is not itself a link is the caption for
- * that file.
+ * All three languages are scanned, because the page path is the same in each
+ * and some documents only ever appeared on one of them — the flight safety
+ * policy is linked from the English page and the Kazakh one, and each links a
+ * different file.
+ *
+ * The caption is the nearest paragraph above the link. That is how the legacy
+ * markup was laid out and how the converter emitted it: a line of prose naming
+ * the document, then the table row holding its "Скачать".
  */
-function captionsFromPage(): Map<string, string> {
-  const source = fs.readFileSync(path.join(CONTENT_DIR, 'ru', `${pagePath}.mdx`), 'utf8');
-  const lines = source.split('\n');
-  const captions = new Map<string, string>();
+function placements(): Map<string, Placement> {
+  const found = new Map<string, Placement>();
 
-  for (const [index, line] of lines.entries()) {
-    const link = /\]\((https?:\/\/[^)\s]+)\)/.exec(line);
-    if (!link) continue;
+  for (const file of contentFiles()) {
+    // content/<locale>/<section>/<page>.mdx → <section>/<page>
+    const relative = path.relative(CONTENT_DIR, file).replace(/\.mdx$/, '');
+    const pagePath = relative.split(path.sep).slice(1).join('/');
 
-    const filename = decodeURIComponent(new URL(link[1]!).pathname.split('/').pop() ?? '');
-    if (!filename || captions.has(filename)) continue;
+    const lines = fs.readFileSync(file, 'utf8').split('\n');
 
-    for (let above = index - 1; above >= 0 && above > index - 5; above -= 1) {
-      const candidate = lines[above]!.trim();
-      if (candidate === '' || candidate.startsWith('|') || candidate.includes('](')) continue;
-      captions.set(filename, candidate.replace(/\s+/g, ' ').slice(0, 200));
-      break;
+    for (const [index, line] of lines.entries()) {
+      const link = /\]\((https?:\/\/[^)\s]+)\)/.exec(line);
+      if (!link) continue;
+
+      let name: string;
+      try {
+        name = decodeURIComponent(new URL(link[1]!).pathname.split('/').pop() ?? '');
+      } catch {
+        continue;
+      }
+      if (!name || !DOCUMENT_TYPES[path.extname(name).toLowerCase()]) continue;
+      if (found.has(name)) continue;
+
+      let caption: string | undefined;
+      for (let above = index - 1; above >= 0 && above > index - 5; above -= 1) {
+        const candidate = lines[above]!.trim();
+        if (candidate === '' || candidate.startsWith('|') || candidate.includes('](')) continue;
+        caption = candidate.replace(/\s+/g, ' ').slice(0, 200);
+        break;
+      }
+
+      found.set(name, { pagePath, caption });
     }
   }
 
-  return captions;
+  return found;
 }
 
-/** `2026/08` in the legacy path is the month the file was published. */
-function dateFromCaption(caption: string | undefined, fallback: string): string {
+/** A caption like "Приказ КД от 04.08.2026 года." also carries the date. */
+function dateFrom(caption: string | undefined, fallback: string): string {
   const match = /(\d{2})\.(\d{2})\.(\d{4})/.exec(caption ?? '');
   return match ? `${match[3]}-${match[2]}-${match[1]}T00:00:00.000Z` : fallback;
 }
 
+// ---------------------------------------------------------------------------
+
 function main(): void {
-  const captions = captionsFromPage();
-  const existing = new Set(listAllDocuments().map((row) => row.originalFilename));
+  if (!fs.existsSync(folder)) {
+    console.error(
+      `\nNo such folder: ${path.relative(ROOT, folder)}\n\n` +
+        `Create it, put the files from hsairport.kz in it, and run this again:\n` +
+        `  mkdir -p documents-inbox\n`
+    );
+    process.exit(1);
+  }
+
+  const known = placements();
+  const already = new Set(listAllDocuments().map((row) => row.originalFilename));
 
   const files = fs
-    .readdirSync(folder!, { withFileTypes: true })
+    .readdirSync(folder, { withFileTypes: true })
     .filter((entry) => entry.isFile() && DOCUMENT_TYPES[path.extname(entry.name).toLowerCase()])
     .map((entry) => entry.name)
     .sort();
 
-  console.log(`\n${files.length} document(s) in ${folder}`);
-  console.log(`${captions.size} caption(s) recovered from content/ru/${pagePath}.mdx\n`);
+  console.log(`\n${files.length} document(s) in ${path.relative(ROOT, folder)}`);
+  console.log(`${known.size} known from the migrated pages\n`);
 
   const today = `${new Date().toISOString().slice(0, 10)}T00:00:00.000Z`;
+  const onPage = new Map<string, number>();
+  const unplaced: string[] = [];
   let imported = 0;
   let skipped = 0;
-  let untitled = 0;
 
   for (const name of files) {
     const display = displayFilename(name);
 
-    // Re-running must not duplicate. The uploaded name is the identity here;
-    // the stored name is generated fresh each time and cannot be compared.
-    if (existing.has(display)) {
+    // Re-running must not duplicate. The uploaded name is the identity; the
+    // stored name is generated fresh each time and cannot be compared.
+    if (already.has(display)) {
       skipped += 1;
       continue;
     }
 
-    const caption = captions.get(name) ?? captions.get(display);
-    if (!caption) untitled += 1;
+    const placement = known.get(name) ?? known.get(display);
+    const pagePath = placement?.pagePath ?? fallbackPage;
 
-    const title = caption ?? titleFromFilename(name);
-    const publishedAt = dateFromCaption(caption, today);
+    if (!pagePath) {
+      unplaced.push(display);
+      continue;
+    }
 
-    console.log(`  ${caption ? ' ' : '?'} ${title.slice(0, 68).padEnd(68)} ${display}`);
+    const title = placement?.caption ?? titleFromFilename(name);
+    onPage.set(pagePath, (onPage.get(pagePath) ?? 0) + 1);
 
     if (!dryRun) {
-      const buffer = fs.readFileSync(path.join(folder!, name));
+      const buffer = fs.readFileSync(path.join(folder, name));
       createDocument({
-        pagePath: pagePath!,
+        pagePath,
         title,
         storedName: storeDocument(buffer, name),
         originalFilename: display,
         sizeBytes: buffer.length,
-        publishedAt,
+        publishedAt: dateFrom(placement?.caption, today),
       });
     }
     imported += 1;
   }
 
-  console.log(`\n${dryRun ? 'Would import' : 'Imported'} ${imported}`);
-  if (skipped > 0) console.log(`${skipped} already in the library, skipped`);
-  if (untitled > 0) {
-    console.log(
-      `${untitled} had no caption on the page and are titled from their filename — ` +
-        `marked "?" above, and worth correcting in /admin/documents`
-    );
+  console.log(`${dryRun ? 'Would import' : 'Imported'} ${imported}:`);
+  for (const [page, count] of [...onPage].sort((a, b) => b[1] - a[1])) {
+    console.log(`  ${String(count).padStart(4)}  /${page}`);
   }
+
+  if (skipped > 0) console.log(`\n${skipped} already in the library, skipped`);
+
+  if (unplaced.length > 0) {
+    console.log(
+      `\n${unplaced.length} file(s) are not mentioned by any migrated page, so there is ` +
+        `nothing to say which page they belong on. Upload these in /admin/documents, or ` +
+        `re-run with --page=<section/page> to put them all somewhere:`
+    );
+    for (const name of unplaced.slice(0, 20)) console.log(`  ${name}`);
+    if (unplaced.length > 20) console.log(`  … and ${unplaced.length - 20} more`);
+  }
+
+  if (dryRun) console.log('\nNothing was written. Drop --dry-run to import.');
   console.log();
 }
 

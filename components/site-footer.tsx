@@ -22,21 +22,26 @@ export function SiteFooter() {
             {t('coordinates')}: {AIRPORT_COORDS.latitude}, {AIRPORT_COORDS.longitude}
           </p>
 
+          {/*
+            The landline and the airport's own address only. The contacts page
+            carries all of them; a footer that repeats five ways to make contact
+            on every page is a footer nobody reads.
+          */}
           <p className="mt-3 text-sm">
             <span className="text-text-muted">{tContacts('callCentre')}: </span>
             <a
-              href={`tel:${AIRPORT_CONTACTS.phone.tel}`}
+              href={`tel:${AIRPORT_CONTACTS.phones[0].tel}`}
               className="tabular text-brand-text-strong focus:ring-focus rounded-sm underline focus:ring-2 focus:outline-none"
             >
-              {AIRPORT_CONTACTS.phone.label}
+              {AIRPORT_CONTACTS.phones[0].label}
             </a>
           </p>
           <p className="text-sm">
             <a
-              href={`mailto:${AIRPORT_CONTACTS.email}`}
+              href={`mailto:${AIRPORT_CONTACTS.emails[0]}`}
               className="text-brand-text-strong focus:ring-focus rounded-sm underline focus:ring-2 focus:outline-none"
             >
-              {AIRPORT_CONTACTS.email}
+              {AIRPORT_CONTACTS.emails[0]}
             </a>
           </p>
 

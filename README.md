@@ -62,17 +62,20 @@ and material that changes weekly does not belong in a deploy. They belong in the
 document library — uploaded at `/admin/documents`, stored under `DATA_DIR`,
 listed on whichever page they are filed against. See *Everyday tasks* below.
 
-To seed it from the legacy site, put the files in a folder and run:
+To bring them over, download every file from hsairport.kz into one folder —
+no sorting, no renaming — and run:
 
 ```bash
-npm run documents:import -- ./downloads --page=press/announcements --dry-run
+mkdir -p documents-inbox
+npm run documents:import -- --dry-run
 ```
 
-Titles come from the captions already recovered from the legacy markup and
-still present in `content/`, matched to the files by filename — so
-`приказКД-10.docx` is titled "Приказ КД от 04.08.2026 года." rather than
-"приказКД 10". Anything it could not match is marked `?` in the output and is
-worth correcting in the admin panel. Drop `--dry-run` to write.
+Each file is filed against the page it was published on and given the title it
+was published under, both read out of the migrated pages in `content/`, which
+still hold the legacy links and the captions printed above them. So
+`приказКД-10.docx` lands on the announcements page titled "Приказ КД от
+04.08.2026 года.", dated from that caption. Anything the pages do not mention
+is listed at the end to be uploaded by hand. Drop `--dry-run` to write.
 
 Once a page's documents are in the library, delete the legacy link tables from
 its MDX in `content/` — otherwise the page shows the new list and the old dead
@@ -136,7 +139,7 @@ first — see `.env.example` for the full environment reference.
 | `npm run schedule:import`  | Import a workbook from the command line             |
 | `npm run db:generate`      | Generate a Drizzle migration                        |
 | `npm run migrate:verify`   | Re-check migrated pages against the legacy site     |
-| `npm run documents:import` | Bulk-import a folder of documents onto a page       |
+| `npm run documents:import` | Import `documents-inbox/` into the document library  |
 
 ## Running it on the airport's server
 

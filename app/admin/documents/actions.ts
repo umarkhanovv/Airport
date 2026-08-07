@@ -26,18 +26,33 @@ export interface DocumentsState {
 }
 
 /**
+ * Locale *identifiers*, not URL prefixes.
+ *
+ * Kazakh is served under `/kz` but its identifier is `kk` (see `i18n/routing`),
+ * and the rewrite from one to the other happens in middleware — so the route
+ * Next has cached, and the one to invalidate, is `/kk/…`.
+ */
+const LOCALES = ['ru', 'en', 'kk'];
+
+/**
+ * Regenerates the pages one document appears on.
+ *
  * Content pages are statically generated, so a document added today would not
  * appear until the next deploy without this — and unpublishing one would not
- * take it off the page at all, which is the direction that matters.
+ * come off the page at all, which is the direction that matters: a procurement
+ * notice that has been pulled has usually been pulled for a reason.
+ *
+ * The concrete localised paths, rather than the route pattern or the whole
+ * tree. `revalidatePath('/[locale]/[...slug]', 'page')` did not take a
+ * withdrawn document off its page, and `revalidatePath('/', 'layout')` did but
+ * invalidated the news pages at the same time — which is invisible in
+ * production and made the end-to-end suite fail about one run in three, as the
+ * news tests paginated through pages another test had just thrown away.
  */
-function revalidateContentPages(): void {
-  // The whole tree, rather than the catch-all route the pages live under.
-  // The narrower form left a withdrawn document on the page it had been
-  // published to, and removal is the direction that matters: a procurement
-  // notice that has been pulled has usually been pulled for a reason. Documents
-  // change rarely enough that regenerating more than strictly necessary costs
-  // nothing worth measuring.
-  revalidatePath('/', 'layout');
+function revalidateDocumentPages(...pagePaths: Array<string | null | undefined>): void {
+  for (const pagePath of new Set(pagePaths.filter(Boolean))) {
+    for (const locale of LOCALES) revalidatePath(`/${locale}/${pagePath}`);
+  }
 }
 
 /**
@@ -108,7 +123,7 @@ export async function uploadDocuments(
     }
   }
 
-  revalidateContentPages();
+  revalidateDocumentPages(pagePath);
 
   // Titles default to the filename and are edited in the list below, so the
   // upload lands the staff member back where they can fix them.
@@ -122,7 +137,10 @@ export async function renameDocument(formData: FormData): Promise<void> {
   const id = formData.get('id');
   const title = formData.get('title');
   const pagePath = formData.get('pagePath');
-  if (typeof id !== 'string' || !getDocumentById(id)) return;
+  if (typeof id !== 'string') return;
+
+  const existing = getDocumentById(id);
+  if (!existing) return;
 
   updateDocument(id, {
     ...(typeof title === 'string' && title.trim() !== ''
@@ -131,7 +149,8 @@ export async function renameDocument(formData: FormData): Promise<void> {
     ...(typeof pagePath === 'string' && pagePath !== '' ? { pagePath } : {}),
   });
 
-  revalidateContentPages();
+  // Both, when a document is moved: the page it left has to lose it.
+  revalidateDocumentPages(existing.pagePath, typeof pagePath === 'string' ? pagePath : null);
   redirect('/admin/documents?saved=1');
 }
 
@@ -142,9 +161,12 @@ export async function toggleDocumentPublished(formData: FormData): Promise<void>
   const id = formData.get('id');
   if (typeof id !== 'string') return;
 
+  const existing = getDocumentById(id);
+  if (!existing) return;
+
   updateDocument(id, { isPublished: formData.get('publish') === 'true' });
 
-  revalidateContentPages();
+  revalidateDocumentPages(existing.pagePath);
   redirect('/admin/documents');
 }
 
@@ -155,8 +177,11 @@ export async function deleteDocumentAction(formData: FormData): Promise<void> {
   const id = formData.get('id');
   if (typeof id !== 'string') return;
 
+  // Read before the row goes; afterwards there is nothing to say which page
+  // needs regenerating.
+  const existing = getDocumentById(id);
   deleteDocument(id);
 
-  revalidateContentPages();
+  revalidateDocumentPages(existing?.pagePath);
   redirect('/admin/documents?deleted=1');
 }

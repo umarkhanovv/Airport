@@ -23,18 +23,27 @@ test.describe('contact details', () => {
 
       // Dialable rather than merely printed: on a phone this page is the
       // shortest route to a person.
-      await expect(main.getByRole('link', { name: '+7 72533 5 29 09' })).toHaveAttribute(
-        'href',
-        'tel:+77253352909'
-      );
-      await expect(main.getByRole('link', { name: '+7 702 047 07 68' })).toHaveAttribute(
-        'href',
-        'tel:+77020470768'
-      );
-      await expect(main.getByRole('link', { name: 'office@hsairport.kz' })).toHaveAttribute(
-        'href',
-        'mailto:office@hsairport.kz'
-      );
+      //
+      // All three numbers and both addresses, on every language version. The
+      // legacy site published a different subset in each language, and a number
+      // omitted because it only appeared in Kazakh is a number nobody can reach.
+      for (const [label, tel] of [
+        ['+7 72533 5 29 09', 'tel:+77253352909'],
+        ['+7 701 234 45 17', 'tel:+77012344517'],
+        ['+7 702 047 07 68', 'tel:+77020470768'],
+      ] as const) {
+        await expect(main.getByRole('link', { name: label }), `${path} ${label}`).toHaveAttribute(
+          'href',
+          tel
+        );
+      }
+
+      for (const address of ['office@hsairport.kz', 'info.hsa@tia.com.kz']) {
+        await expect(
+          main.getByRole('link', { name: address }),
+          `${path} ${address}`
+        ).toHaveAttribute('href', `mailto:${address}`);
+      }
 
       // The addresses are translated, so assert on the digits inside them —
       // the postcode and the street number survive every translation.
@@ -94,5 +103,6 @@ test.describe('structured data', () => {
     // visitor is being directed to.
     expect(data.address.streetAddress).toContain('Шага');
     expect(data.sameAs).toContain('https://www.facebook.com/turkistaninternationalairport');
+    expect(data.sameAs).toContain('https://x.com/turkistanairprt');
   });
 });

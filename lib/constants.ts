@@ -49,31 +49,33 @@ export const EOTINISH_URL: string | null = 'https://eotinish.kz/';
 /**
  * Published contact details, read out of the legacy site's footer during the
  * Stage 8 crawl. Addresses are translated and live in the message catalogues;
- * only what is the same in every language is here.
+ * everything here is the same in every language.
  *
- * The three legacy footers do not agree with each other, and the airport should
- * settle these before launch:
- *
- *   - the mobile number is +7 702 047 07 68 in English and Kazakh but
- *     +7 701 234 45 17 in Russian. The number below is the one two of the three
- *     agree on.
- *   - the e-mail is office@hsairport.kz in Russian and English but
- *     info.hsa@tia.com.kz in Kazakh. The airport's own domain is used here;
- *     tia.com.kz belongs to a different operator, and the images the legacy
- *     site hotlinks from it have already gone.
- *
- * The landline is the same in all three, allowing for the trunk prefix.
+ * The three legacy footers each published a different subset — the Russian one
+ * a mobile the other two did not have, the Kazakh one an e-mail on a different
+ * domain — and the airport's decision was to publish all of them, everywhere,
+ * rather than pick. That is the right call for a contact page: a passenger who
+ * reaches a number that is answered does not care which page it came from, and
+ * a number omitted because it appeared in only one language is a number nobody
+ * can reach.
  */
 export const AIRPORT_CONTACTS = {
-  /** Call centre, landline. `tel` values are E.164; labels are for reading. */
-  phone: { tel: '+77253352909', label: '+7 72533 5 29 09' },
-  /** Call centre, mobile. */
-  mobile: { tel: '+77020470768', label: '+7 702 047 07 68' },
-  email: 'office@hsairport.kz',
+  /**
+   * `tel` values are E.164 so a phone dials them; labels are how the airport
+   * writes them. The landline leads: it is the one all three footers agreed on.
+   */
+  phones: [
+    { tel: '+77253352909', label: '+7 72533 5 29 09', kind: 'landline' },
+    { tel: '+77012344517', label: '+7 701 234 45 17', kind: 'mobile' },
+    { tel: '+77020470768', label: '+7 702 047 07 68', kind: 'mobile' },
+  ],
+  /** The airport's own domain first; tia.com.kz is the operator's. */
+  emails: ['office@hsairport.kz', 'info.hsa@tia.com.kz'],
   social: [
-    { name: 'Instagram', url: 'https://www.instagram.com/turkistan_airport/' },
+    { name: 'Instagram', url: 'https://www.instagram.com/turkistan_airport' },
     { name: 'Facebook', url: 'https://www.facebook.com/turkistaninternationalairport' },
-    { name: 'X', url: 'https://twitter.com/turkistanairprt' },
+    // x.com, not the twitter.com the legacy footer still points at.
+    { name: 'X', url: 'https://x.com/turkistanairprt' },
   ],
 } as const;
 

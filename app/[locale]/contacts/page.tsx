@@ -74,40 +74,38 @@ export default async function ContactsPage({ params }: PageProps<'/[locale]/cont
           <div>
             <dt className="text-text-muted text-sm">{tContacts('callCentre')}</dt>
             {/*
-              Both numbers are links: on a phone this page is the fastest route
+              Every number is a link: on a phone this page is the fastest route
               to a person, and a number that has to be copied out by hand is not.
-              `tabular` keeps the two from jittering against each other.
+              `tabular` keeps them from jittering against each other.
             */}
-            <dd className="mt-1">
-              <a
-                href={`tel:${AIRPORT_CONTACTS.phone.tel}`}
-                className="tabular text-brand-text-strong focus:ring-focus rounded-sm underline focus:ring-2 focus:outline-none"
-              >
-                {AIRPORT_CONTACTS.phone.label}
-              </a>
-              <span className="text-text-muted text-sm"> — {tContacts('landlineHint')}</span>
-            </dd>
-            <dd className="mt-1">
-              <a
-                href={`tel:${AIRPORT_CONTACTS.mobile.tel}`}
-                className="tabular text-brand-text-strong focus:ring-focus rounded-sm underline focus:ring-2 focus:outline-none"
-              >
-                {AIRPORT_CONTACTS.mobile.label}
-              </a>
-              <span className="text-text-muted text-sm"> — {tContacts('mobileHint')}</span>
-            </dd>
+            {AIRPORT_CONTACTS.phones.map((phone) => (
+              <dd key={phone.tel} className="mt-1">
+                <a
+                  href={`tel:${phone.tel}`}
+                  className="tabular text-brand-text-strong focus:ring-focus rounded-sm underline focus:ring-2 focus:outline-none"
+                >
+                  {phone.label}
+                </a>
+                <span className="text-text-muted text-sm">
+                  {' — '}
+                  {phone.kind === 'landline' ? tContacts('landlineHint') : tContacts('mobileHint')}
+                </span>
+              </dd>
+            ))}
           </div>
 
           <div>
             <dt className="text-text-muted text-sm">{tContacts('email')}</dt>
-            <dd className="mt-1">
-              <a
-                href={`mailto:${AIRPORT_CONTACTS.email}`}
-                className="text-brand-text-strong focus:ring-focus rounded-sm underline focus:ring-2 focus:outline-none"
-              >
-                {AIRPORT_CONTACTS.email}
-              </a>
-            </dd>
+            {AIRPORT_CONTACTS.emails.map((email) => (
+              <dd key={email} className="mt-1">
+                <a
+                  href={`mailto:${email}`}
+                  className="text-brand-text-strong focus:ring-focus rounded-sm underline focus:ring-2 focus:outline-none"
+                >
+                  {email}
+                </a>
+              </dd>
+            ))}
           </div>
         </dl>
 

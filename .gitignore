@@ -88,3 +88,7 @@ next-env.d.ts
 
 # Playwright stored admin session
 /.auth/
+
+# Documents downloaded from the legacy site, staged for `npm run documents:import`.
+# The files belong in the database, not in the repository — see the README.
+/documents-inbox/
