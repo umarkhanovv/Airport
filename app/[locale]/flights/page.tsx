@@ -5,6 +5,7 @@ import { BoardControls } from '@/components/board/board-controls';
 import { BoardEnhancements } from '@/components/board/board-enhancements';
 import { BoardSearch } from '@/components/board/board-search';
 import { FlightTable } from '@/components/board/flight-table';
+import { SectionPages } from '@/components/section-pages';
 import {
   BOARD_PARAMS,
   boardHref,
@@ -221,6 +222,14 @@ export default async function FlightsPage({
       <p className="text-text-muted mt-8 text-sm">
         {t('asOf', { date: formatLongDate(schedule.uploadedAt.slice(0, 10), locale) })}
       </p>
+
+      {/*
+        This route shadows `app/[locale]/[section]`, so the section index that
+        would otherwise list them never renders — and the airlines list, cargo
+        tariffs, seasonal schedule and ticket offices would be reachable only by
+        typing their address.
+      */}
+      <SectionPages locale={locale} section="flights" className="mt-12" layout="inline" />
     </div>
   );
 }

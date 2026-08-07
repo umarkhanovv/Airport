@@ -183,7 +183,10 @@
   "Content": {
     "translationPending": "Перевод этой страницы ещё не готов. Показан русский вариант.",
     "machineTranslated": "Эта страница переведена автоматически и ожидает вычитки.",
-    "lastReviewed": "Страница проверена: {date}"
+    "lastReviewed": "Страница проверена: {date}",
+    "inThisSection": "Страницы раздела",
+    "awaitingContent": "Текст этой страницы готовится. Раздел существует, содержание аэропорт предоставит.",
+    "pageAwaitingContent": "готовится"
   },
   "Placeholder": {
     "underConstruction": "Раздел в разработке",

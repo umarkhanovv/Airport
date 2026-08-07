@@ -35,6 +35,13 @@ export interface PageFrontmatter {
   lastReviewed?: string;
   /** Hides a page from navigation without deleting it. */
   draft?: boolean;
+  /**
+   * The legacy page this was migrated from had no body, so neither does this
+   * one. Recorded in Stage 8 and surfaced to readers: the page is listed and
+   * reachable, and says plainly that its text is being prepared rather than
+   * opening blank.
+   */
+  needsContent?: boolean;
 }
 
 export interface ContentPage {
@@ -125,6 +132,7 @@ function normalizeFrontmatter(data: Record<string, unknown>): PageFrontmatter {
         : undefined,
     lastReviewed: typeof data.lastReviewed === 'string' ? data.lastReviewed : undefined,
     draft: data.draft === true,
+    needsContent: data.needsContent === true,
   };
 }
 

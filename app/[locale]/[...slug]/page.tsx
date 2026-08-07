@@ -72,6 +72,17 @@ export default async function ContentPage({ params }: PageProps<'/[locale]/[...s
         </p>
       )}
 
+      {/*
+        The legacy page this was migrated from had no body either. Saying so is
+        the alternative to a page that opens blank and reads as broken — and it
+        is the truth: the section exists, the airport has still to write it.
+      */}
+      {page.frontmatter.needsContent && page.body.trim() === '' && (
+        <p className="border-border bg-surface-raised text-text-muted mt-6 rounded-lg border border-dashed px-4 py-5 text-sm">
+          {t('awaitingContent')}
+        </p>
+      )}
+
       <div className="mt-6">
         <MdxContent source={page.body} />
       </div>

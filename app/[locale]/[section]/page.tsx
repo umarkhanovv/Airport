@@ -2,29 +2,34 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
+import { SectionPages } from '@/components/section-pages';
 import { isSection, SECTIONS } from '@/lib/constants';
+import { listPagesInSection } from '@/lib/content';
 import { routing } from '@/i18n/routing';
 import { alternatesFor } from '@/lib/seo';
 import type { Locale } from '@/i18n/routing';
 
 /**
- * Placeholder pages for the seven top-level IA sections (spec §5), so the
- * navigation shell resolves in all three locales without 404s.
+ * The index of one of the seven top-level IA sections (spec §5).
  *
- * The seven known sections are prerendered by `generateStaticParams`. Anything
- * else falls through to the `isSection` guard below and renders the localised
- * 404 page.
+ * It lists the section's pages — and until now it did not. It rendered a
+ * placeholder written in Stage 2, while Stage 8 filled `content/` with 52 pages
+ * per language underneath it and nothing was ever changed to link to them. A
+ * page reachable only by typing its address is indistinguishable, to a visitor,
+ * from a page that does not exist.
  *
- * We deliberately do NOT set `dynamicParams = false` here. It would 404 too,
- * but with no fallback to render Next logs an internal `NoFallbackError` on
- * every miss — which would fill the airport's production logs with noise for
- * ordinary bad URLs, and there will be plenty of those from the ~246 legacy
- * links being redirected (plan §7).
+ * Pages the airport has still to write are listed too, marked. Someone looking
+ * for the police desk is better served by "that page is here and its text is
+ * coming" than by a section that appears not to cover it at all.
  *
- * As real routes arrive (Stage 3 `/flights`, Stage 5 `/news`, …) their static
- * segments take precedence over this dynamic one, so no cleanup is needed —
- * the placeholders simply stop being reached.
+ * The seven known sections are prerendered by `generateStaticParams`; anything
+ * else falls through to the `isSection` guard and renders the localised 404.
+ * `dynamicParams = false` is deliberately not set: it would also 404, but with
+ * no fallback to render Next logs an internal error on every miss, which would
+ * fill the airport's logs with noise from the ~246 legacy links being
+ * redirected (plan §7).
  */
+
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) => SECTIONS.map((section) => ({ locale, section })));
 }
@@ -50,17 +55,23 @@ export default async function SectionPage({ params }: PageProps<'/[locale]/[sect
   const t = await getTranslations({ locale, namespace: 'Sections' });
   const tPlaceholder = await getTranslations({ locale, namespace: 'Placeholder' });
 
+  const pages = listPagesInSection(locale, section);
+
   return (
-    <div className="max-w-2xl">
+    <div>
       <h1 className="text-text text-3xl font-semibold tracking-tight sm:text-4xl">
         {t(`${section}.title`)}
       </h1>
-      <p className="text-text-muted mt-3 text-lg">{t(`${section}.description`)}</p>
+      <p className="text-text-muted mt-3 max-w-2xl text-lg">{t(`${section}.description`)}</p>
 
-      <div className="border-border bg-surface-raised mt-10 rounded-lg border p-5">
-        <p className="text-text font-medium">{tPlaceholder('underConstruction')}</p>
-        <p className="text-text-muted mt-1 text-sm">{tPlaceholder('explanation')}</p>
-      </div>
+      {pages.length === 0 ? (
+        <div className="border-border bg-surface-raised mt-10 max-w-2xl rounded-lg border p-5">
+          <p className="text-text font-medium">{tPlaceholder('underConstruction')}</p>
+          <p className="text-text-muted mt-1 text-sm">{tPlaceholder('explanation')}</p>
+        </div>
+      ) : (
+        <SectionPages locale={locale} section={section} className="mt-10" />
+      )}
     </div>
   );
 }

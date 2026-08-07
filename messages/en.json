@@ -183,7 +183,10 @@
   "Content": {
     "translationPending": "This page has not been translated yet. Showing the Russian version.",
     "machineTranslated": "This page was machine-translated and is awaiting review.",
-    "lastReviewed": "Page reviewed: {date}"
+    "lastReviewed": "Page reviewed: {date}",
+    "inThisSection": "Pages in this section",
+    "awaitingContent": "The text of this page is being prepared. The page exists; the airport has still to supply its content.",
+    "pageAwaitingContent": "in preparation"
   },
   "Placeholder": {
     "underConstruction": "Section in progress",

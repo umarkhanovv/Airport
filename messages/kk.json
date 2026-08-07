@@ -184,7 +184,10 @@
   "Content": {
     "translationPending": "Бұл беттің аудармасы әлі дайын емес. Орысша нұсқасы көрсетілген.",
     "machineTranslated": "Бұл бет автоматты түрде аударылған және тексеруді күтуде.",
-    "lastReviewed": "Бет тексерілді: {date}"
+    "lastReviewed": "Бет тексерілді: {date}",
+    "inThisSection": "Бөлім беттері",
+    "awaitingContent": "Бұл беттің мәтіні дайындалуда. Бет бар, мазмұнын әуежай ұсынады.",
+    "pageAwaitingContent": "дайындалуда"
   },
   "Placeholder": {
     "underConstruction": "Бөлім дайындалуда",

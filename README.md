@@ -28,7 +28,7 @@ legacy site.
 | 9     | PWA, SEO, accessibility                             | Done                                         |
 | 10    | Hardening and handover                              | Done                                         |
 
-Everything above is green: 300 unit tests and 116 end-to-end tests, plus
+Everything above is green: 300 unit tests and 121 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node. The end-to-end
 suite includes an axe pass over every public page, the admin panel and the
 feedback form in its error state, and asserts the flight board still renders
