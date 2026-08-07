@@ -188,6 +188,10 @@
     "awaitingContent": "The text of this page is being prepared. The page exists; the airport has still to supply its content.",
     "pageAwaitingContent": "in preparation"
   },
+  "Documents": {
+    "title": "Documents",
+    "empty": "No documents yet."
+  },
   "Placeholder": {
     "underConstruction": "Section in progress",
     "explanation": "Content for this section is being migrated from the previous site. The navigation structure is already in place."

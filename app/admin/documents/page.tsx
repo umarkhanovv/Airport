@@ -1,0 +1,180 @@
+import type { Metadata } from 'next';
+
+import { requireAdmin } from '@/lib/admin/auth';
+import { SECTIONS } from '@/lib/constants';
+import { listPagesInSection } from '@/lib/content';
+import { listAllDocuments } from '@/lib/documents/queries';
+import { countUnreadFeedback } from '@/lib/feedback/store';
+
+import { AdminNav } from '../admin-nav';
+
+import { deleteDocumentAction, renameDocument, toggleDocumentPublished } from './actions';
+import { UploadForm } from './upload-form';
+
+export const metadata: Metadata = { title: 'Documents' };
+
+export const dynamic = 'force-dynamic';
+
+/**
+ * The document library (spec §5).
+ *
+ * These were going to be committed to the repository as part of the content
+ * migration. The client stopped that, correctly: procurement notices are added
+ * and superseded weekly, and material that changes weekly does not belong in a
+ * deploy. So they live in the database, are uploaded here, and appear under
+ * whichever content page they are filed against.
+ *
+ * Titles are rendered as text throughout — they come from filenames a person
+ * chose, and the announcements page's legacy filenames contain everything from
+ * quotes to angle brackets.
+ */
+export default async function AdminDocumentsPage({ searchParams }: PageProps<'/admin/documents'>) {
+  await requireAdmin('/admin/documents');
+
+  const { saved, deleted } = await searchParams;
+  const documents = listAllDocuments();
+
+  // Every content page, in Russian — the paths are the same in all three, and
+  // a document is filed against the page rather than against a translation.
+  const pages = SECTIONS.flatMap((section) =>
+    listPagesInSection('ru', section).map((page) => ({
+      path: page.slug.join('/'),
+      title: page.frontmatter.title,
+    }))
+  ).sort((a, b) => a.path.localeCompare(b.path));
+
+  const byPage = new Map<string, typeof documents>();
+  for (const document of documents) {
+    byPage.set(document.pagePath, [...(byPage.get(document.pagePath) ?? []), document]);
+  }
+
+  const titleOf = (path: string) => pages.find((page) => page.path === path)?.title ?? path;
+  const size = (bytes: number) =>
+    bytes >= 1024 * 1024
+      ? `${(bytes / 1024 / 1024).toFixed(1)} MB`
+      : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+
+  return (
+    <>
+      <AdminNav current="documents" unreadFeedback={countUnreadFeedback()} />
+
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+        <h1 className="text-2xl font-semibold">Documents</h1>
+        <p className="text-text-muted mt-2 text-sm">
+          Files published on the site&apos;s pages — orders, protocols, tariffs. They appear under
+          the page they are filed against, newest first.
+        </p>
+
+        {saved ? (
+          <p
+            role="status"
+            className="border-arrival bg-arrival-soft mt-4 rounded-md border px-4 py-3 text-sm"
+          >
+            Saved.
+          </p>
+        ) : null}
+        {deleted ? (
+          <p
+            role="status"
+            className="border-border bg-surface-raised mt-4 rounded-md border px-4 py-3 text-sm"
+          >
+            The document was deleted.
+          </p>
+        ) : null}
+
+        <section className="border-border bg-surface mt-6 rounded-lg border p-5">
+          <h2 className="font-medium">Upload</h2>
+          <UploadForm pages={pages} />
+        </section>
+
+        <h2 className="mt-10 text-lg font-medium">
+          {documents.length} document{documents.length === 1 ? '' : 's'}
+        </h2>
+
+        {documents.length === 0 ? (
+          <p className="border-border text-text-muted mt-3 rounded-lg border border-dashed p-6 text-sm">
+            Nothing uploaded yet. Files added here appear on the page they are filed against, with
+            their format and size shown next to the link.
+          </p>
+        ) : (
+          [...byPage.entries()].map(([pagePath, rows]) => (
+            <section key={pagePath} className="mt-8">
+              <h3 className="text-text font-medium">
+                {titleOf(pagePath)}{' '}
+                <span className="text-text-muted font-normal">
+                  · /{pagePath} · {rows.length}
+                </span>
+              </h3>
+
+              <ul className="border-border divide-border mt-3 divide-y rounded-lg border">
+                {rows.map((document) => (
+                  <li
+                    key={document.id}
+                    data-testid="document-row"
+                    data-published={document.isPublished ? 'true' : 'false'}
+                    className="flex flex-wrap items-center gap-3 px-4 py-3"
+                  >
+                    <form action={renameDocument} className="flex flex-1 items-center gap-2">
+                      <input type="hidden" name="id" value={document.id} />
+                      <label className="sr-only" htmlFor={`title-${document.id}`}>
+                        Title of {document.originalFilename}
+                      </label>
+                      <input
+                        id={`title-${document.id}`}
+                        name="title"
+                        defaultValue={document.title}
+                        className="border-border-strong bg-surface focus:ring-focus min-w-0 flex-1 rounded-md border px-2 py-1 text-sm focus:ring-2 focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        className="border-border-strong focus:ring-focus rounded-md border px-3 py-1 text-xs focus:ring-2 focus:outline-none"
+                      >
+                        Rename
+                      </button>
+                    </form>
+
+                    <span className="text-text-muted tabular text-xs">
+                      {size(document.sizeBytes)} · {document.publishedAt.slice(0, 10)}
+                    </span>
+
+                    <a
+                      href={`/api/documents/${document.storedName}`}
+                      className="text-brand-text-strong text-xs underline"
+                    >
+                      Download
+                    </a>
+
+                    <form action={toggleDocumentPublished}>
+                      <input type="hidden" name="id" value={document.id} />
+                      <input
+                        type="hidden"
+                        name="publish"
+                        value={document.isPublished ? 'false' : 'true'}
+                      />
+                      <button
+                        type="submit"
+                        className="border-border-strong focus:ring-focus rounded-md border px-3 py-1 text-xs focus:ring-2 focus:outline-none"
+                      >
+                        {document.isPublished ? 'Unpublish' : 'Publish'}
+                      </button>
+                    </form>
+
+                    <form action={deleteDocumentAction}>
+                      <input type="hidden" name="id" value={document.id} />
+                      <button
+                        type="submit"
+                        className="focus:ring-focus rounded-md border border-red-700 px-3 py-1 text-xs text-red-700 focus:ring-2 focus:outline-none dark:border-red-400 dark:text-red-400"
+                      >
+                        Delete
+                      </button>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))
+        )}
+      </main>
+    </>
+  );
+}

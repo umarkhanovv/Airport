@@ -172,6 +172,55 @@ export const feedbackSubmissions = sqliteTable(
   ]
 );
 
+/**
+ * Files published alongside a content page — procurement notices, tariffs,
+ * policies.
+ *
+ * These are in the database rather than in the repository because they change
+ * constantly: the announcements page alone carried 188 of them on the legacy
+ * site, most added and superseded within a month. Committing them would mean a
+ * deploy every time a tender opens.
+ *
+ * A document belongs to a page by its content path — `press/announcements` —
+ * and not to a locale. The files are Russian-language orders and protocols with
+ * no translations; the page they hang under exists in all three languages and
+ * lists the same documents on each.
+ */
+export const documents = sqliteTable(
+  'documents',
+  {
+    id: text('id').primaryKey(),
+    /** Content page this is published on, e.g. `press/announcements`. */
+    pagePath: text('page_path').notNull(),
+    /** What the link says. Defaults to the uploaded filename, then edited. */
+    title: text('title').notNull(),
+
+    /** Generated filename under DATA_DIR/uploads/documents. Never a path. */
+    storedName: text('stored_name').notNull(),
+    /** As the uploader named it — shown, and used for the download filename. */
+    originalFilename: text('original_filename').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+
+    publishedAt: text('published_at').notNull(),
+    isPublished: integer('is_published', { mode: 'boolean' }).notNull().default(true),
+
+    /** Where it was on hsairport.kz, so migrated links stay traceable. */
+    legacyUrl: text('legacy_url'),
+
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    updatedAt: text('updated_at')
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    // The list query: one page's published documents, newest first.
+    index('documents_page_published').on(table.pagePath, table.isPublished, table.publishedAt),
+    uniqueIndex('documents_stored_name').on(table.storedName),
+  ]
+);
+
 /** The locales a news post can be written in — same set as the site's. */
 export type NewsLocale = 'ru' | 'en' | 'kk';
 
@@ -185,3 +234,6 @@ export type NewFlightEntryRow = typeof flightEntries.$inferInsert;
 
 export type FeedbackSubmission = typeof feedbackSubmissions.$inferSelect;
 export type NewFeedbackSubmission = typeof feedbackSubmissions.$inferInsert;
+
+export type DocumentRow = typeof documents.$inferSelect;
+export type NewDocumentRow = typeof documents.$inferInsert;

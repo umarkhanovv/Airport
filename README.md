@@ -28,7 +28,7 @@ legacy site.
 | 9     | PWA, SEO, accessibility                             | Done                                         |
 | 10    | Hardening and handover                              | Done                                         |
 
-Everything above is green: 300 unit tests and 121 end-to-end tests, plus
+Everything above is green: 317 unit tests and 129 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node. The end-to-end
 suite includes an axe pass over every public page, the admin panel and the
 feedback form in its error state, and asserts the flight board still renders
@@ -54,11 +54,32 @@ believed.
 **The 207 documents linked from those pages are still hosted on hsairport.kz**
 — 188 procurement notices on the announcements page, 14 tariff files on cargo,
 and a handful elsewhere. Every one of those links breaks on the day the legacy
-site is switched off. `npm run migrate:generate` downloads them into
-`public/documents/legacy/` and rewrites the links, and it is resumable, but the
-legacy host stopped responding partway through the first run and the copy has
-not been made. Run it again before the old site goes; `npm test` will confirm,
-once `tests/unit/content-assets.test.ts` is restored alongside it.
+site is switched off.
+
+They are not migrated by copying them into this repository, which was the first
+plan and was the wrong one: procurement notices are added and superseded weekly,
+and material that changes weekly does not belong in a deploy. They belong in the
+document library — uploaded at `/admin/documents`, stored under `DATA_DIR`,
+listed on whichever page they are filed against. See *Everyday tasks* below.
+
+To seed it from the legacy site, put the files in a folder and run:
+
+```bash
+npm run documents:import -- ./downloads --page=press/announcements --dry-run
+```
+
+Titles come from the captions already recovered from the legacy markup and
+still present in `content/`, matched to the files by filename — so
+`приказКД-10.docx` is titled "Приказ КД от 04.08.2026 года." rather than
+"приказКД 10". Anything it could not match is marked `?` in the output and is
+worth correcting in the admin panel. Drop `--dry-run` to write.
+
+Once a page's documents are in the library, delete the legacy link tables from
+its MDX in `content/` — otherwise the page shows the new list and the old dead
+links together. The four `/wp-content/…` links on the English tenders page are
+in the same position: the converter has been fixed to resolve them, but the
+content tree has not been regenerated since, because that needs the legacy site
+to be reachable.
 
 ## Stack
 
@@ -115,6 +136,7 @@ first — see `.env.example` for the full environment reference.
 | `npm run schedule:import`  | Import a workbook from the command line             |
 | `npm run db:generate`      | Generate a Drizzle migration                        |
 | `npm run migrate:verify`   | Re-check migrated pages against the legacy site     |
+| `npm run documents:import` | Bulk-import a folder of documents onto a page       |
 
 ## Running it on the airport's server
 
@@ -155,6 +177,7 @@ Everything that cannot be rebuilt from this repository is under `DATA_DIR`:
 $DATA_DIR/app.db              SQLite: flights, news, feedback
 $DATA_DIR/uploads/schedules/  every weekly workbook ever published
 $DATA_DIR/uploads/news/       cover images for news posts
+$DATA_DIR/uploads/documents/  orders, protocols, tariffs
 ```
 
 Set `DATA_DIR` to an absolute path outside the checkout. The default is
@@ -206,6 +229,13 @@ is Markdown. The address of a post is fixed when it is created, so links keep
 working — fixing a headline does not move the page. A story written in more
 than one language should be linked with "Same story in another language", which
 is what makes the public page offer readers the other versions.
+
+**Publishing documents.** Admin → Documents. Choose the page they belong to,
+pick a date, and select as many files as you like at once — PDF, Word, Excel,
+PowerPoint or a zip, up to 25 MB each. Each one is listed underneath afterwards,
+where its title can be corrected; the title is what the link on the page says.
+Unpublishing takes a document off the page *and* stops serving the file, so a
+notice that has been withdrawn is genuinely withdrawn.
 
 **Reading feedback.** Admin → Feedback. Everything submitted through the
 contacts form is here, whether or not e-mail is configured; SMTP only adds a

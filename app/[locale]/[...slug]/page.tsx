@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
+import { DocumentList } from '@/components/document-list';
 import { MdxContent } from '@/components/mdx-content';
 import { getPage, listSlugs } from '@/lib/content';
 import { formatLongDate } from '@/lib/date';
@@ -86,6 +87,13 @@ export default async function ContentPage({ params }: PageProps<'/[locale]/[...s
       <div className="mt-6">
         <MdxContent source={page.body} />
       </div>
+
+      {/*
+        Files published on this page, from the database rather than the
+        repository — procurement notices change weekly, and committing them
+        would mean a deploy every time a tender opens.
+      */}
+      <DocumentList locale={locale} pagePath={slug.join('/')} />
 
       {page.frontmatter.lastReviewed && (
         <p className="text-text-muted border-border mt-12 border-t pt-4 text-sm">

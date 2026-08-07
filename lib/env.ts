@@ -97,6 +97,7 @@ export const env = {
     database: path.join(dataDir, 'app.db'),
     scheduleUploads: path.join(dataDir, 'uploads', 'schedules'),
     newsUploads: path.join(dataDir, 'uploads', 'news'),
+    documentUploads: path.join(dataDir, 'uploads', 'documents'),
   },
 } as const;
 
