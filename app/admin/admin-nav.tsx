@@ -13,7 +13,7 @@ export function AdminNav({
   current,
   unreadFeedback = 0,
 }: {
-  current: 'dashboard' | 'schedule' | 'feedback';
+  current: 'dashboard' | 'schedule' | 'news' | 'feedback';
   unreadFeedback?: number;
 }) {
   const linkClass = (active: boolean) =>
@@ -35,6 +35,9 @@ export function AdminNav({
             className={`px-3 py-1.5 ${linkClass(current === 'schedule')}`}
           >
             Schedule
+          </Link>
+          <Link href="/admin/news" className={`px-3 py-1.5 ${linkClass(current === 'news')}`}>
+            News
           </Link>
           <Link
             href="/admin/feedback"

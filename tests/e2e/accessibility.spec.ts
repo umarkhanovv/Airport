@@ -75,6 +75,20 @@ test.describe('admin', () => {
 
     expect(blocking, `admin overview:\n${describeViolations(results)}`).toEqual([]);
   });
+
+  test('the news editor is accessible', async ({ page }) => {
+    // The longest form in the application, and the one with a file input, a
+    // fieldset and a select in it. Staff use it more than any other screen.
+    await page.goto('/admin/news/new');
+    await expect(page.getByRole('heading', { name: 'Write a post' })).toBeVisible();
+
+    const results = await scan(page);
+    const blocking = results.violations.filter(
+      (violation) => violation.impact === 'critical' || violation.impact === 'serious'
+    );
+
+    expect(blocking, `news editor:\n${describeViolations(results)}`).toEqual([]);
+  });
 });
 
 test.describe('feedback form errors', () => {

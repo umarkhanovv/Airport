@@ -21,13 +21,13 @@ hardening and handover, is not started.
 | 3     | Flight board UI                                     | Done                                         |
 | 4     | Board extras — pin, .ics, weather                   | Done                                         |
 | 5     | News                                                | Done                                         |
-| 6     | Admin — auth, upload → preview → publish            | Done                                         |
+| 6     | Admin — auth, upload → preview → publish, news      | Done                                         |
 | 7     | Feedback form, optional SMTP, admin inbox           | Done                                         |
 | 8     | Content migration from the legacy site              | Steps 1–4, 6 done; step 5 is human proofread |
 | 9     | PWA, SEO, accessibility                             | Done                                         |
 | 10    | Hardening and handover                              | Not started                                  |
 
-Everything above is green: 282 unit tests and 94 end-to-end tests, plus
+Everything above is green: 300 unit tests and 105 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node. The end-to-end
 suite includes an axe pass over every public page, the admin panel and the
 feedback form in its error state, and asserts the flight board still renders
@@ -50,7 +50,7 @@ It currently passes. 53 pages are empty because the legacy page was empty — th
 report prints what each one holds, so the claim can be read rather than
 believed.
 
-News CRUD from the admin panel remains outstanding from Stage 6.
+Nothing is outstanding from Stages 0–9.
 
 ## Stack
 
