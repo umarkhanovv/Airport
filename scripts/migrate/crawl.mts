@@ -20,6 +20,8 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { attributesOf, contentRegion, decodeEntities, stripNoise, textOf } from './html.mts';
+
 const ORIGIN = 'https://hsairport.kz';
 const SITEMAP = `${ORIGIN}/sitemap.xml`;
 
@@ -102,70 +104,6 @@ async function fetchCached(url: string): Promise<{ body: string; status: number 
 // Extraction
 // ---------------------------------------------------------------------------
 
-const ENTITIES: Record<string, string> = {
-  '&nbsp;': ' ',
-  '&amp;': '&',
-  '&lt;': '<',
-  '&gt;': '>',
-  '&quot;': '"',
-  '&#039;': "'",
-  '&laquo;': '«',
-  '&raquo;': '»',
-  '&mdash;': '—',
-  '&ndash;': '–',
-};
-
-function decodeEntities(value: string): string {
-  return value
-    .replace(/&[a-z]+;|&#\d+;/gi, (entity) => {
-      if (entity in ENTITIES) return ENTITIES[entity]!;
-      const numeric = /^&#(\d+);$/.exec(entity);
-      return numeric ? String.fromCodePoint(Number(numeric[1])) : entity;
-    })
-    .replace(/ /g, ' ');
-}
-
-function stripNoise(html: string): string {
-  return html
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ');
-}
-
-/**
- * Narrows to the Porto theme's content container.
- *
- * The header, the seven-item nav and the footer repeat on all 249 pages; left
- * in, they would drown every word count in the same boilerplate.
- */
-function contentRegion(html: string): string {
-  const start = html.search(/class="[^"]*\bpage-content\b[^"]*"/);
-  if (start === -1) return html;
-
-  // Advance past the rest of the opening tag. Slicing at the class attribute
-  // leaves `class="page-content">` sitting in the extracted text, where it
-  // inflates every word count by one and becomes the "heading" of any page
-  // that has no real one.
-  const tagEnd = html.indexOf('>', start);
-  const after = html.slice(tagEnd === -1 ? start : tagEnd + 1);
-  const end = after.search(/<footer\b|id="footer"|class="[^"]*\bfooter\b/);
-  return end === -1 ? after : after.slice(0, end);
-}
-
-function textOf(html: string): string {
-  return decodeEntities(
-    stripNoise(html)
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/(p|div|li|h[1-6]|tr)>/gi, '\n')
-      .replace(/<[^>]+>/g, ' ')
-  )
-    .split('\n')
-    .map((line) => line.replace(/\s+/g, ' ').trim())
-    .filter(Boolean)
-    .join('\n');
-}
-
 /**
  * Every heading in the content region, shallowest first.
  *
@@ -179,15 +117,10 @@ function textOf(html: string): string {
 function headingsOf(region: string): Array<{ level: number; text: string }> {
   return [...stripNoise(region).matchAll(/<(h[1-3])\b[^>]*>([\s\S]*?)<\/\1>/gi)].map((match) => ({
     level: Number(match[1]![1]),
-    text: decodeEntities(match[2]!.replace(/<[^>]+>/g, ' '))
+    text: decodeEntities(match[2]!.replace(/<[^>]+>/g, ' '), { collapseNbsp: true })
       .replace(/\s+/g, ' ')
       .trim(),
   }));
-}
-
-function attributesOf(html: string, tag: string, attribute: string): string[] {
-  const pattern = new RegExp(`<${tag}\\b[^>]*\\b${attribute}=["']([^"']+)["']`, 'gi');
-  return [...html.matchAll(pattern)].map((match) => match[1]!);
 }
 
 function localeOf(url: string): Locale {
@@ -239,7 +172,7 @@ async function main(): Promise<void> {
   for (const [index, { url, type }] of targets.entries()) {
     const { body, status } = await fetchCached(url);
 
-    const region = contentRegion(body);
+    const region = contentRegion(body, { whenMissing: 'whole' });
     const text = textOf(region);
     const lines = text.split('\n');
 
@@ -252,12 +185,15 @@ async function main(): Promise<void> {
         locale: localeOf(url),
         type,
         status,
-        title: decodeEntities(/<title>([\s\S]*?)<\/title>/i.exec(body)?.[1] ?? '')
+        title: decodeEntities(/<title>([\s\S]*?)<\/title>/i.exec(body)?.[1] ?? '', {
+          collapseNbsp: true,
+        })
           .replace(/\s*[-|]\s*Turkistan International Airport\s*$/i, '')
           .trim(),
         heading: '',
         description: decodeEntities(
-          /<meta\s+name=["']description["']\s+content=["']([^"']*)["']/i.exec(body)?.[1] ?? ''
+          /<meta\s+name=["']description["']\s+content=["']([^"']*)["']/i.exec(body)?.[1] ?? '',
+          { collapseNbsp: true }
         ).trim(),
         wordsRaw: text.split(/\s+/).filter(Boolean).length,
         words: 0,

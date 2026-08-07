@@ -27,6 +27,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { contentRegion, decodeEntities, stripPostListing } from './html.mts';
 import { loadMapping } from './load-mapping.mts';
 import type { Decision } from './mapping-types.mts';
 
@@ -71,36 +72,6 @@ function cachedHtml(url: string): string | null {
 // HTML → MDX
 // ---------------------------------------------------------------------------
 
-const ENTITIES: Record<string, string> = {
-  '&nbsp;': ' ',
-  '&amp;': '&',
-  '&lt;': '<',
-  '&gt;': '>',
-  '&quot;': '"',
-  '&#039;': "'",
-  '&laquo;': '«',
-  '&raquo;': '»',
-  '&mdash;': '—',
-  '&ndash;': '–',
-};
-
-function decodeEntities(value: string): string {
-  return value.replace(/&[a-z]+;|&#\d+;/gi, (entity) => {
-    if (entity in ENTITIES) return ENTITIES[entity]!;
-    const numeric = /^&#(\d+);$/.exec(entity);
-    return numeric ? String.fromCodePoint(Number(numeric[1])) : entity;
-  });
-}
-
-function contentRegion(html: string): string {
-  const start = html.search(/class="[^"]*\bpage-content\b[^"]*"/);
-  if (start === -1) return '';
-  const tagEnd = html.indexOf('>', start);
-  const after = html.slice(tagEnd === -1 ? start : tagEnd + 1);
-  const end = after.search(/<footer\b|id="footer"|class="[^"]*\bfooter\b/);
-  return end === -1 ? after : after.slice(0, end);
-}
-
 /** Characters that would otherwise be read as MDX/JSX rather than as text. */
 function escapeMdx(text: string): string {
   return text
@@ -144,6 +115,13 @@ interface ConversionResult {
  *
  * Block-level elements are handled by walking the region in document order and
  * emitting the ones that carry meaning. Everything else collapses to its text.
+ *
+ * Text between those elements is emitted too. The page builder has a "raw HTML"
+ * block whose contents authors typed by hand, and on this site they typed bare
+ * text and a bare `<a>` into a `<div>` with no paragraph around either. Matching
+ * only on block tags skipped it, which is how the Kazakh vacancies page — whose
+ * whole body is one such block — came to be filed as a page the airport still
+ * had to write.
  */
 function htmlToMdx(region: string, sourceUrl: string, dropHeading = ''): ConversionResult {
   const warnings: string[] = [];
@@ -155,7 +133,15 @@ function htmlToMdx(region: string, sourceUrl: string, dropHeading = ''): Convers
   const normalise = (value: string) => value.replace(/\s+/g, ' ').trim().toLowerCase();
   let headingToDrop = normalise(dropHeading);
 
-  const cleaned = region
+  const listing = stripPostListing(region);
+  if (listing.posts > 0) {
+    warnings.push(
+      `${listing.posts} news post(s) were listed on the legacy page and are not repeated here; ` +
+        `news is served from the database`
+    );
+  }
+
+  const cleaned = listing.region
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
     .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
     .replace(/<noscript\b[^>]*>[\s\S]*?<\/noscript>/gi, '')
@@ -164,7 +150,26 @@ function htmlToMdx(region: string, sourceUrl: string, dropHeading = ''): Convers
   const blockPattern =
     /<(h[1-6])\b[^>]*>([\s\S]*?)<\/\1>|<(p)\b[^>]*>([\s\S]*?)<\/\3>|<(ul|ol)\b[^>]*>([\s\S]*?)<\/\5>|<(table)\b[^>]*>([\s\S]*?)<\/\7>|<img\b([^>]*)>|<(iframe)\b([^>]*)>/gi;
 
+  /**
+   * Emits whatever text sits between the blocks, as its own paragraph.
+   *
+   * Most gaps are nothing but the theme's nested container divs, so the test
+   * is for letters rather than for characters: a slideshow's "1 / 6" counters
+   * and its ❮ ❯ arrows are drawn by its script and are not content.
+   */
+  let cursor = 0;
+  const flushOrphanText = (upTo: number) => {
+    const gap = cleaned.slice(cursor, upTo);
+    cursor = upTo;
+
+    const text = inlineToMdx(gap);
+    if (/\p{L}/u.test(text)) blocks.push(text);
+  };
+
   for (const match of cleaned.matchAll(blockPattern)) {
+    flushOrphanText(match.index);
+    cursor = match.index + match[0].length;
+
     const [
       ,
       hTag,
@@ -252,6 +257,8 @@ function htmlToMdx(region: string, sourceUrl: string, dropHeading = ''): Convers
       warnings.push(`dropped an embed, needs a decision: ${src}`);
     }
   }
+
+  flushOrphanText(cleaned.length);
 
   return { mdx: blocks.join('\n\n'), images, warnings };
 }
@@ -529,7 +536,11 @@ async function main(): Promise<void> {
         warnings: [
           ...(needsContent
             ? [
-                `the legacy page carried no body text (${record.words} words); the airport has to supply it`,
+                // The count includes the page's own heading, which the template
+                // renders from the title rather than from the body. Saying
+                // "1 words" without that caveat reads as though one word of
+                // content survived, and the airport asks which word it was.
+                `the legacy page carried no body text — its content region held ${record.words} word(s), its own heading included; the airport has to supply it`,
               ]
             : []),
           ...warnings,

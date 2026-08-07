@@ -24,7 +24,8 @@
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test",
     "migrate:crawl": "node scripts/migrate/crawl.mts",
     "migrate:reconcile": "node scripts/migrate/reconcile.mts",
-    "migrate:generate": "node scripts/migrate/generate.mts"
+    "migrate:generate": "node scripts/migrate/generate.mts",
+    "migrate:verify": "node scripts/migrate/verify-content.mts"
   },
   "dependencies": {
     "@mdx-js/mdx": "^3.1.1",
