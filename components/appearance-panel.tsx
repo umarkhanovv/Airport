@@ -92,7 +92,7 @@ export function AppearancePanel() {
           ref={panelRef}
           role="dialog"
           aria-label={t('label')}
-          className="border-border bg-surface absolute end-0 z-50 mt-2 w-64 rounded-lg border p-4 shadow-lg"
+          className="glass-strong absolute end-0 z-50 mt-2 w-64 rounded-xl p-4"
         >
           <fieldset className="mb-4">
             <legend className="text-text mb-2 text-sm font-semibold">{t('textSize')}</legend>

@@ -103,39 +103,28 @@ test.describe('secrets', () => {
 });
 
 /**
- * The budget from plan §9.2.
+ * Page weight — measured, not capped.
+ *
+ * This was a budget: ceilings on HTML, stylesheet and hydration JavaScript,
+ * failing the build when a page grew past them. The airport has removed the
+ * ceilings, so nothing here fails for being large.
+ *
+ * The measurement stays, and stays for a reason: the ceilings are gone but the
+ * connection this site is read on is not, and a number nobody records is a
+ * number nobody notices going up. These print into the run so a change in page
+ * weight is visible in the same place the change was made, rather than being
+ * discovered by a passenger on a slow phone.
  *
  * Gzipped here rather than trusting the server's `content-length`, so the
- * numbers do not move when a reverse proxy's compression settings change. The
- * framework floor is recorded separately from application code for the reason
- * the plan gives: a framework upgrade moving the floor is a decision, not
- * silent drift.
+ * figures do not move when a reverse proxy's compression settings change.
  */
-const BUDGET = {
-  /**
-   * Split in two, and the split is the honest part.
-   *
-   * It was one number for HTML and blocking CSS together, which measures a
-   * first visit well and every visit after it badly: the stylesheet is one file
-   * for the whole site and is cached after the first page, while the HTML is
-   * fetched again every time. Adding the header menu — server-rendered so that
-   * it works with no JavaScript, and therefore ~3.3 KB in the markup of every
-   * page — made the combined figure the wrong thing to hold.
-   *
-   * So the part that repeats is governed on its own, and the part that is paid
-   * for once is governed on its own. Measured on the flight board, the heaviest
-   * page: 16.3 KB of HTML against 17, and 7.2 KB of stylesheet against 8.
-   */
-  html: 17 * 1024,
-  css: 8 * 1024,
-  hydrationJs: 165 * 1024,
-};
 
 const gzipped = (body: string) => zlib.gzipSync(Buffer.from(body)).length;
+const kb = (bytes: number) => `${(bytes / 1024).toFixed(2)} KB`;
 
-test.describe('performance budget', () => {
+test.describe('page weight', () => {
   for (const path of ['/ru', '/ru/flights']) {
-    test(`${path} stays inside the critical render path budget`, async ({ page }) => {
+    test(`${path} — what the browser is asked to download`, async ({ page }, testInfo) => {
       const response = await page.goto(path);
       const html = gzipped((await response!.body()).toString());
 
@@ -148,24 +137,11 @@ test.describe('performance budget', () => {
         css += gzipped(await (await page.request.get(href)).text());
       }
 
-      expect(html, `${path}: ${(html / 1024).toFixed(1)} KB of HTML`).toBeLessThanOrEqual(
-        BUDGET.html
-      );
-      expect(css, `${path}: ${(css / 1024).toFixed(1)} KB of stylesheet`).toBeLessThanOrEqual(
-        BUDGET.css
-      );
-    });
-
-    test(`${path} stays inside the hydration budget`, async ({ page }) => {
-      await page.goto(path);
-
       /*
-       * `nomodule` scripts are excluded, and the exclusion is the interesting
-       * part of this test. Next emits a 38.5 KB gzipped polyfill bundle marked
-       * `nomodule`, which every browser that understands ES modules — which is
-       * every browser this site is built for — ignores without fetching. Count
-       * it and the budget appears blown by 34 KB by bytes nobody downloads;
-       * the assertion below is what keeps that exclusion honest.
+       * `nomodule` scripts are left out. Next emits a ~38 KB gzipped polyfill
+       * bundle marked that way, which every browser understanding ES modules
+       * ignores without fetching, so counting it would describe a download
+       * nobody performs.
        */
       const sources = await page
         .locator('script[src]:not([nomodule])')
@@ -176,31 +152,21 @@ test.describe('performance budget', () => {
         js += gzipped(await (await page.request.get(url)).text());
       }
 
-      expect(js, `${path}: ${(js / 1024).toFixed(1)} KB of JavaScript`).toBeLessThanOrEqual(
-        BUDGET.hydrationJs
-      );
+      const report = `${path}  HTML ${kb(html)}  CSS ${kb(css)}  JS ${kb(js)}  (gzipped)`;
+      testInfo.annotations.push({ type: 'page weight', description: report });
+      console.log(report);
+
+      // Not a ceiling — a floor under nonsense. A page that arrives empty, or
+      // one that has somehow acquired a megabyte, is a bug rather than a size.
+      expect(html, `${path} served no HTML`).toBeGreaterThan(1024);
+      expect(html + css + js, `${path} is implausibly large`).toBeLessThan(4 * 1024 * 1024);
     });
   }
 
-  test('the bytes excluded from that budget really are the legacy polyfills', async ({ page }) => {
-    await page.goto('/ru');
-
-    const excluded = page.locator('script[src][nomodule]');
-    // One bundle, and it is the polyfill one: if Next ever starts marking
-    // application code `nomodule`, the budget above must stop ignoring it.
-    await expect(excluded).toHaveCount(1);
-
-    const url = await excluded.first().getAttribute('src');
-    const body = await (await page.request.get(url!)).text();
-    expect(body, 'should be polyfilling the language, not running the app').toContain('trimStart');
-    // Application and framework code is emitted as Turbopack chunks, which
-    // register themselves on `globalThis.TURBOPACK`. The polyfill bundle is a
-    // plain script and does not.
-    expect(body).not.toContain('globalThis.TURBOPACK');
-  });
-
   test('the board is readable with no JavaScript at all', async ({ browser }) => {
-    // The budget exists to serve this property; it is worth asserting directly.
+    // What the budget used to protect, asserted directly instead. This is the
+    // property that actually matters on a weak connection, and it survives the
+    // ceilings being lifted.
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();
 

@@ -167,6 +167,126 @@
   --focus: #ffffff;
 }
 
+/* ===========================================================================
+   GLASS
+   ---------------------------------------------------------------------------
+   Frosted surfaces over a tinted backdrop, and the numbers are the whole
+   argument.
+
+   The usual recipe for this is a 10%-opaque white over whatever happens to be
+   behind it. That is a contrast test failure with a blur on it: the effective
+   background under the text becomes whatever the backdrop is doing at that
+   pixel, and nobody can promise 4.5:1 against a moving target. This site
+   asserts its ratios in tests/unit/design-tokens.test.ts and runs axe over
+   every page, so the glass is built the other way round — opaque enough that
+   the effective background stays inside a narrow band around --surface, over a
+   backdrop deliberately kept faint. 72–85% here, not 10%.
+
+   What is left after that constraint is still glass: the blur is real, the
+   backdrop moves under it as the page scrolls, and the inner top highlight is
+   what makes the eye read a pane rather than a tinted box.
+
+   Three ways out, because a translucent surface is not something everyone can
+   read: the high-contrast theme, an explicit `prefers-reduced-transparency`,
+   and browsers without backdrop-filter all get flat opaque surfaces.
+   =========================================================================== */
+
+:root {
+  --glass-bg: rgb(255 255 255 / 0.72);
+  --glass-bg-strong: rgb(255 255 255 / 0.85);
+  --glass-border: rgb(26 22 19 / 0.1);
+  --glass-highlight: rgb(255 255 255 / 0.9);
+  --glass-shadow: 0 8px 32px -12px rgb(90 55 30 / 0.28);
+  --glass-hover-border: rgb(206 123 68 / 0.55);
+  --glass-hover-glow: rgb(206 123 68 / 0.28);
+  --glass-blur: 16px;
+  --glass-saturate: 1.7;
+
+  /* The backdrop the glass has something to blur. Faint on purpose — see the
+     contrast argument above. */
+  --backdrop-a: rgb(206 123 68 / 0.16);
+  --backdrop-b: rgb(15 122 115 / 0.1);
+  --backdrop-c: rgb(206 123 68 / 0.08);
+  --lattice-opacity: 0.07;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.theme-light) {
+    --glass-bg: rgb(24 32 43 / 0.68);
+    --glass-bg-strong: rgb(16 22 30 / 0.84);
+    --glass-border: rgb(255 255 255 / 0.11);
+    --glass-highlight: rgb(255 255 255 / 0.09);
+    --glass-shadow: 0 8px 32px -12px rgb(0 0 0 / 0.6);
+    --glass-hover-border: rgb(227 135 75 / 0.6);
+    --glass-hover-glow: rgb(206 123 68 / 0.3);
+    --backdrop-a: rgb(206 123 68 / 0.14);
+    --backdrop-b: rgb(63 199 189 / 0.08);
+    --backdrop-c: rgb(63 199 189 / 0.05);
+    --lattice-opacity: 0.09;
+  }
+}
+
+:root.theme-dark {
+  --glass-bg: rgb(24 32 43 / 0.68);
+  --glass-bg-strong: rgb(16 22 30 / 0.84);
+  --glass-border: rgb(255 255 255 / 0.11);
+  --glass-highlight: rgb(255 255 255 / 0.09);
+  --glass-shadow: 0 8px 32px -12px rgb(0 0 0 / 0.6);
+  --glass-hover-border: rgb(227 135 75 / 0.6);
+  --glass-hover-glow: rgb(206 123 68 / 0.3);
+  --backdrop-a: rgb(206 123 68 / 0.14);
+  --backdrop-b: rgb(63 199 189 / 0.08);
+  --backdrop-c: rgb(63 199 189 / 0.05);
+  --lattice-opacity: 0.09;
+}
+
+/* ---------------------------------------------------------------------------
+   The ways out of the glass, done by switching tokens rather than by
+   re-declaring every rule — one override reaches every frosted surface, the
+   backdrop and the hover state at once.
+
+   These sit here, unlayered, next to the values they replace. That placement
+   is not tidiness: the base tokens above are unlayered too, and an unlayered
+   declaration wins over anything inside `@layer components` however specific
+   it is, because layer order is resolved before specificity. Written down
+   beside the `.glass` rules, `:root.contrast-high` lost to a plain `:root` and
+   the high-contrast theme kept its frosted panels.
+   --------------------------------------------------------------------------- */
+
+/* A translucent surface with something moving behind it is a readability
+   problem, not a decoration, for anyone who has asked for less of it. */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-bg: var(--surface);
+    --glass-bg-strong: var(--surface);
+    --glass-shadow: none;
+    --glass-highlight: transparent;
+    --glass-blur: 0px;
+    --glass-saturate: 1;
+    --backdrop-a: transparent;
+    --backdrop-b: transparent;
+    --backdrop-c: transparent;
+    --lattice-opacity: 0;
+  }
+}
+
+/* The high-contrast theme is a request for edges, not atmosphere. */
+:root.contrast-high {
+  --glass-bg: var(--surface);
+  --glass-bg-strong: var(--surface);
+  --glass-border: var(--border);
+  --glass-shadow: none;
+  --glass-highlight: transparent;
+  --glass-blur: 0px;
+  --glass-saturate: 1;
+  --glass-hover-border: var(--brand-text-strong);
+  --glass-hover-glow: transparent;
+  --backdrop-a: transparent;
+  --backdrop-b: transparent;
+  --backdrop-c: transparent;
+  --lattice-opacity: 0;
+}
+
 @theme inline {
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
@@ -238,6 +358,125 @@
 
 @layer components {
   /* -------------------------------------------------------------------------
+     Glass surfaces.
+
+     Classes rather than utility strings, for the same reason the menu below is:
+     the header ships in the HTML of every page and the section cards repeat
+     seven times, so `bg-white/72 backdrop-blur-xl border border-white/10
+     shadow-xl …` written out at each site is a measurable slice of a 17 KB
+     budget. One class name is 11 characters.
+     ------------------------------------------------------------------------- */
+  .glass,
+  .glass-strong {
+    border: 1px solid var(--glass-border);
+    background-color: var(--glass-bg);
+    box-shadow:
+      var(--glass-shadow),
+      inset 0 1px 0 0 var(--glass-highlight);
+    /*
+      Unprefixed only, and that is load-bearing. Writing the `-webkit-` twin
+      beside it made the effect vanish: Lightning CSS, which Tailwind runs,
+      folds the pair into one declaration and — for this project's browser
+      targets — keeps the prefixed one, which current Chromium does not
+      implement. The result was a rule that set no filter at all. Left alone,
+      the same tool adds whatever prefix a target actually needs.
+    */
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  }
+
+  /* Sticky chrome and anything the page scrolls underneath. More opaque
+     because whatever passes behind it is arbitrary. */
+  .glass-strong {
+    background-color: var(--glass-bg-strong);
+  }
+
+  .glass-card {
+    border-radius: var(--radius-xl);
+    transition:
+      border-color 150ms,
+      box-shadow 150ms;
+  }
+
+  /*
+    Literal rgb() rather than color-mix(). Lightning CSS cannot know whether a
+    target supports color-mix, so it emits the whole rule twice — once with a
+    flat fallback and once inside @supports — and two copies of a two-line
+    shadow was 0.4 KB of an 8 KB stylesheet budget for a hover state.
+  */
+  .glass-card:hover {
+    border-color: var(--glass-hover-border);
+    box-shadow:
+      0 12px 40px -12px var(--glass-hover-glow),
+      inset 0 1px 0 0 var(--glass-highlight);
+  }
+
+  /* -------------------------------------------------------------------------
+     The field every frosted surface is frosting.
+
+     Fixed, so it stays put while the page travels over it. That relative
+     motion is most of what makes the eye read a pane of glass rather than a
+     tinted rectangle — a backdrop that scrolls with the content would sit
+     still behind it and the blur would look like a texture.
+
+     Two warm-and-cool pools of the airport's own colours, and the façade
+     lattice over both. The lattice matters more than it looks: a blur applied
+     to a flat wash produces another flat wash, so without something structured
+     underneath there is nothing to see through the glass at all. It used to
+     appear only behind the masthead; it runs the height of the page now, which
+     is what gives every panel below the fold something to blur.
+     ------------------------------------------------------------------------- */
+  .app-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    pointer-events: none;
+    background:
+      radial-gradient(60rem 40rem at 12% -8%, var(--backdrop-a), transparent 62%),
+      radial-gradient(48rem 34rem at 94% 6%, var(--backdrop-b), transparent 58%),
+      radial-gradient(70rem 50rem at 50% 108%, var(--backdrop-c), transparent 60%), var(--surface);
+  }
+
+  .app-backdrop::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: var(--lattice-opacity);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23CE7B44' stroke-width='1'%3E%3Cpath d='M52 30 30 52 8 30 30 8Z'/%3E%3Cpath d='M45.6 14.4v31.2H14.4V14.4z'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 60px 60px;
+  }
+
+  /* -------------------------------------------------------------------------
+     Three ways out of the glass.
+
+     Not decoration that happens to be optional — a translucent surface with
+     something moving behind it is a readability problem for anyone with low
+     vision, vestibular sensitivity, or a browser that never shipped
+     backdrop-filter. Each of these puts the flat surface back.
+
+     Done by switching the tokens rather than by re-declaring the rules. The
+     obvious way — repeating `.glass, .glass-strong { … }` under each condition
+     — costs three copies of the block, and the stylesheet is governed by an
+     8 KB budget that this feature had already spent most of. Overriding a
+     handful of custom properties reaches every glass surface, the backdrop and
+     the hover state at once.
+     ------------------------------------------------------------------------- */
+  /* The token overrides that do this live beside the tokens themselves, above
+     and outside any layer. They have to: the base values are unlayered, and an
+     unlayered declaration beats anything in `@layer components` no matter how
+     specific — so a `:root.contrast-high` override written down here silently
+     lost to the plain `:root` above, and the high-contrast theme kept its
+     frosted panels. Layer order is resolved before specificity.
+
+     What is left here is the one case tokens cannot express: no such property,
+     so no such filter. */
+  @supports not (backdrop-filter: blur(1px)) {
+    .glass,
+    .glass-strong {
+      background-color: var(--surface);
+    }
+  }
+
+  /* -------------------------------------------------------------------------
      Header menu.
 
      Three classes rather than utility strings repeated across thirty-odd
@@ -304,26 +543,6 @@
   .menu-link:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px var(--color-focus);
-  }
-
-  /* -------------------------------------------------------------------------
-     The façade lattice.
-
-     The terminal is clad in perforated geometric screens — the airport's own
-     architectural signature. This is that geometry, reduced to two overlapping
-     squares forming an eight-point star, and used in exactly one place: behind
-     the masthead. Kept near-invisible so it is texture, never pattern.
-     ------------------------------------------------------------------------- */
-  .lattice {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23CE7B44' stroke-width='1'%3E%3Cpath d='M52 30 30 52 8 30 30 8Z'/%3E%3Cpath d='M45.6 14.4v31.2H14.4V14.4z'/%3E%3C/g%3E%3C/svg%3E");
-    background-size: 60px 60px;
-    opacity: 0.07;
-  }
-
-  @media (prefers-contrast: more) {
-    .lattice {
-      display: none;
-    }
   }
 
   /* -------------------------------------------------------------------------

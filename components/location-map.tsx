@@ -32,7 +32,7 @@ export function LocationMap() {
   const [interactive, setInteractive] = useState(false);
 
   return (
-    <section className="border-border bg-surface-raised overflow-hidden rounded-xl border">
+    <section className="glass overflow-hidden rounded-xl">
       <div className="relative">
         {interactive ? (
           <iframe

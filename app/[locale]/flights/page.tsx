@@ -69,7 +69,7 @@ export default async function FlightsPage({
         <h1 className="text-text text-3xl font-semibold tracking-tight sm:text-4xl">
           {t('title')}
         </h1>
-        <div className="border-border bg-surface-raised mt-8 rounded-xl border p-6">
+        <div className="glass mt-8 rounded-xl p-6">
           <h2 className="text-text text-lg font-semibold">{t('noSchedule')}</h2>
           <p className="text-text-muted mt-1 text-sm">{t('noScheduleHint')}</p>
         </div>
@@ -196,7 +196,7 @@ export default async function FlightsPage({
 
       <div className="mt-6">
         {flights.length === 0 ? (
-          <p className="border-border bg-surface-raised text-text-muted rounded-lg border p-6 text-sm">
+          <p className="glass text-text-muted rounded-xl p-6 text-sm">
             {state.kind === 'arrival' ? t('noArrivalsToday') : t('noDeparturesToday')}
           </p>
         ) : (

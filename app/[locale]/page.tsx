@@ -30,11 +30,11 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
         weak connection and in a hurry, and the fastest possible first paint is
         worth more to them than an image (plan §9.2).
 
-        The lattice behind it is the terminal's own perforated façade geometry,
-        held at 7% so it reads as texture rather than pattern.
+        The façade lattice that used to be a layer of this section now runs the
+        whole page, in `.app-backdrop` — the frosted surfaces need something
+        structured behind them or the blur has nothing to show.
       */}
-      <section className="relative isolate overflow-hidden">
-        <div aria-hidden="true" className="lattice absolute inset-0 -z-10" />
+      <section className="relative isolate">
         <div className="py-10 sm:py-14">
           <p className="text-brand-text-strong text-sm font-semibold tracking-[0.14em] uppercase">
             {tSite('location')}
@@ -53,10 +53,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
         <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SECTIONS.map((section) => (
             <li key={section}>
-              <Link
-                href={`/${section}`}
-                className="border-border bg-surface hover:border-brand hover:bg-surface-raised block h-full rounded-lg border p-5 transition-colors"
-              >
+              <Link href={`/${section}`} className="glass glass-card block h-full p-5">
                 <span className="text-text block font-semibold">
                   {tSections(`${section}.title`)}
                 </span>
@@ -74,7 +71,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
         fold, lazy-loaded, and never the LCP element.
       */}
       <section className="mt-16">
-        <figure className="border-border overflow-hidden rounded-xl border">
+        <figure className="glass overflow-hidden rounded-xl">
           <Image
             src="/media/terminal-dusk.jpg"
             alt={t('terminalPhotoAlt')}
@@ -84,7 +81,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
             loading="lazy"
             className="h-auto w-full"
           />
-          <figcaption className="bg-surface-raised text-text-muted px-5 py-3 text-sm">
+          <figcaption className="text-text-muted border-border border-t px-5 py-3 text-sm">
             {t('terminalPhotoCaption')}
           </figcaption>
         </figure>

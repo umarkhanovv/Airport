@@ -26,11 +26,28 @@ Built and green through **Stage 10**.
 | 9     | PWA, SEO, accessibility                             | Done                                         |
 | 10    | Hardening and handover                              | Done                                         |
 
-Everything above is green: 322 unit tests and 142 end-to-end tests, plus
+Everything above is green: 322 unit tests and 139 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node. The end-to-end
 suite includes an axe pass over every public page, the admin panel and the
 feedback form in its error state, and asserts the flight board still renders
 offline with the date its schedule was loaded.
+
+Page weight is **measured, not capped**. There were ceilings — HTML, stylesheet
+and hydration JavaScript — and the build failed when a page grew past them; the
+airport has lifted them. The end-to-end run still prints what each page asks the
+browser to download, currently 16.0 KB of HTML, 8.0 KB of stylesheet and 160 KB
+of JavaScript gzipped on the flight board, because the ceilings are gone but the
+connections this site is read on are not. What the budget was protecting is
+asserted directly instead: the board still renders with JavaScript switched off.
+
+The surfaces are **frosted glass** over a fixed, tinted backdrop carrying the
+terminal's façade lattice — the header, the panels, the cards and the footer.
+Built at 72–85% opacity rather than the 10% the technique is usually written
+with, because the effective background under the text has to stay close enough
+to `--surface` for the contrast ratios to hold; those ratios are asserted, and
+axe runs over every page. It turns itself off in three cases, all of them real:
+the high-contrast theme, a browser asking for reduced transparency, and any
+engine without `backdrop-filter`.
 
 Every test browser asks for reduced motion, which is not a detail: the site
 animates scrolling, and an animated scroll is one the driver cannot wait for —

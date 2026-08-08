@@ -65,7 +65,7 @@ export default async function SectionPage({ params }: PageProps<'/[locale]/[sect
       <p className="text-text-muted mt-3 max-w-2xl text-lg">{t(`${section}.description`)}</p>
 
       {pages.length === 0 ? (
-        <div className="border-border bg-surface-raised mt-10 max-w-2xl rounded-lg border p-5">
+        <div className="glass mt-10 max-w-2xl rounded-xl p-5">
           <p className="text-text font-medium">{tPlaceholder('underConstruction')}</p>
           <p className="text-text-muted mt-1 text-sm">{tPlaceholder('explanation')}</p>
         </div>

@@ -63,7 +63,7 @@ export default async function NewsPostPage({ params }: PageProps<'/[locale]/news
       {translations.length > 0 && (
         <p
           data-translations=""
-          className="border-border bg-surface-raised text-text-muted mt-6 rounded-md border px-4 py-2.5 text-sm"
+          className="glass text-text-muted mt-6 rounded-lg px-4 py-2.5 text-sm"
         >
           {t('alsoAvailableIn')}{' '}
           {translations.map((translation, index) => (

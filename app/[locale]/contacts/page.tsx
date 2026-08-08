@@ -152,7 +152,7 @@ export default async function ContactsPage({ params }: PageProps<'/[locale]/cont
         enforced rather than remembered.
       */}
       {EOTINISH_URL ? (
-        <section className="border-border bg-surface-raised mt-8 max-w-3xl rounded-lg border p-5">
+        <section className="glass mt-8 max-w-3xl rounded-xl p-5">
           <h2 className="text-text font-medium">{tFeedback('eotinishTitle')}</h2>
           <p className="text-text-muted mt-1 text-sm">{tFeedback('eotinishBody')}</p>
           <a

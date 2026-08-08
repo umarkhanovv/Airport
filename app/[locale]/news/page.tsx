@@ -44,9 +44,7 @@ export default async function NewsPage({ params, searchParams }: PageProps<'/[lo
       <p className="text-text-muted mt-3 max-w-2xl text-lg">{t('description')}</p>
 
       {posts.length === 0 ? (
-        <p className="border-border bg-surface-raised text-text-muted mt-8 rounded-lg border p-6 text-sm">
-          {t('empty')}
-        </p>
+        <p className="glass text-text-muted mt-8 rounded-xl p-6 text-sm">{t('empty')}</p>
       ) : (
         <ul className="mt-10 space-y-8">
           {posts.map((post) => (

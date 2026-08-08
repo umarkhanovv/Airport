@@ -31,7 +31,7 @@ export async function DocumentList({ locale, pagePath }: { locale: string; pageP
         {t('title')}
       </h2>
 
-      <ul className="border-border divide-border mt-3 divide-y rounded-lg border">
+      <ul className="glass divide-border mt-3 divide-y rounded-xl">
         {documents.map((document) => (
           <li key={document.id}>
             <a

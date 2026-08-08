@@ -88,6 +88,12 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
         <AirportStructuredData locale={locale} />
       </head>
       <body className="flex min-h-screen flex-col">
+        {/*
+          The field every frosted surface on the site is frosting. Fixed rather
+          than scrolled, so the tint stays put while the page travels over it —
+          which is what makes the blur read as glass rather than as a texture.
+        */}
+        <div aria-hidden="true" className="app-backdrop" />
         <NextIntlClientProvider>
           <a
             href="#main"

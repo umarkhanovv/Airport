@@ -31,7 +31,7 @@ export function SiteHeader() {
   const t = useTranslations('Menu');
 
   return (
-    <header className="border-border bg-surface sticky top-0 z-40 border-b">
+    <header className="glass-strong sticky top-0 z-40 border-x-0 border-t-0">
       <div className="mx-auto max-w-6xl px-4">
         <div className="flex items-center gap-4 py-3">
           <Logo />
@@ -92,9 +92,16 @@ export function SiteHeader() {
                       floats beside its own tab has to be measured against the
                       viewport to stay on screen, and measuring takes script.
                     */}
+                    {/*
+                      Opaque enough not to depend on its own blur. It sits
+                      inside the header, which is itself a backdrop-filtered
+                      element and therefore the backdrop root for anything in
+                      it — so a nested blur would have only the header to
+                      frost, not the page hanging below it.
+                    */}
                     <div
                       data-testid="menu-panel"
-                      className="border-border bg-surface absolute inset-x-0 z-30 border-b shadow-lg"
+                      className="glass-strong absolute inset-x-0 z-30 border-x-0 border-t-0"
                     >
                       <div className="mx-auto grid max-w-6xl gap-x-8 gap-y-6 px-4 py-6 sm:grid-cols-2 lg:grid-cols-4">
                         {item.groups.map((group) => (
