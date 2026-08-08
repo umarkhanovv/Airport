@@ -51,6 +51,20 @@ interface Placement {
   caption?: string;
 }
 
+/**
+ * The form a filename is compared in.
+ *
+ * Unicode normalisation, and it is not a detail: macOS writes filenames in NFD,
+ * where `й` is `и` followed by a combining breve, while the legacy site's URLs
+ * carry the composed NFC form. The two are the same name and different strings,
+ * so 40 of the 178 announcements documents did not match until this was here —
+ * and they were exactly the ones whose names happen to contain й, ё or ұ.
+ *
+ * Case is folded too. A download that arrives as `ПРОТОКОЛ-ИТОГОВ.pdf` is the
+ * document the page calls `протокол-итогов.pdf`.
+ */
+const key = (filename: string) => filename.normalize('NFC').toLowerCase();
+
 // ---------------------------------------------------------------------------
 // What the legacy pages say about each file
 // ---------------------------------------------------------------------------
@@ -89,17 +103,21 @@ function placements(): Map<string, Placement> {
     const lines = fs.readFileSync(file, 'utf8').split('\n');
 
     for (const [index, line] of lines.entries()) {
-      const link = /\]\((https?:\/\/[^)\s]+)\)/.exec(line);
+      // Absolute and root-relative alike: the legacy site linked four of its
+      // own tender documents as `/wp-content/…`, and only the filename is
+      // needed here, not a resolvable address.
+      const link = /\]\(((?:https?:\/\/|\/)[^)\s]+)\)/.exec(line);
       if (!link) continue;
 
       let name: string;
       try {
-        name = decodeURIComponent(new URL(link[1]!).pathname.split('/').pop() ?? '');
+        const pathname = link[1]!.startsWith('/') ? link[1]! : new URL(link[1]!).pathname;
+        name = decodeURIComponent(pathname.split('/').pop() ?? '');
       } catch {
         continue;
       }
       if (!name || !DOCUMENT_TYPES[path.extname(name).toLowerCase()]) continue;
-      if (found.has(name)) continue;
+      if (found.has(key(name))) continue;
 
       let caption: string | undefined;
       for (let above = index - 1; above >= 0 && above > index - 5; above -= 1) {
@@ -109,16 +127,34 @@ function placements(): Map<string, Placement> {
         break;
       }
 
-      found.set(name, { pagePath, caption });
+      // Failing that, the label in the row's own first cell.
+      //
+      // The legacy page pairs each order with a blank lease template under it,
+      // and only the first of the pair gets a sentence above it — so a third of
+      // the announcements would otherwise be titled from their filename, which
+      // is how "Договор аренды типовой" becomes "Duty free".
+      if (!caption && line.trim().startsWith('|')) {
+        const cell = line
+          .split('|')[1]
+          ?.replace(/\s+/g, ' ')
+          .replace(/\s*:\s*$/, '')
+          .trim();
+        if (cell) caption = cell.slice(0, 200);
+      }
+
+      found.set(key(name), { pagePath, caption });
     }
   }
 
   return found;
 }
 
+/** `dd.mm.yyyy`, as the airport writes dates in these captions. */
+const DATE_RE = /(\d{2})\.(\d{2})\.(\d{4})/;
+
 /** A caption like "Приказ КД от 04.08.2026 года." also carries the date. */
 function dateFrom(caption: string | undefined, fallback: string): string {
-  const match = /(\d{2})\.(\d{2})\.(\d{4})/.exec(caption ?? '');
+  const match = DATE_RE.exec(caption ?? '');
   return match ? `${match[3]}-${match[2]}-${match[1]}T00:00:00.000Z` : fallback;
 }
 
@@ -162,7 +198,7 @@ function main(): void {
       continue;
     }
 
-    const placement = known.get(name) ?? known.get(display);
+    const placement = known.get(key(name)) ?? known.get(key(display));
     const pagePath = placement?.pagePath ?? fallbackPage;
 
     if (!pagePath) {
