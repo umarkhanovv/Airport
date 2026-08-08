@@ -17,6 +17,34 @@ import type { Locale } from '@/i18n/routing';
  * sections keep their own pages and everything deeper lands here.
  */
 
+/**
+ * A ceiling on how stale one of these can get, and it is a safety net rather
+ * than the mechanism.
+ *
+ * The text comes from `content/` and only changes on deploy, but the documents
+ * underneath it come from the database and change whenever staff edit them —
+ * which is what `revalidatePath` in `app/admin/documents/actions.ts` is for,
+ * and it is normally immediate: 34 ms on an idle server, 357 ms under a
+ * saturated one, measured.
+ *
+ * Normally. When two edits to the same page overlap, a regeneration already in
+ * flight can finish after the second edit invalidated the page and write its
+ * older render back as current. Six editors working on one page lost a quarter
+ * of their renames that way. Without a lifetime these pages have none — they
+ * are prerendered with `initialRevalidateSeconds: false` — so a lost edit was
+ * not delayed, it was permanent: the page kept serving `x-nextjs-cache: HIT`
+ * with the old title until somebody happened to edit that page again. That is
+ * a plausible afternoon at the airport, not a contrived race: staff upload
+ * thirty notices and correct the titles one after another while the public is
+ * reading the page.
+ *
+ * Five minutes does not close the race. It bounds it, which is the part worth
+ * having: an edit that loses is an edit that is late, not one that is lost. It
+ * also stops `s-maxage` being a year, so a caching proxy in front of this —
+ * which the deployment notes expect — cannot hold a withdrawn notice forever.
+ */
+export const revalidate = 300;
+
 export function generateStaticParams() {
   return routing.locales.flatMap((locale) => listSlugs(locale).map((slug) => ({ locale, slug })));
 }

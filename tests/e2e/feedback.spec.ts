@@ -80,7 +80,13 @@ test.describe('the public form', () => {
     // rejection is covered in tests/unit/feedback-antispam.test.ts.
     await page.getByRole('button', { name: 'Отправить' }).click();
 
-    await expect(page.getByRole('alert')).toBeVisible();
+    // Targeted by id, not by role: Next renders its own aria-live route
+    // announcer with role="alert", so getByRole('alert') is ambiguous — and
+    // ambiguous only once hydration has got that far, which made this fail
+    // whenever the server was loaded enough to lose that race. Same reasoning
+    // as tests/e2e/admin.spec.ts.
+    await expect(page.locator('#feedback-form-error')).toBeVisible();
+    await expect(page.locator('#feedback-form-error')).toContainText('слишком быстро');
     await expect(page.locator('#name-error')).toHaveCount(0);
     await expect(page.getByRole('status')).toHaveCount(0);
   });

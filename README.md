@@ -26,7 +26,7 @@ Built and green through **Stage 10**.
 | 9     | PWA, SEO, accessibility                             | Done                                         |
 | 10    | Hardening and handover                              | Done                                         |
 
-Everything above is green: 322 unit tests and 141 end-to-end tests, plus
+Everything above is green: 322 unit tests and 142 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node. The end-to-end
 suite includes an axe pass over every public page, the admin panel and the
 feedback form in its error state, and asserts the flight board still renders
@@ -233,6 +233,14 @@ PowerPoint or a zip, up to 25 MB each. Each one is listed underneath afterwards,
 where its title can be corrected; the title is what the link on the page says.
 Unpublishing takes a document off the page *and* stops serving the file, so a
 notice that has been withdrawn is genuinely withdrawn.
+
+An edit reaches the public page in well under a second. The exception is worth
+knowing about: if two edits to the *same* page overlap — two people at once, or
+one person correcting titles quickly while the public is reading that page —
+one of the two can be held back. It is not lost, and the admin list always
+shows the truth; the public page catches up within five minutes. If a change
+seems not to have taken, reload the public page after five minutes before
+re-doing it.
 
 **Reading feedback.** Admin → Feedback. Everything submitted through the
 contacts form is here, whether or not e-mail is configured; SMTP only adds a

@@ -23,7 +23,30 @@ const PDF = Buffer.from(
   'latin1'
 );
 
-const PAGE_PATH = 'flights/cargo';
+/**
+ * A page of its own per test, and that is not tidiness.
+ *
+ * These tests run in parallel, and every upload, rename, unpublish and delete
+ * regenerates the page its document is filed against. Pointed at one page they
+ * were six editors working on the same document list at once — which loses
+ * about a quarter of its edits, because a regeneration in flight can finish
+ * after a later edit invalidated the page and write its older render back as
+ * current. That is a real defect and it is bounded in
+ * `app/[locale]/[...slug]/page.tsx`, but bounded means five minutes, so a test
+ * that raced would still be waiting long after it had timed out.
+ *
+ * Each one owns its page instead. Nothing here is about how pages interact, so
+ * there is nothing to lose by separating them, and it takes the suite's own
+ * contention out of a test whose subject is a single document.
+ */
+const PAGES = {
+  publish: 'flights/cargo',
+  unpublish: 'passengers/check-in',
+  rename: 'about/bank-details',
+  delete: 'passengers/security',
+  refuse: 'airport/parking',
+  batch: 'airport/taxi',
+} as const;
 
 function unique(label: string): string {
   return `E2E ${label} ${Math.random().toString(36).slice(2, 10)}`;
@@ -33,9 +56,9 @@ function rowFor(page: Page, title: string) {
   return page.locator('[data-testid="document-row"]', { hasText: title });
 }
 
-async function upload(page: Page, filename: string) {
+async function upload(page: Page, pagePath: string, filename: string) {
   await page.goto('/admin/documents');
-  await page.locator('#pagePath').selectOption(PAGE_PATH);
+  await page.locator('#pagePath').selectOption(pagePath);
   await page.locator('#publishedAt').fill('2026-03-01');
   await page
     .locator('#files')
@@ -61,7 +84,7 @@ test.describe('publishing a document', () => {
     page,
   }) => {
     const title = unique('tariff');
-    await upload(page, `${title}.pdf`);
+    await upload(page, PAGES.publish, `${title}.pdf`);
 
     // The title defaults to the filename, and is corrected in place.
     const row = rowFor(page, title);
@@ -86,7 +109,7 @@ test.describe('publishing a document', () => {
     // which a single fetch loses to.
     for (const locale of ['ru', 'en', 'kz']) {
       await expect(async () => {
-        await page.goto(`/${locale}/${PAGE_PATH}`);
+        await page.goto(`/${locale}/${PAGES.publish}`);
         await expect(page.getByRole('link', { name: new RegExp(title) })).toBeVisible();
       }).toPass();
     }
@@ -94,7 +117,7 @@ test.describe('publishing a document', () => {
 
   test('unpublishing takes it off the page and stops serving the file', async ({ page }) => {
     const title = unique('withdrawn');
-    await upload(page, `${title}.pdf`);
+    await upload(page, PAGES.unpublish, `${title}.pdf`);
 
     const href = await rowFor(page, title)
       .getByRole('link', { name: 'Download' })
@@ -108,14 +131,14 @@ test.describe('publishing a document', () => {
     expect((await page.request.get(href!)).status()).toBe(404);
 
     await expect(async () => {
-      await page.goto(`/ru/${PAGE_PATH}`);
+      await page.goto(`/ru/${PAGES.unpublish}`);
       await expect(page.locator('main')).not.toContainText(title);
     }).toPass();
   });
 
   test('renaming changes the link text, not the file', async ({ page }) => {
     const title = unique('rename');
-    await upload(page, `${title}.pdf`);
+    await upload(page, PAGES.rename, `${title}.pdf`);
 
     const corrected = `Приказ КД от 01.03.2026 года ${title}`;
     await rowFor(page, title).locator('input[name="title"]').fill(corrected);
@@ -123,14 +146,14 @@ test.describe('publishing a document', () => {
     await expect(page).toHaveURL(/saved=1/);
 
     await expect(async () => {
-      await page.goto(`/ru/${PAGE_PATH}`);
+      await page.goto(`/ru/${PAGES.rename}`);
       await expect(page.getByRole('link', { name: new RegExp(corrected) })).toBeVisible();
     }).toPass();
   });
 
   test('deleting removes it from the page and from disk', async ({ page }) => {
     const title = unique('delete');
-    await upload(page, `${title}.pdf`);
+    await upload(page, PAGES.delete, `${title}.pdf`);
 
     const href = await rowFor(page, title)
       .getByRole('link', { name: 'Download' })
@@ -152,7 +175,7 @@ test.describe('what may be uploaded', () => {
 
   test('refuses a format a browser would execute', async ({ page }) => {
     await page.goto('/admin/documents');
-    await page.locator('#pagePath').selectOption(PAGE_PATH);
+    await page.locator('#pagePath').selectOption(PAGES.refuse);
     await page.locator('#files').setInputFiles({
       name: 'notice.html',
       mimeType: 'text/html',
@@ -169,7 +192,7 @@ test.describe('what may be uploaded', () => {
     const good = unique('batch');
 
     await page.goto('/admin/documents');
-    await page.locator('#pagePath').selectOption(PAGE_PATH);
+    await page.locator('#pagePath').selectOption(PAGES.batch);
     await page.locator('#files').setInputFiles([
       { name: `${good}.pdf`, mimeType: 'application/pdf', buffer: PDF },
       { name: 'notice.html', mimeType: 'text/html', buffer: Buffer.from('<p>no</p>') },
@@ -179,6 +202,36 @@ test.describe('what may be uploaded', () => {
     await expect(page.getByRole('main').getByRole('status')).toContainText('1 file uploaded');
     await expect(page.getByRole('main').getByRole('alert')).toContainText('notice.html');
     await expect(rowFor(page, good)).toHaveCount(1);
+  });
+});
+
+test.describe('staleness', () => {
+  test('a page carrying documents has a lifetime, so an edit cannot stick forever', async ({
+    page,
+  }) => {
+    /*
+     * The pages these documents appear on are prerendered, and were prerendered
+     * with no lifetime at all — `initialRevalidateSeconds: false`. That was
+     * fine as long as every edit's `revalidatePath` landed, and mostly it does:
+     * 34 ms on an idle server, 357 ms on a saturated one. But two edits to one
+     * page can overlap, and then a regeneration already in flight writes its
+     * older render back as current. With no lifetime that page never recovered
+     * — it served `x-nextjs-cache: HIT` with the wrong title until somebody
+     * edited that page again, which might be never.
+     *
+     * So `app/[locale]/[...slug]/page.tsx` gives it one. This asserts the
+     * consequence rather than the export, because the consequence is what a
+     * caching proxy in front of the airport's server reads too — and the same
+     * header is what stopped it holding a withdrawn notice for a year.
+     */
+    const response = await page.request.get(`/ru/${PAGES.publish}`);
+    const maxAge = /s-maxage=(\d+)/.exec(response.headers()['cache-control'] ?? '');
+
+    expect(maxAge, `no s-maxage in "${response.headers()['cache-control']}"`).not.toBeNull();
+    expect(
+      Number(maxAge![1]),
+      'a document edit should not be able to stick for long'
+    ).toBeLessThanOrEqual(600);
   });
 });
 
