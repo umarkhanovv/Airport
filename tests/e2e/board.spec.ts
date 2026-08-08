@@ -28,8 +28,10 @@ test.describe('renders without JavaScript', () => {
 
   test('tabs and filters are links that work without scripting', async ({ page }) => {
     await page.goto('/flights?view=week');
+    // Scoped to the body: the header menu also links Вылет, to the same view.
+    const main = page.getByRole('main');
 
-    await page.getByRole('link', { name: /Вылет/ }).click();
+    await main.getByRole('link', { name: /Вылет/ }).click();
     await expect(page).toHaveURL(/kind=departures/);
     await expect(page.locator('[data-flight-row]').first()).toBeVisible();
 

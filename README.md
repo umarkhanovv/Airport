@@ -10,9 +10,7 @@ scheduled time, labelled as such.
 
 ## Status
 
-Built and green through **Stage 10**. One item is outstanding and is described
-below: the 207 documents linked from the migrated pages are still hosted on the
-legacy site.
+Built and green through **Stage 10**.
 
 | Stage | Scope                                              | State                                        |
 | ----- | -------------------------------------------------- | -------------------------------------------- |
@@ -28,7 +26,7 @@ legacy site.
 | 9     | PWA, SEO, accessibility                             | Done                                         |
 | 10    | Hardening and handover                              | Done                                         |
 
-Everything above is green: 317 unit tests and 129 end-to-end tests, plus
+Everything above is green: 322 unit tests and 139 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node. The end-to-end
 suite includes an axe pass over every public page, the admin panel and the
 feedback form in its error state, and asserts the flight board still renders
@@ -51,38 +49,25 @@ It currently passes. 53 pages are empty because the legacy page was empty — th
 report prints what each one holds, so the claim can be read rather than
 believed.
 
-**The 207 documents linked from those pages are still hosted on hsairport.kz**
-— 188 procurement notices on the announcements page, 14 tariff files on cargo,
-and a handful elsewhere. Every one of those links breaks on the day the legacy
-site is switched off.
+The documents those pages linked to are now in the **document library** — 200
+of them: 185 procurement notices, 14 cargo tariffs and the flight safety
+policy. They are rows in the database rather than files in this repository,
+because notices are added and superseded weekly and material that changes
+weekly does not belong in a deploy. Staff add them at `/admin/documents`.
 
-They are not migrated by copying them into this repository, which was the first
-plan and was the wrong one: procurement notices are added and superseded weekly,
-and material that changes weekly does not belong in a deploy. They belong in the
-document library — uploaded at `/admin/documents`, stored under `DATA_DIR`,
-listed on whichever page they are filed against. See *Everyday tasks* below.
+`npm run documents:import` brought them across in bulk: every file downloaded
+from the legacy site into `documents-inbox/`, filed against the page it was
+published on and titled with the caption it was published under, both read out
+of the migrated pages. **Import first, then strip the legacy link tables from
+the page** — those links are the only record of what each file is called and
+where it belongs, and removing them first makes the import match nothing.
 
-To bring them over, download every file from hsairport.kz into one folder —
-no sorting, no renaming — and run:
+The handful the airport chose not to carry over — four tender files from 2021,
+one scan, a 2020 presentation — are gone, along with every remaining link to
+hsairport.kz. Four pages whose whole body was those links are marked
+`needsContent`.
 
-```bash
-mkdir -p documents-inbox
-npm run documents:import -- --dry-run
-```
-
-Each file is filed against the page it was published on and given the title it
-was published under, both read out of the migrated pages in `content/`, which
-still hold the legacy links and the captions printed above them. So
-`приказКД-10.docx` lands on the announcements page titled "Приказ КД от
-04.08.2026 года.", dated from that caption. Anything the pages do not mention
-is listed at the end to be uploaded by hand. Drop `--dry-run` to write.
-
-Once a page's documents are in the library, delete the legacy link tables from
-its MDX in `content/` — otherwise the page shows the new list and the old dead
-links together. The four `/wp-content/…` links on the English tenders page are
-in the same position: the converter has been fixed to resolve them, but the
-content tree has not been regenerated since, because that needs the legacy site
-to be reachable.
+Built and green through **Stage 10**; nothing is outstanding.
 
 ## Stack
 
