@@ -41,12 +41,25 @@ test.describe('news list', () => {
     const page = await context.newPage();
 
     await page.goto('/news');
-    await page.getByRole('link', { name: /Вперёд/ }).click();
+
+    /*
+     * Each link is checked before it is clicked, which is not belt and braces.
+     * These links exist only on the page they are on: "forward" is absent from
+     * the last page, "back" from the first. So a click that does not land the
+     * first time is re-tried against whatever page the browser ended up on,
+     * where the link is genuinely gone — and the test spends its whole timeout
+     * waiting for it, reporting a hang rather than the thing that went wrong.
+     */
+    const pagination = page.getByRole('navigation', { name: 'Постраничная навигация' });
+
+    await expect(pagination.getByRole('link', { name: /Вперёд/ })).toBeVisible();
+    await pagination.getByRole('link', { name: /Вперёд/ }).click();
 
     await expect(page).toHaveURL(/page=2/);
-    expect(await page.locator('main article').count()).toBeGreaterThan(0);
+    await expect(page.locator('main article')).not.toHaveCount(0);
 
-    await page.getByRole('link', { name: /Назад/ }).click();
+    await expect(pagination.getByRole('link', { name: /Назад/ })).toBeVisible();
+    await pagination.getByRole('link', { name: /Назад/ }).click();
     await expect(page).toHaveURL(/\/news$/);
     await context.close();
   });

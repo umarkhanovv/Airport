@@ -26,11 +26,20 @@ Built and green through **Stage 10**.
 | 9     | PWA, SEO, accessibility                             | Done                                         |
 | 10    | Hardening and handover                              | Done                                         |
 
-Everything above is green: 322 unit tests and 139 end-to-end tests, plus
+Everything above is green: 322 unit tests and 141 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node. The end-to-end
 suite includes an axe pass over every public page, the admin panel and the
 feedback form in its error state, and asserts the flight board still renders
 offline with the date its schedule was loaded.
+
+Every test browser asks for reduced motion, which is not a detail: the site
+animates scrolling, and an animated scroll is one the driver cannot wait for —
+it is told the scroll is done and the element arrives some frames later, so a
+click lands where the element no longer is. That cost the news pagination test,
+whose link sits a thousand pixels down a list of ten stories, a failure about
+one run in ten. Both halves of the preference are pinned in
+`tests/e2e/accessibility.spec.ts` so the stylesheet cannot quietly stop
+honouring it and bring the flake back somewhere else.
 
 The keyboard and screen-reader passes plan §9.3 also asks for are manual and
 have **not** been done; no automated check substitutes for them.

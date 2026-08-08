@@ -16,6 +16,26 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'on-first-retry',
+
+    /**
+     * Every test browser asks for less motion — a preference the site honours
+     * in `app/globals.css`, and one this suite needs.
+     *
+     * `html { scroll-behavior: smooth }` animates every scroll, including the
+     * one the driver performs to reach a control below the fold. That scroll is
+     * asynchronous and unacknowledged: the browser returns from it immediately
+     * and the element arrives some frames later, so a click can be aimed at
+     * where the element no longer is. It cost the news pagination test — whose
+     * link sits ~1000 px down a list of ten stories — a flake roughly one run
+     * in ten, and it would have cost the next below-the-fold control too.
+     *
+     * Turning it off here rather than waiting it out in each test keeps the
+     * cause fixed rather than the symptom, and the browser stays a real one:
+     * this is the rendering a visitor who has asked for less motion gets, and
+     * `tests/e2e/accessibility.spec.ts` pins both halves of that so the
+     * stylesheet cannot quietly stop honouring the preference.
+     */
+    contextOptions: { reducedMotion: 'reduce' },
   },
 
   projects: [

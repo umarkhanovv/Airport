@@ -59,6 +59,34 @@ for (const { name, path } of PUBLIC_PAGES) {
   });
 }
 
+/**
+ * Motion, and the preference not to have it.
+ *
+ * Both halves are asserted because the suite leans on the second one: every
+ * browser it runs asks for reduced motion (see `playwright.config.ts`), which
+ * is what stops an animated scroll from racing the driver's clicks. If the
+ * stylesheet ever stopped honouring the preference, that would come back as a
+ * flake in whichever test happened to click something below the fold — so it
+ * is caught here instead, where the failure names the cause.
+ */
+test.describe('motion', () => {
+  // Both preferences are set explicitly rather than inherited, so this says
+  // what the stylesheet does regardless of how the suite is configured.
+  const scrollBehaviour = async (page: Page, reducedMotion: 'reduce' | 'no-preference') => {
+    await page.emulateMedia({ reducedMotion });
+    await page.goto('/news');
+    return page.evaluate(() => getComputedStyle(document.documentElement).scrollBehavior);
+  };
+
+  test('scrolling is animated by default', async ({ page }) => {
+    expect(await scrollBehaviour(page, 'no-preference')).toBe('smooth');
+  });
+
+  test('and is not, for a visitor who has asked for less of it', async ({ page }) => {
+    expect(await scrollBehaviour(page, 'reduce')).toBe('auto');
+  });
+});
+
 test.describe('admin', () => {
   // Reuses the session from auth.setup rather than signing in: the login rate
   // limiter counts every attempt from this address across the whole suite.
