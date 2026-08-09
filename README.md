@@ -92,9 +92,22 @@ human reading pass, budgeted separately from development.
 That the pages came across *completely* is checkable without a human, and is
 checked: `npm run migrate:verify` re-fetches all 148 of them from the live
 legacy site and compares their visible text against the MDX that replaced them.
-It currently passes. 53 pages are empty because the legacy page was empty — the
-report prints what each one holds, so the claim can be read rather than
-believed.
+Pages are empty here where the legacy page was empty — the report prints what
+each one holds, so the claim can be read rather than believed.
+
+**11 pages are marked `translationStatus: machine`** and carry a visible notice
+saying so. The legacy site had Russian text and blank English and Kazakh pages
+on a dozen subjects — advertising, CIP booking, tariffs, baggage tracing,
+history, prayer rooms — and the migration reproduced the blanks faithfully.
+Those are now translated. The notice stays until a human clears it, which is
+`translationStatus: complete` plus a `lastReviewed` date; the Kazakh in
+particular has not been read by a native speaker.
+
+`migrate:verify` will now disagree with the legacy site on those pages, and on a
+handful more where the legacy body was scraped rubbish rather than content — a
+navigation menu captured as the company charter, a contact form captured as the
+end of the CIP page, a WordPress shortcode captured as the vacancies page. That
+disagreement is the point of the change, not a regression.
 
 The documents those pages linked to are now in the **document library** — 200
 of them: 185 procurement notices, 14 cargo tariffs and the flight safety
