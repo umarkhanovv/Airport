@@ -212,7 +212,7 @@ export function PostForm({
         <FieldError field="body" message={error('body')} />
       </div>
 
-      <fieldset className="border-border rounded-lg border p-4">
+      <fieldset className="glass rounded-xl p-4">
         <legend className="px-1 text-sm font-medium">Cover image</legend>
 
         {post?.coverImage ? (

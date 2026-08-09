@@ -57,9 +57,7 @@ export default async function AdminFeedbackPage() {
                 key={item.id}
                 data-testid="feedback-item"
                 data-read={item.isRead ? 'true' : 'false'}
-                className={`border-border bg-surface rounded-lg border p-4 ${
-                  item.isRead ? '' : 'border-brand'
-                }`}
+                className={`glass rounded-xl p-4 ${item.isRead ? '' : 'border-brand'}`}
               >
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <span className="font-medium">{item.name}</span>

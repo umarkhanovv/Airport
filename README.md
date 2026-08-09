@@ -41,7 +41,10 @@ connections this site is read on are not. What the budget was protecting is
 asserted directly instead: the board still renders with JavaScript switched off.
 
 The surfaces are **frosted glass** over a fixed, tinted backdrop carrying the
-terminal's façade lattice — the header, the panels, the cards and the footer.
+terminal's façade lattice: the header, the cards, the notices, the flight board
+and the footer, and the admin panel too — with the backdrop turned most of the
+way down there, because staff read tables of two hundred documents and a
+pattern under dense rows is something to see past.
 Built at 72–85% opacity rather than the 10% the technique is usually written
 with, because the effective background under the text has to stay close enough
 to `--surface` for the contrast ratios to hold; those ratios are asserted, and

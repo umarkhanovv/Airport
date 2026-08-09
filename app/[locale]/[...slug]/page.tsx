@@ -89,14 +89,14 @@ export default async function ContentPage({ params }: PageProps<'/[locale]/[...s
       {page.isFallback && (
         <p
           lang={page.fallbackLocale}
-          className="border-brand bg-surface-raised text-text-muted mt-6 border-s-4 px-4 py-3 text-sm"
+          className="glass border-s-brand text-text-muted mt-6 rounded-lg border-s-4 px-4 py-3 text-sm"
         >
           {t('translationPending')}
         </p>
       )}
 
       {page.frontmatter.translationStatus === 'machine' && !page.isFallback && (
-        <p className="border-brand bg-surface-raised text-text-muted mt-6 border-s-4 px-4 py-3 text-sm">
+        <p className="glass border-s-brand text-text-muted mt-6 rounded-lg border-s-4 px-4 py-3 text-sm">
           {t('machineTranslated')}
         </p>
       )}
@@ -107,7 +107,7 @@ export default async function ContentPage({ params }: PageProps<'/[locale]/[...s
         is the truth: the section exists, the airport has still to write it.
       */}
       {page.frontmatter.needsContent && page.body.trim() === '' && (
-        <p className="border-border bg-surface-raised text-text-muted mt-6 rounded-lg border border-dashed px-4 py-5 text-sm">
+        <p className="glass text-text-muted mt-6 rounded-xl border-dashed px-4 py-5 text-sm">
           {t('awaitingContent')}
         </p>
       )}

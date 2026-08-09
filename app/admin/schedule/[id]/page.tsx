@@ -86,7 +86,7 @@ export default async function PreviewSchedulePage({ params }: PageProps<'/admin/
           Nothing has been published. The board is still showing the previous schedule.
         </p>
 
-        <dl className="border-border bg-surface mt-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-lg border p-4 text-sm sm:grid-cols-4">
+        <dl className="glass mt-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-xl p-4 text-sm sm:grid-cols-4">
           <div className="col-span-2">
             <dt className="text-text-muted">File</dt>
             <dd className="mt-0.5 font-medium break-all">{staged.record.originalFilename}</dd>
@@ -122,7 +122,7 @@ export default async function PreviewSchedulePage({ params }: PageProps<'/admin/
         {parsed.days.length > 0 ? (
           <section className="mt-6">
             <h2 className="text-lg font-medium">Days</h2>
-            <div className="border-border mt-3 overflow-x-auto rounded-lg border">
+            <div className="glass mt-3 overflow-x-auto rounded-xl">
               <table className="w-full text-sm">
                 <thead className="bg-surface-sunken text-text-muted text-left">
                   <tr>

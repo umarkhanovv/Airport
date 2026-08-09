@@ -22,7 +22,7 @@ export function AdminNav({
       : 'text-text-muted hover:text-text hover:bg-surface-sunken rounded-md';
 
   return (
-    <header className="border-border bg-surface border-b">
+    <header className="glass-strong sticky top-0 z-30 border-x-0 border-t-0">
       <div className="mx-auto flex w-full max-w-5xl items-center gap-4 px-4 py-3">
         <span className="font-semibold">Airport admin</span>
 

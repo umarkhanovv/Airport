@@ -144,7 +144,7 @@ export default async function FlightsPage({
 
       {/* The schedule does not cover today — say so before anything else. */}
       {!coversToday && (
-        <p className="border-brand bg-surface-raised text-text mt-6 border-s-4 px-4 py-3 text-sm">
+        <p className="glass border-s-brand text-text mt-6 rounded-lg border-s-4 px-4 py-3 text-sm">
           {t('staleRange', {
             from: formatLongDate(weekStart, locale),
             to: formatLongDate(weekEnd, locale),
@@ -209,12 +209,15 @@ export default async function FlightsPage({
               </p>
             )}
             <BoardEnhancements />
-            <FlightTable
-              flights={flights}
-              locale={locale as Locale}
-              kind={state.kind}
-              groupByDate={groupByDate}
-            />
+            {/* A pane of its own from 640px up — see `.board-pane`. */}
+            <div className="board-pane">
+              <FlightTable
+                flights={flights}
+                locale={locale as Locale}
+                kind={state.kind}
+                groupByDate={groupByDate}
+              />
+            </div>
           </>
         )}
       </div>

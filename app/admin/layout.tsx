@@ -34,7 +34,16 @@ export default function AdminLayout({ children }: LayoutProps<'/admin'>) {
       <head>
         <ThemeScript />
       </head>
-      <body className="bg-surface-sunken text-text flex min-h-screen flex-col">{children}</body>
+      {/*
+        `admin-shell` turns the backdrop down rather than off. The public site
+        is a shop window and can afford atmosphere behind it; this is a
+        workbench, where staff read tables of two hundred documents and a
+        pattern under dense rows is a cost. Same surfaces, quieter field.
+      */}
+      <body className="admin-shell text-text flex min-h-screen flex-col">
+        <div aria-hidden="true" className="app-backdrop" />
+        {children}
+      </body>
     </html>
   );
 }

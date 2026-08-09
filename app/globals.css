@@ -287,6 +287,14 @@
   --lattice-opacity: 0;
 }
 
+/* The admin panel keeps the surfaces and loses most of the atmosphere. Staff
+   read tables of two hundred documents there; a lattice under dense rows is
+   something to see past rather than something to enjoy. */
+.admin-shell {
+  --lattice-opacity: 0.025;
+  --backdrop-c: transparent;
+}
+
 @theme inline {
   --color-surface: var(--surface);
   --color-surface-raised: var(--surface-raised);
@@ -563,6 +571,33 @@
   /* Controls that only work with scripting. */
   :root:not(.js) [data-js-only] {
     display: none;
+  }
+
+  /*
+    The board gets a pane of its own from 640px up.
+
+    The breakpoint lives here rather than as `sm:glass` in the markup, because
+    `sm:glass` silently compiles to nothing: Tailwind variants apply to
+    utilities, and `.glass` is a component class. It produced no rule at all
+    and the board simply sat on the bare backdrop.
+
+    Below 640px there is deliberately no pane. The rows are already restyled
+    into individual cards down there, and a pane around a stack of cards is a
+    box in a box.
+  */
+  @media (min-width: 640px) {
+    .board-pane {
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      /* Sides only: the header row and the last flight sit against the top and
+         bottom edges, which is how a departure board reads. */
+      padding-inline: 1.25rem;
+      background-color: var(--glass-bg);
+      box-shadow:
+        var(--glass-shadow),
+        inset 0 1px 0 0 var(--glass-highlight);
+      backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+    }
   }
 
   .board-icon-button {
