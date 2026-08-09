@@ -400,9 +400,6 @@
 
   .glass-card {
     border-radius: var(--radius-xl);
-    transition:
-      border-color 150ms,
-      box-shadow 150ms;
   }
 
   /*
@@ -416,6 +413,51 @@
     box-shadow:
       0 12px 40px -12px var(--glass-hover-glow),
       inset 0 1px 0 0 var(--glass-highlight);
+  }
+
+  /* -------------------------------------------------------------------------
+     Something happens when you press it.
+
+     Hover is a pointer's feedback and this audience is mostly on phones, where
+     hover does not exist — a tap on a card produced nothing at all until the
+     next page painted, which on a weak connection is long enough to tap again.
+     A pressed state is the cheapest honest acknowledgement there is: no
+     script, one property, and it reads as physical rather than decorative.
+
+     `transform` only, so it composites; and the reduced-motion block above
+     collapses the transition to nothing, which is right — a press should be
+     instant whether or not you want animation.
+     ------------------------------------------------------------------------- */
+  /*
+    Deliberately not `background-color` or `color`. Putting those in the list
+    makes changing theme a 150ms cross-fade on every card at once, which looks
+    like the page is struggling rather than switching — and it is the surfaces,
+    not the interaction, doing the animating. Only what a press or a hover
+    actually changes is transitioned; a theme snaps.
+  */
+  .glass-card {
+    transition:
+      transform 150ms,
+      border-color 150ms,
+      box-shadow 150ms;
+  }
+
+  .menu-item,
+  .menu-link,
+  .board-icon-button {
+    transition: transform 120ms;
+  }
+
+  /* A card is a large target and barely needs to move; a small control has to
+     move further for the same amount of "that registered". */
+  .glass-card:active {
+    transform: scale(0.985);
+  }
+
+  .menu-item:active,
+  .menu-link:active,
+  .board-icon-button:active {
+    transform: scale(0.96);
   }
 
   /* -------------------------------------------------------------------------

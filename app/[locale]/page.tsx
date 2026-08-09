@@ -34,15 +34,26 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
         whole page, in `.app-backdrop` — the frosted surfaces need something
         structured behind them or the blur has nothing to show.
       */}
+      {/*
+        Smaller than it was, deliberately.
+
+        The masthead used to run to text-6xl, which made the airport's own name
+        three times the weight of the departure times underneath it. That is
+        the wrong thesis for this page: nobody arrives here wondering what the
+        airport is called, they arrive wanting to know when a flight is, and
+        the board is the most characteristic thing this site has. The name
+        still has to be here — it is how a visitor confirms they are in the
+        right place — so it stays first and stays legible, and stops competing.
+      */}
       <section className="relative isolate">
-        <div className="py-10 sm:py-14">
+        <div className="py-8 sm:py-10">
           <p className="text-brand-text-strong text-sm font-semibold tracking-[0.14em] uppercase">
             {tSite('location')}
           </p>
-          <h1 className="text-text mt-3 max-w-4xl text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
+          <h1 className="text-text mt-2 max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl">
             {t('title')}
           </h1>
-          <p className="text-text-muted mt-4 max-w-xl text-lg">{t('intro')}</p>
+          <p className="text-text-muted mt-3 max-w-xl">{t('intro')}</p>
         </div>
       </section>
 
@@ -50,9 +61,22 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
 
       <section className="mt-16">
         <h2 className="text-text text-2xl font-semibold tracking-tight">{t('sectionsHeading')}</h2>
+        {/*
+          Seven tiles, not seven equal tiles.
+
+          They were identical, which said that flights matter as much as
+          partner tariffs. They do not: the board is why almost everyone is
+          here, and a grid that flattens that is making a false claim about the
+          content. Flights takes the width of two, which is the whole of the
+          hierarchy — no second accent on top of it, because the size is
+          already saying it.
+
+          Seven into a 2-up and a 3-up both come out even once the first tile
+          is double width, so nothing is left ragged at the end of a row.
+        */}
         <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SECTIONS.map((section) => (
-            <li key={section}>
+            <li key={section} className={section === 'flights' ? 'sm:col-span-2' : undefined}>
               <Link href={`/${section}`} className="glass glass-card block h-full p-5">
                 <span className="text-text block font-semibold">
                   {tSections(`${section}.title`)}
