@@ -30,20 +30,14 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
         weak connection and in a hurry, and the fastest possible first paint is
         worth more to them than an image (plan §9.2).
 
-        The façade lattice that used to be a layer of this section now runs the
-        whole page, in `.app-backdrop` — the frosted surfaces need something
-        structured behind them or the blur has nothing to show.
-      */}
-      {/*
-        Smaller than it was, deliberately.
+        Smaller than it was, too. It ran to text-6xl, which made the airport's
+        own name three times the weight of the departure times underneath it —
+        the wrong thesis for this page. Nobody arrives wondering what the
+        airport is called. The name still comes first, because it is how a
+        visitor confirms they are in the right place, and it stops competing.
 
-        The masthead used to run to text-6xl, which made the airport's own name
-        three times the weight of the departure times underneath it. That is
-        the wrong thesis for this page: nobody arrives here wondering what the
-        airport is called, they arrive wanting to know when a flight is, and
-        the board is the most characteristic thing this site has. The name
-        still has to be here — it is how a visitor confirms they are in the
-        right place — so it stays first and stays legible, and stops competing.
+        The façade lattice that used to be a layer of this section now runs the
+        whole page, in `.app-backdrop`.
       */}
       <section className="relative isolate">
         <div className="py-8 sm:py-10">
@@ -95,7 +89,7 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
         fold, lazy-loaded, and never the LCP element.
       */}
       <section className="mt-16">
-        <figure className="glass overflow-hidden rounded-xl">
+        <figure className="panel overflow-hidden">
           <Image
             src="/media/terminal-dusk.jpg"
             alt={t('terminalPhotoAlt')}

@@ -14,7 +14,7 @@ export function SiteFooter() {
   const tContacts = useTranslations('Contacts');
 
   return (
-    <footer className="glass mt-20 border-x-0 border-b-0">
+    <footer className="border-border bg-surface-raised mt-20 border-t">
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2">
         <div>
           <p className="text-text font-semibold">{t('rights')}</p>

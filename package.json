@@ -22,6 +22,7 @@
     "e2e:seed": "rm -rf .e2e-data && DATA_DIR=.e2e-data npm run schedule:import -- data/sample_weekly_schedule.xlsx && DATA_DIR=.e2e-data node --conditions=react-server scripts/seed-news-fixture.mts",
     "news:seed": "node --conditions=react-server scripts/seed-news.mts",
     "verify": "npm run typecheck && npm run lint && npm run format:check && npm run test",
+    "check:env": "node --conditions=react-server scripts/check-env.mts",
     "migrate:crawl": "node scripts/migrate/crawl.mts",
     "migrate:reconcile": "node scripts/migrate/reconcile.mts",
     "migrate:generate": "node scripts/migrate/generate.mts",

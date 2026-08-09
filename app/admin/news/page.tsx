@@ -54,7 +54,7 @@ export default async function AdminNewsPage({ searchParams }: PageProps<'/admin/
           </p>
         ) : null}
         {deleted ? (
-          <p role="status" className="glass mt-4 rounded-lg px-4 py-3 text-sm">
+          <p role="status" className="panel mt-4 px-4 py-3 text-sm">
             The post was deleted.
           </p>
         ) : null}
@@ -71,7 +71,7 @@ export default async function AdminNewsPage({ searchParams }: PageProps<'/admin/
             published, so a draft can be prepared in advance.
           </p>
         ) : (
-          <div className="glass mt-6 overflow-x-auto rounded-xl">
+          <div className="panel mt-6 overflow-x-auto">
             <table className="w-full min-w-[44rem] text-sm">
               <thead className="bg-surface-sunken text-text-muted text-left">
                 <tr>

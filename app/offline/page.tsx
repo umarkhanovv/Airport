@@ -51,7 +51,7 @@ export default function OfflinePage() {
         <div aria-hidden="true" className="app-backdrop" />
         <main className="mx-auto flex w-full max-w-xl flex-1 flex-col justify-center gap-4 px-4 py-12">
           {MESSAGES.map((message) => (
-            <section key={message.lang} lang={message.lang} className="glass rounded-xl p-6">
+            <section key={message.lang} lang={message.lang} className="panel p-6">
               <h1 className="text-xl font-semibold">{message.title}</h1>
               <p className="text-text-muted mt-2 text-sm">{message.body}</p>
             </section>

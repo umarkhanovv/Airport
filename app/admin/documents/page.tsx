@@ -74,12 +74,12 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps<'/a
           </p>
         ) : null}
         {deleted ? (
-          <p role="status" className="glass mt-4 rounded-lg px-4 py-3 text-sm">
+          <p role="status" className="panel mt-4 px-4 py-3 text-sm">
             The document was deleted.
           </p>
         ) : null}
 
-        <section className="glass mt-6 rounded-xl p-5">
+        <section className="panel mt-6 p-5">
           <h2 className="font-medium">Upload</h2>
           <UploadForm pages={pages} />
         </section>
@@ -103,7 +103,7 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps<'/a
                 </span>
               </h3>
 
-              <ul className="glass divide-border mt-3 divide-y rounded-xl">
+              <ul className="panel divide-border mt-3 divide-y">
                 {rows.map((document) => (
                   <li
                     key={document.id}

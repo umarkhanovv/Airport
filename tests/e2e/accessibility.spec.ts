@@ -117,6 +117,50 @@ test.describe('admin', () => {
 
     expect(blocking, `news editor:\n${describeViolations(results)}`).toEqual([]);
   });
+
+  /**
+   * The rest of the panel.
+   *
+   * Two of the nine admin routes were scanned and seven were not, which was
+   * survivable while they were all the same flat surface and stopped being so
+   * the moment the design pass changed them. These are the screens staff spend
+   * their day in — the document library alone carries two hundred rows — and
+   * an airport's own employees are as likely to need a screen reader as its
+   * passengers.
+   */
+  for (const { name, path, heading } of [
+    { name: 'schedule upload', path: '/admin/schedule', heading: 'Upload schedule' },
+    { name: 'documents', path: '/admin/documents', heading: 'Documents' },
+    { name: 'feedback inbox', path: '/admin/feedback', heading: 'Feedback' },
+  ]) {
+    test(`${name} is accessible`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
+
+      const results = await scan(page);
+      const blocking = results.violations.filter(
+        (violation) => violation.impact === 'critical' || violation.impact === 'serious'
+      );
+
+      expect(blocking, `${name}:\n${describeViolations(results)}`).toEqual([]);
+    });
+  }
+});
+
+test.describe('the sign-in screen', () => {
+  // Signed out on purpose: it is the one admin screen a visitor can reach, and
+  // the only one nobody is ever authenticated on while using it.
+  test('is accessible', async ({ page }) => {
+    await page.goto('/admin/login');
+    await expect(page.getByRole('heading', { name: 'Airport admin' })).toBeVisible();
+
+    const results = await scan(page);
+    const blocking = results.violations.filter(
+      (violation) => violation.impact === 'critical' || violation.impact === 'serious'
+    );
+
+    expect(blocking, `admin login:\n${describeViolations(results)}`).toEqual([]);
+  });
 });
 
 test.describe('feedback form errors', () => {

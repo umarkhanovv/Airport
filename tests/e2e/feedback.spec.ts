@@ -193,7 +193,8 @@ test.describe('the admin inbox, signed in', () => {
     // The obvious attack on this panel: stored XSS through the public form,
     // triggered when staff open the inbox (plan §9.1).
     const payload = `<script>window.__xss = true;</script><img src=x onerror="window.__xss=true">`;
-    const message = `${uniqueMessage('XSS')} ${payload}`;
+    const unique = uniqueMessage('XSS');
+    const message = `${unique} ${payload}`;
 
     await page.goto(CONTACTS);
     await fillForm(page, message);
@@ -203,7 +204,17 @@ test.describe('the admin inbox, signed in', () => {
 
     await page.goto('/admin/feedback');
 
-    const item = page.locator('[data-testid="feedback-item"]', { hasText: 'XSS' });
+    /*
+     * Matched on this submission's own text, not on the word "XSS".
+     *
+     * The inbox is never emptied between runs of the suite against a server
+     * that is already up — `e2e:seed` recreates DATA_DIR, but Playwright's
+     * `reuseExistingServer` means it does not run at all in that case. So the
+     * second local run found two rows containing "XSS", the third found three,
+     * and `toHaveCount(1)` failed on a test whose subject is escaping. The
+     * neighbouring test above already scopes itself this way.
+     */
+    const item = page.locator('[data-testid="feedback-item"]', { hasText: unique });
     await expect(item).toHaveCount(1);
     // Shown verbatim as text …
     await expect(item).toContainText('<script>');

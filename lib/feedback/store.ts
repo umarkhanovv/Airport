@@ -46,17 +46,6 @@ export function listFeedback(limit = 50): FeedbackSubmission[] {
     .all();
 }
 
-export function getFeedback(id: string): FeedbackSubmission | null {
-  const rows = getDb()
-    .select()
-    .from(feedbackSubmissions)
-    .where(eq(feedbackSubmissions.id, id))
-    .limit(1)
-    .all();
-
-  return rows[0] ?? null;
-}
-
 export function countUnreadFeedback(): number {
   const rows = getDb()
     .select({ value: count() })

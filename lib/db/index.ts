@@ -52,8 +52,3 @@ export function getDb() {
   }
   return instance;
 }
-
-/** For tests and scripts that need an isolated database. */
-export function createTestDb(file = ':memory:') {
-  return createDatabase(file);
-}

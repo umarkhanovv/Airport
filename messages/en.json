@@ -231,6 +231,13 @@
     "description": "The page may have been moved, or its address may have changed.",
     "backHome": "Back to home"
   },
+  "Error": {
+    "title": "The page could not be opened",
+    "description": "Something went wrong on our side. Try again — if that does not help, go back to the home page.",
+    "retry": "Try again",
+    "backHome": "Back to home",
+    "reference": "Error reference"
+  },
   "Content": {
     "translationPending": "This page has not been translated yet. Showing the Russian version.",
     "machineTranslated": "This page was machine-translated and is awaiting review.",

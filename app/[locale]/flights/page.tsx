@@ -69,7 +69,7 @@ export default async function FlightsPage({
         <h1 className="text-text text-3xl font-semibold tracking-tight sm:text-4xl">
           {t('title')}
         </h1>
-        <div className="glass mt-8 rounded-xl p-6">
+        <div className="panel mt-8 p-6">
           <h2 className="text-text text-lg font-semibold">{t('noSchedule')}</h2>
           <p className="text-text-muted mt-1 text-sm">{t('noScheduleHint')}</p>
         </div>
@@ -144,7 +144,7 @@ export default async function FlightsPage({
 
       {/* The schedule does not cover today — say so before anything else. */}
       {!coversToday && (
-        <p className="glass border-s-brand text-text mt-6 rounded-lg border-s-4 px-4 py-3 text-sm">
+        <p className="panel panel-notice text-text mt-6 px-4 py-3 text-sm">
           {t('staleRange', {
             from: formatLongDate(weekStart, locale),
             to: formatLongDate(weekEnd, locale),
@@ -196,7 +196,7 @@ export default async function FlightsPage({
 
       <div className="mt-6">
         {flights.length === 0 ? (
-          <p className="glass text-text-muted rounded-xl p-6 text-sm">
+          <p className="panel text-text-muted p-6 text-sm">
             {state.kind === 'arrival' ? t('noArrivalsToday') : t('noDeparturesToday')}
           </p>
         ) : (

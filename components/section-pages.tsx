@@ -67,7 +67,7 @@ export async function SectionPages({
         {t('inThisSection')}
       </h2>
 
-      <ul className="glass divide-border mt-3 max-w-2xl divide-y rounded-xl">
+      <ul className="panel divide-border mt-3 max-w-2xl divide-y">
         {pages.map((page) => (
           <li key={page.slug.join('/')}>
             <Link

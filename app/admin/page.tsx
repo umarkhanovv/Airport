@@ -46,7 +46,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<'/a
           <h2 className="text-lg font-medium">Live schedule</h2>
 
           {active ? (
-            <dl className="glass mt-3 grid grid-cols-2 gap-x-6 gap-y-3 rounded-xl p-4 text-sm sm:grid-cols-4">
+            <dl className="panel mt-3 grid grid-cols-2 gap-x-6 gap-y-3 p-4 text-sm sm:grid-cols-4">
               <div>
                 <dt className="text-text-muted">Week</dt>
                 <dd className="mt-0.5 font-medium">
@@ -91,7 +91,7 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<'/a
           {history.length === 0 ? (
             <p className="text-text-muted mt-3 text-sm">Nothing published yet.</p>
           ) : (
-            <div className="glass mt-3 overflow-x-auto rounded-xl">
+            <div className="panel mt-3 overflow-x-auto">
               <table className="w-full min-w-[40rem] text-sm">
                 <thead className="bg-surface-sunken text-text-muted text-left">
                   <tr>

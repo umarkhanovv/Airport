@@ -402,6 +402,34 @@
     border-radius: var(--radius-xl);
   }
 
+  /* -------------------------------------------------------------------------
+     The flat surface, and most surfaces are this one.
+
+     Glass went onto everything for a while — header, cards, notices, lists,
+     tables, the admin panel, the offline page — which is the opposite of what
+     it was for. A frosted pane says "this floats above the page". When every
+     surface says it, none of them do, and the effect stops being hierarchy and
+     becomes wallpaper.
+
+     So glass is now spent where something genuinely sits above the content:
+     the sticky header, the board, the section tiles on the home page, the
+     admin bar, the appearance popover, the map. Everything else is this —
+     a border and a raised fill, the same surface the site used before, which
+     is a perfectly good way to bound a block of text.
+     ------------------------------------------------------------------------- */
+  .panel {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    background-color: var(--surface-raised);
+  }
+
+  /* A notice with the brand rule down its inline-start edge. */
+  .panel-notice {
+    border-inline-start-width: 4px;
+    border-inline-start-color: var(--brand);
+    border-radius: var(--radius-lg);
+  }
+
   /*
     Literal rgb() rather than color-mix(). Lightning CSS cannot know whether a
     target supports color-mix, so it emits the whole rule twice — once with a

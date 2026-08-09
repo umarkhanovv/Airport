@@ -81,7 +81,7 @@ export async function FlightPreview({ locale }: { locale: Locale }) {
   // ambiguous empty table (spec §6.4: honesty over appearance).
   if (!schedule) {
     return (
-      <div className="glass rounded-xl p-6">
+      <div className="panel p-6">
         <h2 className="text-text text-lg font-semibold">{t('noSchedule')}</h2>
         <p className="text-text-muted mt-1 text-sm">{t('noScheduleHint')}</p>
       </div>
@@ -105,7 +105,7 @@ export async function FlightPreview({ locale }: { locale: Locale }) {
 
   if (!covers) {
     return (
-      <div className="glass rounded-xl p-6">
+      <div className="panel p-6">
         <h2 className="text-text text-lg font-semibold">{t('staleTitle')}</h2>
         <p className="text-text-muted mt-1 text-sm">
           {schedule.weekStart && schedule.weekEnd

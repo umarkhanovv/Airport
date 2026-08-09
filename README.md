@@ -26,7 +26,7 @@ Built and green through **Stage 10**.
 | 9     | PWA, SEO, accessibility                             | Done                                         |
 | 10    | Hardening and handover                              | Done                                         |
 
-Everything above is green: 322 unit tests and 139 end-to-end tests, plus
+Everything above is green: 322 unit tests and 143 end-to-end tests, plus
 typecheck, lint, format and a production build on plain Node. The end-to-end
 suite includes an axe pass over every public page, the admin panel and the
 feedback form in its error state, and asserts the flight board still renders
@@ -40,17 +40,35 @@ of JavaScript gzipped on the flight board, because the ceilings are gone but the
 connections this site is read on are not. What the budget was protecting is
 asserted directly instead: the board still renders with JavaScript switched off.
 
-The surfaces are **frosted glass** over a fixed, tinted backdrop carrying the
-terminal's façade lattice: the header, the cards, the notices, the flight board
-and the footer, and the admin panel too — with the backdrop turned most of the
-way down there, because staff read tables of two hundred documents and a
-pattern under dense rows is something to see past.
+**Frosted glass** sits over a fixed, tinted backdrop carrying the terminal's
+façade lattice — and it is spent in six places, not everywhere. It went onto
+every surface first, which is self-defeating: a frosted pane says "this floats
+above the page", and when everything says it, nothing does. It now marks the
+sticky header, the flight board, the section tiles on the home page, the admin
+bar, the appearance popover and the map. Every other surface is `.panel`, a
+border and a raised fill.
+
 Built at 72–85% opacity rather than the 10% the technique is usually written
 with, because the effective background under the text has to stay close enough
 to `--surface` for the contrast ratios to hold; those ratios are asserted, and
 axe runs over every page. It turns itself off in three cases, all of them real:
 the high-contrast theme, a browser asking for reduced transparency, and any
 engine without `backdrop-filter`.
+
+When a page fails, `app/[locale]/error.tsx` shows a localised 500 inside the
+normal chrome, with a retry and a way home. It shows the `digest` — the hash
+Next writes beside the real error in the server log, so a caller can quote it —
+and never the thrown message, which can carry a filesystem path. If the layout
+itself is what threw, `app/global-error.tsx` takes over with all three languages
+as literal text. Verified against a production build: the error text reaches the
+log and not the browser.
+
+One honest limit. Next requires error boundaries to be client components, so
+they cannot server-render — and when a page throws, the shell is discarded. **A
+visitor with JavaScript disabled gets a blank page on a 500**, not the error
+screen above. That is an App Router constraint rather than a choice here, and it
+does not touch normal operation: the board, the menu and the forms all work
+without JavaScript, and that is tested.
 
 Every test browser asks for reduced motion, which is not a detail: the site
 animates scrolling, and an animated scroll is one the driver cannot wait for —
@@ -148,6 +166,7 @@ first — see `.env.example` for the full environment reference.
 | `npm run build`            | Production build plus the standalone bundle         |
 | `npm start`                | Run the standalone bundle on plain Node             |
 | `npm run verify`           | Typecheck, lint, format check and unit tests        |
+| `npm run check:env`        | Is this machine configured to serve the site?       |
 | `npm test`                 | Unit tests (Vitest)                                 |
 | `npm run test:e2e`         | End-to-end tests (Playwright)                       |
 | `npm run schedule:import`  | Import a workbook from the command line             |
@@ -176,6 +195,18 @@ Generate the session secret rather than inventing one:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
+
+Check the environment before starting rather than after. A server missing a
+secret starts perfectly happily and then fails at the first thing that needs
+one — an administrator signing in, which is both the worst moment to find out
+and the hardest to attribute:
+
+```bash
+npm run check:env
+```
+
+It names every missing variable at once, so they are fixed in one pass rather
+than one restart at a time.
 
 The server listens on `PORT`, default 3000, and expects a reverse proxy in
 front of it terminating TLS. The proxy is also where **HSTS** belongs — the

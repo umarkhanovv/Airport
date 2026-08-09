@@ -5,11 +5,17 @@ import type { ParseResult } from './types.ts';
 import { readWorkbook, WorkbookReadError } from './workbook.ts';
 import { DIAGNOSTIC } from './types.ts';
 
+/*
+ * One entry point, and only what callers actually take through it.
+ *
+ * This used to re-export the parser internals, the workbook reader, the city
+ * table and the normalizers as well. Nothing imported any of them from here —
+ * the modules that need `parseGrid` or `cityDisplayName` import those files
+ * directly — so the barrel was advertising an API surface that existed only to
+ * be maintained. Callers take `parseScheduleWorkbook` below, plus `ParseResult`
+ * and `DIAGNOSTIC` from the types.
+ */
 export * from './types.ts';
-export { CANONICAL_HEADERS, buildHeaderMap, parseGrid, columnLetter } from './parse.ts';
-export { looksLikeXlsx, WorkbookReadError } from './workbook.ts';
-export * from './cities.ts';
-export * from './normalize.ts';
 
 /**
  * Parses an uploaded weekly schedule workbook.

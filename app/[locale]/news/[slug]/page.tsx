@@ -61,10 +61,7 @@ export default async function NewsPostPage({ params }: PageProps<'/[locale]/news
         a switcher somewhere.
       */}
       {translations.length > 0 && (
-        <p
-          data-translations=""
-          className="glass text-text-muted mt-6 rounded-lg px-4 py-2.5 text-sm"
-        >
+        <p data-translations="" className="panel text-text-muted mt-6 px-4 py-2.5 text-sm">
           {t('alsoAvailableIn')}{' '}
           {translations.map((translation, index) => (
             <span key={translation.locale}>

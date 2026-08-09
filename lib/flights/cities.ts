@@ -111,5 +111,3 @@ export function isKnownCity(key: string): boolean {
 export function cityDisplayName(key: string, locale: 'ru' | 'en' | 'kk', fallback: string): string {
   return lookupCity(key)?.names[locale] ?? fallback;
 }
-
-export const ALL_CITIES = CITIES;

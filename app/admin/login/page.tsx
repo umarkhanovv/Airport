@@ -20,7 +20,7 @@ export default async function AdminLoginPage({ searchParams }: PageProps<'/admin
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-4 py-12">
-      <div className="glass rounded-xl p-6">
+      <div className="panel p-6">
         <h1 className="text-xl font-semibold">Airport admin</h1>
         <p className="text-text-muted mt-1 mb-6 text-sm">
           Staff access for publishing the weekly flight schedule.
