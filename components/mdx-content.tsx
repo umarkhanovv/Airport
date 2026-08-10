@@ -1,4 +1,5 @@
 import { evaluate } from '@mdx-js/mdx';
+import remarkGfm from 'remark-gfm';
 import * as runtime from 'react/jsx-runtime';
 
 import { Link } from '@/i18n/navigation';
@@ -39,9 +40,16 @@ const components = {
   blockquote: (props: React.ComponentProps<'blockquote'>) => (
     <blockquote {...props} className="border-brand text-text-muted my-6 border-s-4 ps-4 italic" />
   ),
+  /*
+    The minimum width is what makes the wrapper's horizontal scroll do
+    anything. Left to fill the width, a five-column tariff table on a 375px
+    screen compresses until "tenge per tonne MTOW" stacks four words deep in a
+    column two centimetres wide. Better to let it keep a readable width and be
+    pushed sideways, which is the gesture the scroll container was there for.
+  */
   table: (props: React.ComponentProps<'table'>) => (
     <div className="my-6 overflow-x-auto">
-      <table {...props} className="w-full border-collapse text-left text-sm" />
+      <table {...props} className="w-full min-w-[34rem] border-collapse text-left text-sm" />
     </div>
   ),
   th: (props: React.ComponentProps<'th'>) => (
@@ -77,6 +85,18 @@ const components = {
 export async function MdxContent({ source }: { source: string }) {
   const { default: Content } = await evaluate(source, {
     ...runtime,
+    /*
+     * Tables, which plain MDX does not do — they are a GitHub-flavoured
+     * extension. The `table`, `th` and `td` components above were written and
+     * styled from the start and had never rendered once: the parser produced
+     * no table nodes, so a markdown table came out as a paragraph of pipes.
+     * The airport's tariffs are the first genuinely tabular content on the
+     * site and are unreadable any other way.
+     *
+     * Server-side only. `evaluate` runs here and the output ships as plain
+     * markup, so this costs the browser nothing.
+     */
+    remarkPlugins: [remarkGfm],
     development: false,
   });
 

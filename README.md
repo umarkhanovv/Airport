@@ -93,9 +93,26 @@ That the pages came across *completely* is checkable without a human, and is
 checked: `npm run migrate:verify` re-fetches all 148 of them from the live
 legacy site and compares their visible text against the MDX that replaced them.
 Pages are empty here where the legacy page was empty — the report prints what
-each one holds, so the claim can be read rather than believed.
+each one holds, so the claim can be read rather than believed. 16 of the pages
+marked "text being prepared" were re-checked against the live site directly and
+hold 1–6 words each, which is their own heading.
 
-**11 pages are marked `translationStatus: machine`** and carry a visible notice
+**The converter never emitted a single table**, in any of the 148 pages, and
+that cost real content: both airport tariff tables on `about/certificates` were
+dropped in all three languages. They have been restored by hand from the live
+page. Three other table-bearing pages lost nothing — their tables were document
+listings, which belong in the document library rather than in a page. Anyone
+re-running `scripts/migrate/generate.mts` should know it has this hole, and that
+pages have been hand-edited since, so a re-run would overwrite that work rather
+than improve on it.
+
+The legacy **`/covid-19-information/`** page is deliberately not migrated. It
+exists in all three languages, around 550 words each, and is still linked from
+the old site's menu — but it describes restrictions that ended years ago, and a
+passenger could act on them. Recorded here rather than left to look like an
+oversight; the legacy URL is all that is needed to reverse the decision.
+
+**13 pages are marked `translationStatus: machine`** and carry a visible notice
 saying so. The legacy site had Russian text and blank English and Kazakh pages
 on a dozen subjects — advertising, CIP booking, tariffs, baggage tracing,
 history, prayer rooms — and the migration reproduced the blanks faithfully.

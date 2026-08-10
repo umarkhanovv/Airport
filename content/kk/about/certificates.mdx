@@ -1,8 +1,28 @@
 ---
-title: 'Тарифтер'
+title: 'Сертификаттар'
 section: about
 legacyUrl: 'https://hsairport.kz/kz/certificates/'
-translationStatus: pending
+translationStatus: machine
 lastReviewed:
-needsContent: true
+migrationNotes:
+  - 'the converter emitted no tables anywhere in the migration, so both tariff tables on this page were dropped; restored by hand from the live page'
+  - 'the legacy page publishes these tables in Russian even in Kazakh. Headings and service names are translated here; every figure, unit and the ВВЛ direction code are as published'
+  - 'the legacy page is titled Сертификаттар but its heading and its whole body are tariffs; both are kept as published'
 ---
+
+## Әуежай қызметтерінің тарифтері
+
+Тарифтер ҚҚС-сыз көрсетілген. ВВЛ — ішкі әуе желілері. МВМ — әуе кемесінің
+ең жоғары ұшу массасы.
+
+| №   | Қызмет атауы                            | Бағыты     | Өлшем бірлігі            | Тариф |
+| --- | --------------------------------------- | ---------- | ------------------------ | ----- |
+| 1   | Ұшу мен қонуды қамтамасыз ету           | ВВЛ (ішкі) | теңге/тонна МВМ ӘК       | 991   |
+| 2   | Авиациялық қауіпсіздікті қамтамасыз ету | ВВЛ (ішкі) | теңге/тонна МВМ ӘК       | 379   |
+| 3   | Нормадан тыс тұрақ                      | ВВЛ (ішкі) | теңге/тонна-сағат МВМ ӘК | 125   |
+
+## Базалық әуеайлақтағы тұрақ
+
+| №   | Қызмет атауы                                      | Бағыты     | Өлшем бірлігі      | Тариф |
+| --- | ------------------------------------------------- | ---------- | ------------------ | ----- |
+| 1   | Әуе кемесіне базалық әуеайлақтан тұрақ орнын беру | ВВЛ (ішкі) | теңге/тонна-тәулік | 35,08 |

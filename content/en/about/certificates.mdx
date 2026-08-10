@@ -1,8 +1,28 @@
 ---
-title: 'Tariffs'
+title: 'Certificates'
 section: about
 legacyUrl: 'https://hsairport.kz/en/certificates/'
-translationStatus: pending
+translationStatus: machine
 lastReviewed:
-needsContent: true
+migrationNotes:
+  - 'the converter emitted no tables anywhere in the migration, so both tariff tables on this page were dropped; restored by hand from the live page'
+  - 'the legacy page publishes these tables in Russian even in English. Headings and service names are translated here; every figure, unit and the ВВЛ direction code are as published'
+  - 'the legacy page is titled Certificates but its heading and its whole body are tariffs; both are kept as published'
 ---
+
+## Airport service tariffs
+
+Tariffs exclude VAT. ВВЛ marks domestic air routes. MTOW is the aircraft's
+maximum take-off weight.
+
+| No. | Service                        | Direction      | Unit                      | Tariff |
+| --- | ------------------------------ | -------------- | ------------------------- | ------ |
+| 1   | Take-off and landing           | ВВЛ (domestic) | tenge per tonne MTOW      | 991    |
+| 2   | Aviation security              | ВВЛ (domestic) | tenge per tonne MTOW      | 379    |
+| 3   | Parking beyond the free period | ВВЛ (domestic) | tenge per tonne-hour MTOW | 125    |
+
+## Parking at the base aerodrome
+
+| No. | Service                                      | Direction      | Unit                | Tariff |
+| --- | -------------------------------------------- | -------------- | ------------------- | ------ |
+| 1   | Aircraft parking stand at the base aerodrome | ВВЛ (domestic) | tenge per tonne-day | 35.08  |
