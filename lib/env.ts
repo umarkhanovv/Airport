@@ -92,6 +92,20 @@ export const env = {
   /** Weather is a progressive enhancement and degrades silently (spec §11.2). */
   weatherEnabled: readBoolean('WEATHER_ENABLED', true),
 
+  /**
+   * This deployment is a preview, not the airport's site.
+   *
+   * A review copy carries the airport's name, logo, address and telephone
+   * numbers, alongside content nobody has proofread — so the one thing it must
+   * not do is turn up in a search for the airport. When set, `robots.txt`
+   * disallows everything rather than only the admin tree.
+   *
+   * Off by default: the real deployment is the one that should be indexed, and
+   * a flag that has to be remembered in order to be indexed would eventually be
+   * forgotten.
+   */
+  isPreview: readBoolean('PREVIEW', false),
+
   paths: {
     dataDir,
     database: path.join(dataDir, 'app.db'),

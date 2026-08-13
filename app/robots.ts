@@ -11,6 +11,18 @@ import { env } from '@/lib/env';
  * and `sitemap` is pointed at the URL Stage 9 will serve.
  */
 export default function robots(): MetadataRoute.Robots {
+  /*
+   * A preview deployment keeps everything out of search, and no sitemap.
+   *
+   * A review copy is the airport's name, logo, address and telephone numbers
+   * over content nobody has read yet. Indexed, it competes with the airport's
+   * own site for the airport's own name, and a passenger could land on an
+   * unreviewed page believing it official.
+   */
+  if (env.isPreview) {
+    return { rules: { userAgent: '*', disallow: '/' } };
+  }
+
   return {
     rules: {
       userAgent: '*',
