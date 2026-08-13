@@ -112,7 +112,7 @@ the old site's menu — but it describes restrictions that ended years ago, and 
 passenger could act on them. Recorded here rather than left to look like an
 oversight; the legacy URL is all that is needed to reverse the decision.
 
-**13 pages are marked `translationStatus: machine`** and carry a visible notice
+**14 pages are marked `translationStatus: machine`** and carry a visible notice
 saying so. The legacy site had Russian text and blank English and Kazakh pages
 on a dozen subjects — advertising, CIP booking, tariffs, baggage tracing,
 history, prayer rooms — and the migration reproduced the blanks faithfully.
