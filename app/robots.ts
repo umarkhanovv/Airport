@@ -10,6 +10,19 @@ import { env } from '@/lib/env';
  * the SEO surface land in Stage 9; this file is deliberately minimal until then
  * and `sitemap` is pointed at the URL Stage 9 will serve.
  */
+/**
+ * Read at request time, like `app/sitemap.ts` next door.
+ *
+ * Without this the file is prerendered, and everything it depends on is fixed
+ * at build time: `SITE_URL` and the preview flag both come from the
+ * environment, which on every host this is meant to run on is set for the
+ * *running* container, not the build. A preview deployment therefore published
+ * `Allow: /` and a sitemap pointing at localhost, having been told to publish
+ * neither — a safeguard that silently does nothing is worse than no safeguard,
+ * because it is believed.
+ */
+export const dynamic = 'force-dynamic';
+
 export default function robots(): MetadataRoute.Robots {
   /*
    * A preview deployment keeps everything out of search, and no sitemap.
