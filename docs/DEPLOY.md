@@ -251,6 +251,15 @@ the benefit of `docker run`, which mounts a `-v` over that path regardless.
 Permissions on the volume — `RAILWAY_RUN_UID=0`, see §3. This one does not show
 up until something writes, so it will look like a bug in the admin panel.
 
+**Build fails prerendering with `table 'flight_entries' already exists`.**
+A cold database and one prerender worker per core. `getDb()` migrates on first
+use, and drizzle's migrator reads which migrations have been applied _before_
+opening its transaction, so two workers can both decide the tables are missing
+and the second dies creating them. `npm run build` now runs `db:migrate` first,
+from one process, which leaves the workers nothing to apply. It needs genuine
+parallelism to lose that race, which is why it survives a laptop and fails on a
+big build machine — see `scripts/migrate.mts`.
+
 **Site is up but empty.** The volume has not been seeded — §4.
 
 **Data disappears on every deploy.** The volume is not mounted, or is mounted

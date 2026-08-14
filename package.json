@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build && serwist build serwist.config.mjs && node scripts/prepare-standalone.mjs",
+    "build": "npm run db:migrate && next build && serwist build serwist.config.mjs && node scripts/prepare-standalone.mjs",
     "start": "node .next/standalone/server.js",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -18,6 +18,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "db:generate": "drizzle-kit generate",
+    "db:migrate": "node --conditions=react-server scripts/migrate.mts",
     "schedule:import": "node --conditions=react-server scripts/import-schedule.mts",
     "data:pack": "node --conditions=react-server scripts/pack-data.mts",
     "e2e:seed": "rm -rf .e2e-data && DATA_DIR=.e2e-data npm run schedule:import -- data/sample_weekly_schedule.xlsx && DATA_DIR=.e2e-data node --conditions=react-server scripts/seed-news-fixture.mts",
