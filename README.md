@@ -218,6 +218,20 @@ first — see `.env.example` for the full environment reference.
 | `npm run migrate:verify`   | Re-check migrated pages against the legacy site     |
 | `npm run documents:import` | Import `documents-inbox/` into the document library  |
 
+## Running it on a platform
+
+**[docs/DEPLOY.md](docs/DEPLOY.md)** walks through Railway end to end using the
+`Dockerfile` in this repository: deploy from the repo, mount a volume at
+`/var/lib/hsairport`, set four variables, and seed the volume once with
+`npm run data:pack`. Push to `master` and the host rebuilds.
+
+Only two things about this site constrain the choice of host — a persistent
+disk, and a base image that can compile a native module — so the guide
+transfers to Northflank, Render, Fly or a VPS with the CLI commands swapped.
+
+Read the section below as well if you are doing it by hand: it is the same
+deployment without a platform in the way, and it says where the data lives.
+
 ## Running it on the airport's server
 
 Requires Node 22 and a C toolchain, because `better-sqlite3` compiles a native

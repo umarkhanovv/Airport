@@ -55,6 +55,8 @@ next-env.d.ts
 /data/app.db-wal
 /data/app.db-shm
 /data/uploads/
+# Throwaway test workbooks (date-shifted samples), not content.
+/data/test_week*.xlsx
 
 # e2e throwaway state
 /.e2e-data/
@@ -92,3 +94,4 @@ next-env.d.ts
 # Documents downloaded from the legacy site, staged for `npm run documents:import`.
 # The files belong in the database, not in the repository — see the README.
 /documents-inbox/
+airport-data.tar.gz
