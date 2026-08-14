@@ -93,6 +93,49 @@ export function zonedWallClockToUtc(
   return new Date(corrected);
 }
 
+/**
+ * A stored instant, read as a clock on the wall at the airport.
+ *
+ * The board never needed this: flight times are wall-clock strings by design
+ * (plan §4 rule 1) and are printed exactly as the workbook gave them. But the
+ * admin panel records real instants — when a schedule was published, when a
+ * message arrived — and it printed them with `toISOString()` and the word
+ * "UTC" after. A staff member uploading at 21:12 in Türkistan was told they
+ * had done it at 16:12, which is not a formatting quibble on a page whose job
+ * is to say what is live right now.
+ *
+ * The offset is read out of `Intl` rather than written down. Kazakhstan
+ * collapsed to a single UTC+5 zone in 2024 and a "+5" in the source would
+ * quietly become a lie the next time the rules move, or the moment AIRPORT_TZ
+ * points somewhere else.
+ */
+export function formatAirportDateTime(iso: string, timeZone: string = DEFAULT_AIRPORT_TZ): string {
+  // SQLite hands back `YYYY-MM-DD HH:MM:SS` in some paths and a full ISO
+  // string in others; both mean UTC here.
+  const parsed = new Date(iso.includes('T') ? iso : `${iso.replace(' ', 'T')}Z`);
+  if (Number.isNaN(parsed.getTime())) return iso;
+
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZoneName: 'shortOffset',
+  }).formatToParts(parsed);
+
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? '';
+  // `hour` can come back as 24 for midnight under hour12:false.
+  const hour = String(Number(get('hour')) % 24).padStart(2, '0');
+  // "GMT+5" is what `shortOffset` produces, and "UTC+5" is what the people
+  // reading this page call it.
+  const offset = get('timeZoneName').replace('GMT', 'UTC');
+
+  return `${get('year')}-${get('month')}-${get('day')} ${hour}:${get('minute')} ${offset}`;
+}
+
 /** Shifts a `YYYY-MM-DD` string by whole days without touching timezones. */
 export function addDays(isoDate: string, days: number): string {
   const [y, m, d] = isoDate.split('-').map(Number);

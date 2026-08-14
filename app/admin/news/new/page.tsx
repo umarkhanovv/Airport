@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { requireAdmin } from '@/lib/admin/auth';
+import { airportToday } from '@/lib/date';
+import { env } from '@/lib/env';
 import { countUnreadFeedback } from '@/lib/feedback/store';
 import { listTranslationCandidates } from '@/lib/news/admin';
 
@@ -37,7 +39,7 @@ export default async function NewNewsPostPage() {
           Nothing is public until the published box is ticked, so this can be filled in and left.
         </p>
 
-        <PostForm candidates={candidates} />
+        <PostForm candidates={candidates} today={airportToday(env.airportTz)} />
       </main>
     </>
   );

@@ -3,6 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { requireAdmin } from '@/lib/admin/auth';
+import { airportToday } from '@/lib/date';
+import { env } from '@/lib/env';
 import { countUnreadFeedback } from '@/lib/feedback/store';
 import { getNewsPostById, listTranslationCandidates } from '@/lib/news/admin';
 
@@ -71,6 +73,7 @@ export default async function EditNewsPostPage({
           post={post}
           candidates={candidates}
           currentTranslationGroupId={post.translationGroupId}
+          today={airportToday(env.airportTz)}
         />
 
         <section className="border-border mt-12 rounded-lg border border-dashed p-5">

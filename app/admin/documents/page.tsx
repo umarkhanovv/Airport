@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 
 import { requireAdmin } from '@/lib/admin/auth';
 import { SECTIONS } from '@/lib/constants';
+import { airportToday } from '@/lib/date';
+import { env } from '@/lib/env';
 import { listPagesInSection } from '@/lib/content';
 import { listAllDocuments } from '@/lib/documents/queries';
 import { countUnreadFeedback } from '@/lib/feedback/store';
@@ -81,7 +83,7 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps<'/a
 
         <section className="panel mt-6 p-5">
           <h2 className="font-medium">Upload</h2>
-          <UploadForm pages={pages} />
+          <UploadForm pages={pages} today={airportToday(env.airportTz)} />
         </section>
 
         <h2 className="mt-10 text-lg font-medium">

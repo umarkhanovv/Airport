@@ -68,10 +68,24 @@ export function PostForm({
   post,
   candidates,
   currentTranslationGroupId,
+  today,
 }: {
   post?: ExistingPost;
   candidates: TranslationCandidate[];
   currentTranslationGroupId?: string;
+  /**
+   * Today's date at the airport, computed on the server.
+   *
+   * This used to be `new Date().toISOString().slice(0, 10)` right here — the
+   * pattern `lib/date.ts` bans in its opening comment, and for exactly the
+   * reason given there. Between 19:00 and midnight in Türkistan, UTC is still
+   * on the previous day, so the form offered yesterday as the publication date
+   * of an announcement being written tonight.
+   *
+   * A prop rather than a client-side `airportToday()`, so the answer does not
+   * depend on the clock of whichever machine the staff member is sitting at.
+   */
+  today: string;
 }) {
   const [state, action, pending] = useActionState(saveNewsPost, INITIAL);
 
@@ -80,7 +94,7 @@ export function PostForm({
   const describedBy = (field: NewsErrorField) => (error(field) ? `${field}-error` : undefined);
 
   // The date input wants `YYYY-MM-DD`; the column holds a full ISO instant.
-  const dateValue = values?.publishedAt ?? post?.publishedAt.slice(0, 10) ?? today();
+  const dateValue = values?.publishedAt ?? post?.publishedAt.slice(0, 10) ?? today;
 
   const linkedCandidate = candidates.find(
     (candidate) => candidate.translationGroupId === currentTranslationGroupId
@@ -317,8 +331,4 @@ export function PostForm({
       </button>
     </form>
   );
-}
-
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
 }

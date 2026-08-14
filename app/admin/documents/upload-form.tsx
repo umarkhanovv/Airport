@@ -19,7 +19,14 @@ const FIELD_CLASS =
  * file's title defaults to its filename and is edited in the list below, which
  * is faster than filling in thirty titles before anything is saved.
  */
-export function UploadForm({ pages }: { pages: Array<{ path: string; title: string }> }) {
+export function UploadForm({
+  pages,
+  today,
+}: {
+  pages: Array<{ path: string; title: string }>;
+  /** Today at the airport, computed on the server — see `PostForm`, same trap. */
+  today: string;
+}) {
   const [state, action, pending] = useActionState(uploadDocuments, INITIAL);
 
   return (
@@ -46,7 +53,7 @@ export function UploadForm({ pages }: { pages: Array<{ path: string; title: stri
             id="publishedAt"
             name="publishedAt"
             type="date"
-            defaultValue={new Date().toISOString().slice(0, 10)}
+            defaultValue={today}
             className={FIELD_CLASS}
           />
         </div>

@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { addDays, airportNowTime, airportToday, formatLongDate, formatWeekday } from '@/lib/date';
+import {
+  addDays,
+  airportNowTime,
+  airportToday,
+  formatAirportDateTime,
+  formatLongDate,
+  formatWeekday,
+} from '@/lib/date';
 
 /**
  * "Today" must be the airport's today, not the server's (plan §4 rule 2).
@@ -73,6 +80,38 @@ describe('addDays', () => {
     expect(addDays('2024-02-28', 1)).toBe('2024-02-29');
     expect(addDays('2024-12-31', 1)).toBe('2025-01-01');
     expect(addDays('2024-04-01', 0)).toBe('2024-04-01');
+  });
+});
+
+describe('formatAirportDateTime', () => {
+  it('reads a stored instant as the clock on the wall at the airport', () => {
+    // The admin panel used to print this one as "2026-08-14 16:12 UTC", five
+    // hours before the staff member pressed the button.
+    expect(formatAirportDateTime('2026-08-14T16:12:00.000Z', ALMATY)).toBe(
+      '2026-08-14 21:12 UTC+5'
+    );
+  });
+
+  it('rolls the date over with the airport, not with the server', () => {
+    // 19:30 UTC is already half past midnight the next day in Türkistan.
+    expect(formatAirportDateTime('2024-04-01T19:30:00.000Z', ALMATY)).toBe(
+      '2024-04-02 00:30 UTC+5'
+    );
+    expect(formatAirportDateTime('2024-04-01T19:30:00.000Z', 'UTC')).toBe('2024-04-01 19:30 UTC+0');
+  });
+
+  it('accepts the space-separated form SQLite hands back', () => {
+    expect(formatAirportDateTime('2026-08-14 16:12:00', ALMATY)).toBe('2026-08-14 21:12 UTC+5');
+  });
+
+  it('shows midnight as 00:00 rather than 24:00', () => {
+    expect(formatAirportDateTime('2024-04-01T19:00:00.000Z', ALMATY)).toBe(
+      '2024-04-02 00:00 UTC+5'
+    );
+  });
+
+  it('gives back anything it cannot parse, rather than "Invalid Date"', () => {
+    expect(formatAirportDateTime('not a timestamp', ALMATY)).toBe('not a timestamp');
   });
 });
 

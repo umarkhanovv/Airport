@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { assertSameOrigin, requireAdmin } from '@/lib/admin/auth';
+import { airportToday } from '@/lib/date';
 import {
   createDocument,
   deleteDocument,
@@ -11,6 +12,7 @@ import {
   updateDocument,
 } from '@/lib/documents/queries';
 import { storeDocument } from '@/lib/documents/storage';
+import { env } from '@/lib/env';
 import {
   DocumentRejectedError,
   MAX_DOCUMENT_BYTES,
@@ -81,7 +83,9 @@ export async function uploadDocuments(
   const date =
     typeof publishedAt === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(publishedAt)
       ? publishedAt
-      : new Date().toISOString().slice(0, 10);
+      : // The airport's date, not the server's: a UTC host is still on yesterday
+        // for the first five hours of every Türkistan day.
+        airportToday(env.airportTz);
 
   const files = formData.getAll('files').filter((file): file is File => file instanceof File);
   if (files.length === 0 || files.every((file) => file.size === 0)) {

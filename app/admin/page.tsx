@@ -3,6 +3,8 @@ import Link from 'next/link';
 
 import { requireAdmin } from '@/lib/admin/auth';
 import { listScheduleUploads } from '@/lib/admin/queries';
+import { formatAirportDateTime } from '@/lib/date';
+import { env } from '@/lib/env';
 import { countUnreadFeedback } from '@/lib/feedback/store';
 import { getActiveSchedule } from '@/lib/flights/queries';
 
@@ -22,11 +24,8 @@ const SCHEDULE_NOTICES: Record<string, string> = {
   missing: 'That schedule no longer exists. Nothing changed.',
 };
 
-function formatTimestamp(iso: string): string {
-  const parsed = new Date(iso.includes('T') ? iso : `${iso.replace(' ', 'T')}Z`);
-  if (Number.isNaN(parsed.getTime())) return iso;
-  return parsed.toISOString().slice(0, 16).replace('T', ' ') + ' UTC';
-}
+/** Airport time, not the server's. See `formatAirportDateTime`. */
+const formatTimestamp = (iso: string) => formatAirportDateTime(iso, env.airportTz);
 
 export default async function AdminDashboardPage({ searchParams }: PageProps<'/admin'>) {
   await requireAdmin('/admin');
