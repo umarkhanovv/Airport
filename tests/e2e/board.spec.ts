@@ -171,3 +171,66 @@ test.describe('board semantics and state', () => {
     expect([body[0], body[1], body[2], body[3]]).toEqual([0x50, 0x4b, 0x03, 0x04]);
   });
 });
+
+/**
+ * The home page board.
+ *
+ * Its direction tabs are radios and labels rather than links, because reading
+ * `?kind=` from the URL would opt the busiest page on the site out of static
+ * generation. So the switch has to be proved to work with no JavaScript at
+ * all — the property the whole design was chosen for.
+ */
+test.describe('the home page direction tabs', () => {
+  /*
+   * The seeded workbook covers April 2024 on purpose — `never labels another
+   * day as "today"` above depends on it being out of range — so the home page
+   * renders the stale notice and these panels do not exist. Rather than seed a
+   * second, current schedule and lose that test, these skip themselves and run
+   * the moment the fixture covers today.
+   */
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/ru');
+    test.skip(
+      (await page.locator('.home-panel').count()) === 0,
+      'seeded schedule does not cover today, so the home page shows the stale notice'
+    );
+  });
+
+  test('switch the board without leaving the page', async ({ page }) => {
+    const arrivals = page.locator('.home-panel[data-direction="arrival"]');
+    const departures = page.locator('.home-panel[data-direction="departure"]');
+
+    await expect(arrivals).toBeVisible();
+    await expect(departures).toBeHidden();
+
+    await page.getByText('Вылет', { exact: false }).first().click();
+
+    await expect(departures).toBeVisible();
+    await expect(arrivals).toBeHidden();
+    // The whole point: still on the home page, nothing navigated.
+    await expect(page).toHaveURL(/\/ru$/);
+  });
+
+  test('switch with no JavaScript at all', async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+
+    await page.goto('/ru');
+    await page.getByText('Вылет', { exact: false }).first().click();
+
+    await expect(page.locator('.home-panel[data-direction="departure"]')).toBeVisible();
+    await expect(page.locator('.home-panel[data-direction="arrival"]')).toBeHidden();
+    await expect(page).toHaveURL(/\/ru$/);
+
+    await context.close();
+  });
+
+  test('the tabs are reachable and operable from the keyboard', async ({ page }) => {
+    // The radios are `sr-only`, not `display: none`, precisely so this works.
+    await page.locator('#home-arrivals').focus();
+    await page.keyboard.press('ArrowRight');
+
+    await expect(page.locator('#home-departures')).toBeChecked();
+    await expect(page.locator('.home-panel[data-direction="departure"]')).toBeVisible();
+  });
+});

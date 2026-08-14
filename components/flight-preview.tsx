@@ -1,13 +1,12 @@
 import { getTranslations } from 'next-intl/server';
 
-import { BoardControls } from '@/components/board/board-controls';
 import { BoardEnhancements } from '@/components/board/board-enhancements';
 import { FlightTable } from '@/components/board/flight-table';
 import { getActiveSchedule, getDirectionCounts, getFlightsForDate } from '@/lib/flights/queries';
 import { airportNowTime, airportToday, formatLongDate } from '@/lib/date';
-import { parseBoardState } from '@/lib/flights/board';
 import { env } from '@/lib/env';
 import { Link } from '@/i18n/navigation';
+import type { FlightKind } from '@/lib/flights/types';
 import type { Locale } from '@/i18n/routing';
 
 /**
@@ -86,25 +85,19 @@ export async function FlightPreview({ locale }: { locale: Locale }) {
     );
   }
 
-  /*
-   * Arrivals, matching what `/flights` opens on when nothing is asked for
-   * (`parseBoardState`) — so tapping through from here lands on the same view
-   * you were already looking at. Built from an empty parse rather than a
-   * literal, so the two cannot drift apart.
-   */
-  const state = parseBoardState({});
-  const all = getFlightsForDate(today, state.kind);
   const now = airportNowTime(env.airportTz);
 
-  // Show what is still to come; if the day is over, show the whole day rather
-  // than an empty board.
-  const upcoming = all.filter((flight) => (flight.scheduledTime ?? '') >= now);
-  const flights = upcoming.length > 0 ? upcoming : all;
+  /** Still to come; if the day is over, the whole day rather than nothing. */
+  const forDirection = (kind: FlightKind) => {
+    const all = getFlightsForDate(today, kind);
+    const upcoming = all.filter((flight) => (flight.scheduledTime ?? '') >= now);
+    return upcoming.length > 0 ? upcoming : all;
+  };
 
   const counts = getDirectionCounts(today, today);
 
   return (
-    <section aria-labelledby="home-board" className="space-y-4">
+    <section aria-labelledby="home-board" className="home-board space-y-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <h2 id="home-board" className="text-text text-lg font-semibold">
           {t('today')}
@@ -118,17 +111,74 @@ export async function FlightPreview({ locale }: { locale: Locale }) {
         </p>
       </div>
 
-      {/* Direction tabs only. Both lead to `/flights`, which is where the week
-          view, the search and the download belong. */}
-      <BoardControls state={state} counts={counts} compact />
+      {/*
+        Both directions ship, and CSS shows one.
 
-      {/* Pin, share and destination weather. The same behaviour layer the full
-          board uses; it walks `[data-flight-row]`, and this page has exactly
-          one set of rows for it to find. */}
-      <BoardEnhancements />
+        The tabs used to be links to `/flights`, so switching direction on the
+        home page meant leaving it. Making them read `?kind=` instead would have
+        worked and cost the whole page its cache: reading `searchParams` opts a
+        route out of static generation, and this is the most-visited page on a
+        site whose readers are on weak connections.
 
-      <div className="board-pane">
-        <FlightTable flights={flights} locale={locale} kind={state.kind} groupByDate={false} />
+        So: two radios, two labels, two tables, and `:checked ~` decides which
+        table is displayed. Today is a handful of rows, so the second table is
+        nearly free; it needs no JavaScript, which the board is required to
+        manage anyway; and the page stays prerendered. The cost is that the
+        chosen direction is not in the URL — on `/flights`, where a view is
+        worth sharing, it still is.
+      */}
+      <div>
+        <input
+          type="radio"
+          name="home-direction"
+          id="home-arrivals"
+          className="sr-only"
+          defaultChecked
+        />
+        <input type="radio" name="home-direction" id="home-departures" className="sr-only" />
+
+        <nav aria-label={t('directionLabel')}>
+          <ul className="border-border flex gap-1 border-b">
+            <li>
+              <label htmlFor="home-arrivals" className="home-tab home-tab-arrival">
+                {t('arrivals')}
+                <span className="tabular text-text-muted ms-2 text-sm font-normal">
+                  {counts.arrival}
+                </span>
+              </label>
+            </li>
+            <li>
+              <label htmlFor="home-departures" className="home-tab home-tab-departure">
+                {t('departures')}
+                <span className="tabular text-text-muted ms-2 text-sm font-normal">
+                  {counts.departure}
+                </span>
+              </label>
+            </li>
+          </ul>
+        </nav>
+
+        {/* Pin, share and destination weather. It walks `[data-flight-row]`
+            across the document, which is why its pinning re-parents each row
+            into its own table rather than into the first one it found. */}
+        <BoardEnhancements />
+
+        <div className="board-pane home-panel mt-4" data-direction="arrival">
+          <FlightTable
+            flights={forDirection('arrival')}
+            locale={locale}
+            kind="arrival"
+            groupByDate={false}
+          />
+        </div>
+        <div className="board-pane home-panel mt-4" data-direction="departure">
+          <FlightTable
+            flights={forDirection('departure')}
+            locale={locale}
+            kind="departure"
+            groupByDate={false}
+          />
+        </div>
       </div>
 
       <Link href="/flights" className="text-brand-text-strong text-sm font-medium hover:underline">

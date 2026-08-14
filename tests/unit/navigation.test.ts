@@ -66,7 +66,7 @@ describe('the header menu', () => {
     // direction tabs are the first thing a visitor meets. One link back to the
     // full board is what the menu still owes.
     const plain = NAVIGATION.filter((item) => item.kind === 'link').map((item) => item.key);
-    expect(plain).toEqual(['board', 'feedback']);
+    expect(plain).toEqual(['board', 'newsShort', 'feedback']);
   });
 
   it('names each entry once, so a label cannot drift between panels', () => {

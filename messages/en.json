@@ -24,6 +24,7 @@
     "allPages": "All pages in this section",
     "close": "Close menu",
     "board": "Board",
+    "newsShort": "News",
     "passengers": "Passengers",
     "partners": "Partners",
     "press": "Press centre",
@@ -171,12 +172,6 @@
     "previous": "Previous",
     "next": "Next",
     "pageOf": "Page {page} of {total}"
-  },
-  "Appearance": {
-    "theme": "Theme",
-    "system": "System",
-    "light": "Light",
-    "dark": "Dark"
   },
   "Map": {
     "airportLabel": "Turkistan International Airport",

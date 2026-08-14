@@ -2,7 +2,6 @@ import { LocaleSwitcher } from './locale-switcher';
 import { Logo } from './logo';
 import { SiteNavDesktop } from './site-nav-desktop';
 import { SiteNavMobile } from './site-nav-mobile';
-import { ThemeToggle } from './theme-toggle';
 
 /**
  * The masthead: identity on the left, controls on the right, navigation below.
@@ -13,9 +12,9 @@ import { ThemeToggle } from './theme-toggle';
  * on a phone. See `site-nav-desktop.tsx` and `site-nav-mobile.tsx`; both are
  * built from the same `NAVIGATION` array and both work with no JavaScript.
  *
- * On a phone the hamburger sits in the top row beside the language and theme
- * buttons, so nothing below the masthead is spent on chrome until it is asked
- * for. Above `md` the hamburger disappears and the nav row takes its place.
+ * On a phone the hamburger sits in the top row beside the language button, so
+ * nothing below the masthead is spent on chrome until it is asked for. Above
+ * `md` the hamburger disappears and the nav row takes its place.
  */
 export function SiteHeader() {
   return (
@@ -25,7 +24,6 @@ export function SiteHeader() {
           <Logo />
           <div className="ms-auto flex items-center gap-1 sm:gap-2">
             <LocaleSwitcher />
-            <ThemeToggle />
             <SiteNavMobile />
           </div>
         </div>

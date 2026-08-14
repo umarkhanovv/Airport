@@ -166,8 +166,8 @@ Built and green through **Stage 10**; nothing is outstanding.
   airport self-hosts, and CI runs `next build && next start` on every push to
   keep that honest
 - **next-intl** — Russian, English and Kazakh, with `kk` served under `/kz`
-- **Tailwind CSS v4** with a token layer that drives light and dark, and a
-  raised-contrast palette answering `prefers-contrast`
+- **Tailwind CSS v4** with a token layer carrying one palette, plus a
+  raised-contrast one answering `prefers-contrast` — no theme control anywhere
 - **SQLite** via `better-sqlite3` + **Drizzle** — one file on local disk, backed
   up by copying it
 - **SheetJS** (vendored) for parsing the weekly workbook, server-side only

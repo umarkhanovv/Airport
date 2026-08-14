@@ -58,9 +58,12 @@
    COLOUR — taken from the airport itself
    ---------------------------------------------------------------------------
    #CE7B44 is the exact colour of the HSA monogram in the airport's own logo.
-   The second accent is the turquoise of the terminal's Kazakh signage, and the
-   dark surface is the dusk sky behind it rather than a neutral grey — see
-   public/media/terminal-dusk.jpg.
+   The second accent is the turquoise of the terminal's Kazakh signage.
+
+   One palette. There was a dark theme and a system-follows setting; both are
+   gone, along with the control that switched them. What is left is this, plus
+   the raised-contrast palette below, which nobody has to find because it
+   answers `prefers-contrast`.
 
    Terracotta marks departures, turquoise marks arrivals. That is not
    decoration: the legacy site had "Вылет" pointing at /incoming-flights/ and
@@ -96,53 +99,12 @@
   --font-sans: 'Golos Text', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* Twilight, not grey — the sky in the terminal photograph. */
-@media (prefers-color-scheme: dark) {
-  :root:not(.theme-light) {
-    --surface: #0d1219;
-    --surface-raised: #141b24;
-    --surface-sunken: #090d13;
-    --text: #ececed;
-    --text-muted: #a3a6ad;
-    --border: #232b36;
-    --border-strong: #5f6d82; /* 3.58:1 on the twilight surface */
-    --brand: #ce7b44;
-    --brand-text: #e3874b;
-    --brand-text-strong: #e3874b;
-    --on-brand: #000000;
-    --arrival: #3fc7bd;
-    --arrival-soft: #10262a;
-    --on-arrival: #06120f;
-    --focus: #e3874b;
-  }
-}
-
-:root.theme-dark {
-  --surface: #0d1219;
-  --surface-raised: #141b24;
-  --surface-sunken: #090d13;
-  --text: #ececed;
-  --text-muted: #a3a6ad;
-  --border: #232b36;
-  --border-strong: #5f6d82; /* 3.58:1 on the twilight surface */
-  --brand: #ce7b44;
-  --brand-text: #e3874b;
-  --brand-text-strong: #e3874b;
-  --on-brand: #000000;
-  --arrival: #3fc7bd;
-  --arrival-soft: #10262a;
-  --on-arrival: #06120f;
-  --focus: #e3874b;
-}
-
 /* ---------------------------------------------------------------------------
    Maximum contrast for low vision (§17.7).
 
-   This used to be a switch in the appearance panel. The panel is gone — it is
-   one theme button now — but the palette is not, because the palette was never
-   the part that needed simplifying. It answers `prefers-contrast` instead, so
-   somebody who has already told their operating system that they need more
-   contrast gets it here without having to find a control and ask again.
+   The one palette shift that survives, and it has no control: somebody who has
+   already told their operating system they need more contrast gets it here
+   without having to find a switch and say so again.
 
    The ratios these hexes hold are asserted in
    tests/unit/design-tokens.test.ts.
@@ -160,44 +122,6 @@
     --brand-text-strong: #6b3f21;
     --arrival: #044b46;
     --focus: #000000;
-  }
-
-  :root.theme-dark {
-    --surface: #000000;
-    --surface-raised: #000000;
-    --surface-sunken: #000000;
-    --text: #ffffff;
-    --text-muted: #e6e6e6;
-    --border: #ffffff;
-    --border-strong: #ffffff;
-    --brand-text: #f0a068;
-    --brand-text-strong: #f0a068;
-    --arrival: #7ce6dc;
-    --focus: #ffffff;
-  }
-}
-
-/*
-  The same dark palette again, for the reader who never picked a theme and
-  whose system is dark. Worth the eleven repeated lines: this case did not
-  exist while high contrast was a button — you turned it on, saw white, and
-  turned the theme dark yourself. Answering `prefers-contrast` means nobody
-  turns anything on, so a system-dark reader raising their contrast would have
-  been handed a white screen without ever asking for one.
-*/
-@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
-  :root:not(.theme-light) {
-    --surface: #000000;
-    --surface-raised: #000000;
-    --surface-sunken: #000000;
-    --text: #ffffff;
-    --text-muted: #e6e6e6;
-    --border: #ffffff;
-    --border-strong: #ffffff;
-    --brand-text: #f0a068;
-    --brand-text-strong: #f0a068;
-    --arrival: #7ce6dc;
-    --focus: #ffffff;
   }
 }
 
@@ -221,8 +145,8 @@
    what makes the eye read a pane rather than a tinted box.
 
    Three ways out, because a translucent surface is not something everyone can
-   read: the high-contrast theme, an explicit `prefers-reduced-transparency`,
-   and browsers without backdrop-filter all get flat opaque surfaces.
+   read: raised contrast, an explicit `prefers-reduced-transparency`, and
+   browsers without backdrop-filter all get flat opaque surfaces.
    =========================================================================== */
 
 :root {
@@ -242,36 +166,6 @@
   --backdrop-b: rgb(15 122 115 / 0.1);
   --backdrop-c: rgb(206 123 68 / 0.08);
   --lattice-opacity: 0.07;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not(.theme-light) {
-    --glass-bg: rgb(24 32 43 / 0.68);
-    --glass-bg-strong: rgb(16 22 30 / 0.84);
-    --glass-border: rgb(255 255 255 / 0.11);
-    --glass-highlight: rgb(255 255 255 / 0.09);
-    --glass-shadow: 0 8px 32px -12px rgb(0 0 0 / 0.6);
-    --glass-hover-border: rgb(227 135 75 / 0.6);
-    --glass-hover-glow: rgb(206 123 68 / 0.3);
-    --backdrop-a: rgb(206 123 68 / 0.14);
-    --backdrop-b: rgb(63 199 189 / 0.08);
-    --backdrop-c: rgb(63 199 189 / 0.05);
-    --lattice-opacity: 0.09;
-  }
-}
-
-:root.theme-dark {
-  --glass-bg: rgb(24 32 43 / 0.68);
-  --glass-bg-strong: rgb(16 22 30 / 0.84);
-  --glass-border: rgb(255 255 255 / 0.11);
-  --glass-highlight: rgb(255 255 255 / 0.09);
-  --glass-shadow: 0 8px 32px -12px rgb(0 0 0 / 0.6);
-  --glass-hover-border: rgb(227 135 75 / 0.6);
-  --glass-hover-glow: rgb(206 123 68 / 0.3);
-  --backdrop-a: rgb(206 123 68 / 0.14);
-  --backdrop-b: rgb(63 199 189 / 0.08);
-  --backdrop-c: rgb(63 199 189 / 0.05);
-  --lattice-opacity: 0.09;
 }
 
 /* ---------------------------------------------------------------------------
@@ -509,6 +403,7 @@
   .menu-link,
   .board-icon-button,
   .nav-row,
+  .nav-group-row,
   .nav-sub-link,
   .chip-button,
   .lang-option,
@@ -526,6 +421,7 @@
   .menu-link:active,
   .board-icon-button:active,
   .nav-row:active,
+  .nav-group-row:active,
   .nav-sub-link:active,
   .chip-button:active,
   .lang-option:active,
@@ -666,8 +562,26 @@
   */
   details[open] > .menu-panel,
   details[open] > .nav-drawer-panel,
+  details[open] > .nav-branch-body,
+  details[open] > .nav-leaf-body,
   details[open] > .lang-menu {
     animation: menu-in 160ms ease-out;
+  }
+
+  /* The deeper the level, the shorter the move: a whole panel dropping 6px
+     reads as the panel arriving, but a handful of links inside an already-open
+     branch doing the same reads as the page twitching. */
+  details[open] > .nav-branch-body,
+  details[open] > .nav-leaf-body {
+    animation-duration: 130ms;
+    animation-name: menu-in-nested;
+  }
+
+  @keyframes menu-in-nested {
+    from {
+      opacity: 0;
+      transform: translateY(-0.1875rem);
+    }
   }
 
   @keyframes menu-in {
@@ -803,6 +717,45 @@
     border-inline-start: 1px solid var(--border);
     padding-inline-start: 0.75rem;
     padding-block-end: 0.5rem;
+  }
+
+  /* The third level's own row: a group heading you can open.
+     Not `.nav-row` — that is `width: 100%` at the branch's font size, and
+     reusing it made the group look like a sibling of the section above it
+     rather than something inside it. And not `.menu-group-title` alone, which
+     the desktop panel also uses as a plain heading; a summary needs its marker
+     hidden and a 44px target. */
+  .nav-group-row {
+    display: flex;
+    min-height: 2.75rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    padding: 0.375rem 0.5rem;
+    list-style: none;
+    color: var(--text-muted);
+  }
+
+  .nav-group-row::-webkit-details-marker {
+    display: none;
+  }
+
+  .nav-group-row:hover {
+    background-color: var(--surface-sunken);
+  }
+
+  .nav-group-row:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--focus);
+  }
+
+  /* Indented once more, and without a second rule down the edge — two nested
+     borders at 375px eat the width the labels need. */
+  .nav-leaf-body {
+    padding-inline-start: 0.5rem;
+    padding-block-end: 0.25rem;
   }
 
   .nav-sub-link {
@@ -999,6 +952,66 @@
         inset 0 1px 0 0 var(--glass-highlight);
       backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     }
+  }
+
+  /* -------------------------------------------------------------------------
+     The home page's direction tabs.
+
+     Two radios and two labels, so switching direction changes nothing but which
+     panel is displayed — no navigation, no script, and the page stays
+     prerendered. `/flights` keeps real links, because there a view is worth
+     sharing and belongs in the URL; here it is a glance.
+
+     The radios themselves are `sr-only` rather than `display: none`, which
+     would take them out of the tab order and leave the labels unreachable from
+     a keyboard. As it is, the pair is a real radio group: arrow keys move
+     between the tabs and the panel follows.
+     ------------------------------------------------------------------------- */
+  .home-tab {
+    display: block;
+    cursor: pointer;
+    margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+    padding: 0.625rem 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition:
+      color 120ms,
+      border-color 120ms;
+  }
+
+  .home-tab:hover {
+    color: var(--text);
+    border-bottom-color: var(--border-strong);
+  }
+
+  #home-arrivals:checked ~ nav .home-tab-arrival {
+    border-bottom-color: var(--arrival);
+    color: var(--arrival);
+  }
+
+  #home-departures:checked ~ nav .home-tab-departure {
+    border-bottom-color: var(--brand);
+    color: var(--brand-text-strong);
+  }
+
+  /* The focus ring belongs on the label, since the radio is visually hidden. */
+  #home-arrivals:focus-visible ~ nav .home-tab-arrival,
+  #home-departures:focus-visible ~ nav .home-tab-departure {
+    outline: 2px solid var(--focus);
+    outline-offset: -2px;
+    border-radius: var(--radius-sm);
+  }
+
+  .home-panel {
+    display: none;
+  }
+
+  #home-arrivals:checked ~ .home-panel[data-direction='arrival'],
+  #home-departures:checked ~ .home-panel[data-direction='departure'] {
+    display: block;
+    animation: menu-in-nested 130ms ease-out;
   }
 
   .board-icon-button {

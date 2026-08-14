@@ -44,8 +44,14 @@ export function BoardEnhancements() {
 
   // --- pinning ------------------------------------------------------------
   useEffect(() => {
-    const table = document.querySelector<HTMLElement>('table.board tbody');
-    if (!table) return;
+    /*
+     * Plural, because the home page now renders both directions at once and
+     * shows one with CSS. This used to hold a single `tbody` and prepend every
+     * pinned row into it — which with two boards on a page would have lifted a
+     * pinned departure out of the departures table and dropped it into
+     * arrivals. Each row is re-parented into its own table below instead.
+     */
+    if (document.querySelector('table.board tbody') === null) return;
 
     function paint(pinned: string[]) {
       const rows = document.querySelectorAll<HTMLElement>('[data-flight-row]');
@@ -71,7 +77,7 @@ export function BoardEnhancements() {
        */
       const pinnedRows = [...rows].filter((row) => row.hasAttribute('data-pinned'));
       for (const row of pinnedRows.reverse()) {
-        table!.prepend(row);
+        row.closest('tbody')?.prepend(row);
       }
     }
 

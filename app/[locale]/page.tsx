@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { FlightPreview } from '@/components/flight-preview';
+import { NewsPreview } from '@/components/news-preview';
 import type { Locale } from '@/i18n/routing';
 
 /**
@@ -76,6 +77,8 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
           />
         </figure>
       </section>
+
+      <NewsPreview locale={locale as Locale} />
     </>
   );
 }

@@ -73,9 +73,41 @@ export function SiteNavMobile() {
 
                     <div className="nav-branch-body">
                       {item.groups.map((group) => (
-                        <div key={group.key} className="mt-3 first:mt-1">
-                          <h2 className="menu-group-title px-2">{t(group.key)}</h2>
-                          <ul className="mt-1">
+                        /*
+                          A third level, because the second was still a wall.
+                          Opening Пассажирам used to render four headings and
+                          eighteen links at once; now it renders four rows.
+
+                          The `name` is scoped to this branch. Reusing
+                          `nav-mobile` would make a group and its own parent
+                          members of the same exclusive accordion, so opening
+                          the group would close the branch containing it — the
+                          menu would shut as you reached into it.
+                        */
+                        <details
+                          key={group.key}
+                          name={`nav-group-${item.key}`}
+                          className="group/leaf"
+                        >
+                          <summary className="nav-group-row">
+                            <h2 className="menu-group-title">{t(group.key)}</h2>
+                            <svg
+                              aria-hidden="true"
+                              viewBox="0 0 12 12"
+                              className="size-3 shrink-0 transition-transform group-open/leaf:rotate-180"
+                            >
+                              <path
+                                d="M2 4.5 6 8.5 10 4.5"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          </summary>
+
+                          <ul className="nav-leaf-body">
                             {group.links.map((link) => (
                               <li key={link.key}>
                                 <Link href={link.href} className="nav-sub-link">
@@ -84,7 +116,7 @@ export function SiteNavMobile() {
                               </li>
                             ))}
                           </ul>
-                        </div>
+                        </details>
                       ))}
 
                       {/* Every branch also opens onto its own section index —

@@ -60,6 +60,39 @@ export function listNews(locale: NewsLocale, page = 1): { posts: NewsListItem[];
   return { posts, total };
 }
 
+/**
+ * The newest few posts, for the home page.
+ *
+ * Its own query rather than `listNews(locale, 1).posts.slice(0, 3)`, which
+ * would fetch ten rows and run a `COUNT(*)` over the table to show three and a
+ * link. The index `news_posts_locale_published` covers this exactly.
+ *
+ * There is no fallback to another language: an English reader sees English
+ * posts or none. That is deliberate everywhere else in news and stays true
+ * here — showing Russian text under an English heading is worse than showing
+ * nothing — but it does mean this block is empty far more often on `/en` than
+ * on `/`, which is why the caller renders nothing at all when it comes back
+ * empty rather than an "no news yet" notice on the busiest page of the site.
+ */
+export function listLatestNews(locale: NewsLocale, limit = 3): NewsListItem[] {
+  return getDb()
+    .select({
+      id: newsPosts.id,
+      slug: newsPosts.slug,
+      locale: newsPosts.locale,
+      title: newsPosts.title,
+      excerpt: newsPosts.excerpt,
+      coverImage: newsPosts.coverImage,
+      coverAlt: newsPosts.coverAlt,
+      publishedAt: newsPosts.publishedAt,
+    })
+    .from(newsPosts)
+    .where(and(eq(newsPosts.locale, locale), eq(newsPosts.isPublished, true)))
+    .orderBy(desc(newsPosts.publishedAt), asc(newsPosts.id))
+    .limit(limit)
+    .all();
+}
+
 export function getNewsPost(locale: NewsLocale, slug: string): NewsDetail | null {
   const rows = getDb()
     .select()

@@ -22,7 +22,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
  * quietly require a script.
  */
 
-const TOP_LEVEL = ['Табло', 'Пассажирам', 'Партнёрам', 'Пресс-центр', 'Обратная связь'];
+const TOP_LEVEL = ['Табло', 'Новости', 'Пассажирам', 'Партнёрам', 'Пресс-центр', 'Обратная связь'];
 
 /** Playwright's default viewport is desktop-width; the phone tests opt out. */
 const PHONE = { width: 375, height: 812 };
@@ -33,12 +33,21 @@ const mobileNav = (page: Page) => page.getByTestId('nav-mobile');
 /**
  * A top-level entry: the `<summary>` that opens a panel, or the plain link.
  *
- * Restricted to those two elements on purpose. "Пресс-центр" is both a tab and
- * the heading of the one group inside its own panel, so a plain text lookup is
- * ambiguous — and rightly so; they are different things that read the same.
+ * Scoped to the row classes rather than to `summary, a`, and that is not
+ * fussiness. "Пресс-центр" names three different things in the phone menu now —
+ * the section, the one group inside it, and nothing else that reads the same —
+ * so an element-level lookup matches a section summary and a group summary at
+ * once and fails strict mode. The classes say which level is meant.
  */
 function entry(nav: Locator, label: string) {
-  return nav.locator('summary, a').filter({ hasText: new RegExp(`^${label}$`) });
+  return nav
+    .locator('summary.menu-summary, summary.nav-row, a.menu-item, a.nav-row')
+    .filter({ hasText: new RegExp(`^${label}$`) });
+}
+
+/** A group inside an opened section — the third level, phone only. */
+function group(nav: Locator, label: string) {
+  return nav.locator('summary.nav-group-row').filter({ hasText: new RegExp(`^${label}$`) });
 }
 
 /**
@@ -59,7 +68,7 @@ async function openDrawer(page: Page) {
 }
 
 test.describe('the header menu', () => {
-  test('shows the five destinations the airport asked for', async ({ page }) => {
+  test('shows the six destinations the airport asked for', async ({ page }) => {
     await page.goto('/ru');
 
     for (const label of TOP_LEVEL) {
@@ -226,6 +235,11 @@ test.describe('the menu on a phone', () => {
 
     await entry(nav, 'Пассажирам').click();
     await expect(branch(nav, page, 'Пассажирам')).toHaveAttribute('open', '');
+
+    // The third level: a section opens onto its groups, not onto every link it
+    // has. Eighteen links used to arrive at once here.
+    await expect(nav.getByRole('link', { name: 'Комната матери и ребёнка' })).toBeHidden();
+    await group(nav, 'В аэропорту').click();
     await expect(nav.getByRole('link', { name: 'Комната матери и ребёнка' })).toBeVisible();
 
     await entry(nav, 'Партнёрам').click();
@@ -239,6 +253,7 @@ test.describe('the menu on a phone', () => {
     const nav = mobileNav(page);
 
     await entry(nav, 'Пассажирам').click();
+    await group(nav, 'Прибывшим').click();
     await nav.getByRole('link', { name: 'Розыск багажа' }).click();
 
     await expect(page).toHaveURL(/\/passengers\/baggage-tracing$/);
@@ -253,6 +268,7 @@ test.describe('the menu on a phone', () => {
     const nav = mobileNav(page);
     await nav.locator('summary.nav-toggle').click();
     await entry(nav, 'Партнёрам').click();
+    await group(nav, 'Закупки').click();
 
     const link = nav.getByRole('link', { name: 'Сезонное расписание' });
     await expect(link).toBeVisible();
@@ -266,6 +282,8 @@ test.describe('the menu on a phone', () => {
     await page.goto('/ru');
     await openDrawer(page);
     await entry(mobileNav(page), 'Пассажирам').click();
+    // The deepest indent is what has to fit, so measure with a group open.
+    await group(mobileNav(page), 'В аэропорту').click();
 
     const overflow = await page.evaluate(() => {
       const panel = document.querySelector('[data-testid="nav-drawer"]')!;
@@ -284,6 +302,7 @@ test.describe('the menu on a phone', () => {
     await page.goto('/ru');
     await openDrawer(page);
     await entry(mobileNav(page), 'Пассажирам').click();
+    await group(mobileNav(page), 'В аэропорту').click();
 
     const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     const blocking = results.violations.filter(
@@ -294,7 +313,7 @@ test.describe('the menu on a phone', () => {
   });
 });
 
-test.describe('the language and theme buttons', () => {
+test.describe('the language button', () => {
   test('one button, naming the language you are reading', async ({ page }) => {
     await page.goto('/ru');
 
@@ -328,31 +347,5 @@ test.describe('the language and theme buttons', () => {
 
     await expect(page).toHaveURL(/\/en$/);
     await context.close();
-  });
-
-  test('the theme button cycles system, light, dark and remembers', async ({ page }) => {
-    await page.goto('/ru');
-
-    const button = page.getByRole('banner').getByRole('button', { name: /Тема/ });
-    const root = page.locator('html');
-
-    await expect(button).toHaveAccessibleName('Тема: Как в системе');
-    await expect(root).not.toHaveClass(/theme-(light|dark)/);
-
-    await button.click();
-    await expect(button).toHaveAccessibleName('Тема: Светлая');
-    await expect(root).toHaveClass(/theme-light/);
-
-    await button.click();
-    await expect(button).toHaveAccessibleName('Тема: Тёмная');
-    await expect(root).toHaveClass(/theme-dark/);
-
-    // Applied before first paint by the inline head script, not after hydration.
-    await page.reload();
-    await expect(root).toHaveClass(/theme-dark/);
-
-    await button.click();
-    await expect(button).toHaveAccessibleName('Тема: Как в системе');
-    await expect(root).not.toHaveClass(/theme-(light|dark)/);
   });
 });

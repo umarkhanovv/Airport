@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { ThemeScript } from '@/components/theme-script';
+import { JsMarker } from '@/components/js-marker';
 
 import '../globals.css';
 
@@ -32,7 +32,7 @@ export default function AdminLayout({ children }: LayoutProps<'/admin'>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <ThemeScript />
+        <JsMarker />
       </head>
       {/*
         `admin-shell` turns the backdrop down rather than off. The public site

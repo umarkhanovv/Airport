@@ -54,6 +54,18 @@ export type NavItem =
 export const NAVIGATION: NavItem[] = [
   { kind: 'link', key: 'board', href: '/flights' },
 
+  /*
+   * News is top-level as well as inside the press panel, and the duplication is
+   * deliberate. The panel entry is where someone browsing the press centre
+   * looks; this is where someone who just wants to know what has happened
+   * looks, and making them open a menu called "Пресс-центр" to find out is a
+   * word the airport uses about itself, not one a visitor arrives with.
+   *
+   * `newsShort` rather than `news` — the panel's label is "Новости аэропорта",
+   * which is right in a list of press links and too long for a tab.
+   */
+  { kind: 'link', key: 'newsShort', href: '/news' },
+
   {
     kind: 'menu',
     key: 'passengers',

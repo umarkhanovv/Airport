@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 
-import { ThemeScript } from '@/components/theme-script';
+import { JsMarker } from '@/components/js-marker';
 
 import '../globals.css';
 
@@ -45,7 +45,7 @@ export default function OfflinePage() {
   return (
     <html lang="ru" suppressHydrationWarning>
       <head>
-        <ThemeScript />
+        <JsMarker />
       </head>
       <body className="text-text flex min-h-screen flex-col">
         <div aria-hidden="true" className="app-backdrop" />

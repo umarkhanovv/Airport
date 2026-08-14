@@ -7,7 +7,7 @@ import { SiteFooter } from '@/components/site-footer';
 import { SiteHeader } from '@/components/site-header';
 import { ServiceWorkerRegistration } from '@/components/service-worker';
 import { AirportStructuredData } from '@/components/structured-data';
-import { ThemeScript } from '@/components/theme-script';
+import { JsMarker } from '@/components/js-marker';
 import { env } from '@/lib/env';
 import { alternatesFor } from '@/lib/seo';
 import { routing, type Locale } from '@/i18n/routing';
@@ -19,17 +19,16 @@ export function generateStaticParams() {
 }
 
 /**
- * Browser chrome colour, per scheme.
+ * Browser chrome colour.
  *
- * The manifest can only carry one `theme_color`, so the dark value is declared
- * here — without it a dark-theme user gets a white bar above a near-black page.
- * Both values are the `--surface` token for their scheme.
+ * One value, because there is one theme. This used to be a light/dark pair —
+ * the manifest can only carry a single `theme_color`, so the dark surface had
+ * to be declared here or a dark-theme reader got a white bar above a near-black
+ * page. With the dark palette gone it is simply `--surface`, and it agrees with
+ * `app/manifest.ts`.
  */
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0d1219' },
-  ],
+  themeColor: '#ffffff',
 };
 
 export async function generateMetadata(
@@ -84,7 +83,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps<'/[
       <head>
         {/* Must run before first paint or a dark-theme user gets a white
             flash on every navigation. */}
-        <ThemeScript />
+        <JsMarker />
         <AirportStructuredData locale={locale} />
       </head>
       <body className="flex min-h-screen flex-col">

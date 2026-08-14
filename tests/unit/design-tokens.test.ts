@@ -29,33 +29,12 @@ const LIGHT = {
   focus: '#9a5c33',
 } as const;
 
-const DARK = {
-  surface: '#0d1219',
-  surfaceRaised: '#141b24',
-  text: '#ececed',
-  textMuted: '#a3a6ad',
-  borderStrong: '#5f6d82',
-  brand: '#ce7b44',
-  brandText: '#e3874b',
-  arrival: '#3fc7bd',
-  arrivalSoft: '#10262a',
-  focus: '#e3874b',
-} as const;
-
 const HIGH_CONTRAST_LIGHT = {
   surface: '#ffffff',
   text: '#000000',
   textMuted: '#1f1a17',
   brandText: '#7a4826',
   arrival: '#044b46',
-} as const;
-
-const HIGH_CONTRAST_DARK = {
-  surface: '#000000',
-  text: '#ffffff',
-  textMuted: '#e6e6e6',
-  brandText: '#f0a068',
-  arrival: '#7ce6dc',
 } as const;
 
 describe('light theme', () => {
@@ -121,39 +100,10 @@ describe('light theme', () => {
   });
 });
 
-describe('dark theme', () => {
-  const surfaces = [DARK.surface, DARK.surfaceRaised];
-
-  it('body and muted text pass AA on every surface', () => {
-    for (const surface of surfaces) {
-      expect(contrastRatio(DARK.text, surface), surface).toBeGreaterThanOrEqual(AA.normalText);
-      expect(contrastRatio(DARK.textMuted, surface), surface).toBeGreaterThanOrEqual(AA.normalText);
-    }
-  });
-
-  it('both accents pass AA on the twilight surface', () => {
-    expect(contrastRatio(DARK.brandText, DARK.surface)).toBeGreaterThanOrEqual(AA.normalText);
-    expect(contrastRatio(DARK.arrival, DARK.surface)).toBeGreaterThanOrEqual(AA.normalText);
-  });
-
-  it('raw brand passes AA on dark, unlike on light', () => {
-    expect(contrastRatio(DARK.brand, DARK.surface)).toBeGreaterThanOrEqual(AA.normalText);
-  });
-
-  it('strong borders and focus ring meet the non-text threshold', () => {
-    expect(contrastRatio(DARK.borderStrong, DARK.surface)).toBeGreaterThanOrEqual(AA.nonText);
-    expect(contrastRatio(DARK.focus, DARK.surface)).toBeGreaterThanOrEqual(AA.nonText);
-  });
-
-  it('arrival text is legible on its own tinted fill', () => {
-    expect(contrastRatio(DARK.arrival, DARK.arrivalSoft)).toBeGreaterThanOrEqual(AA.normalText);
-  });
-});
-
-describe('high-contrast mode (accessibility panel)', () => {
+describe('raised contrast (prefers-contrast, no control)', () => {
   it('clears AAA on light, not merely AA', () => {
-    // This mode exists for users who cannot read AA. Meeting only AA would
-    // make the toggle pointless.
+    // This palette exists for readers who cannot read AA. Meeting only AA
+    // would make answering `prefers-contrast` pointless.
     expect(contrastRatio(HIGH_CONTRAST_LIGHT.text, HIGH_CONTRAST_LIGHT.surface)).toBeGreaterThan(7);
     expect(
       contrastRatio(HIGH_CONTRAST_LIGHT.textMuted, HIGH_CONTRAST_LIGHT.surface)
@@ -166,20 +116,7 @@ describe('high-contrast mode (accessibility panel)', () => {
     );
   });
 
-  it('clears AAA on dark', () => {
-    expect(contrastRatio(HIGH_CONTRAST_DARK.text, HIGH_CONTRAST_DARK.surface)).toBeGreaterThan(7);
-    expect(contrastRatio(HIGH_CONTRAST_DARK.textMuted, HIGH_CONTRAST_DARK.surface)).toBeGreaterThan(
-      7
-    );
-    expect(contrastRatio(HIGH_CONTRAST_DARK.brandText, HIGH_CONTRAST_DARK.surface)).toBeGreaterThan(
-      7
-    );
-    expect(contrastRatio(HIGH_CONTRAST_DARK.arrival, HIGH_CONTRAST_DARK.surface)).toBeGreaterThan(
-      7
-    );
-  });
-
-  it('is a genuine improvement over the default theme', () => {
+  it('is a genuine improvement over the default palette', () => {
     expect(contrastRatio(HIGH_CONTRAST_LIGHT.arrival, HIGH_CONTRAST_LIGHT.surface)).toBeGreaterThan(
       contrastRatio(LIGHT.arrival, LIGHT.surface)
     );
@@ -194,7 +131,6 @@ describe('the two direction accents are distinguishable', () => {
     // They must not be told apart by colour alone (every use is labelled), but
     // when they are seen together they should be obviously different.
     expect(contrastRatio(LIGHT.brand, LIGHT.arrival)).toBeGreaterThan(1.5);
-    expect(contrastRatio(DARK.brand, DARK.arrival)).toBeGreaterThan(1.5);
   });
 });
 
@@ -203,12 +139,7 @@ describe('stylesheet and tokens agree', () => {
 
   it('declares every colour this suite asserts', () => {
     const asserted = new Set(
-      [
-        ...Object.values(LIGHT),
-        ...Object.values(DARK),
-        ...Object.values(HIGH_CONTRAST_LIGHT),
-        ...Object.values(HIGH_CONTRAST_DARK),
-      ].map((c) => c.toLowerCase())
+      [...Object.values(LIGHT), ...Object.values(HIGH_CONTRAST_LIGHT)].map((c) => c.toLowerCase())
     );
 
     const missing = [...asserted].filter((c) => !css.toLowerCase().includes(c));
