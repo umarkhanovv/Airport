@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 
 import { assertSameOrigin, requireAdmin } from '@/lib/admin/auth';
 import {
+  deleteStoredWorkbook,
   discardStagedUpload,
   MAX_SCHEDULE_BYTES,
   promoteStagedUpload,
@@ -14,7 +15,13 @@ import {
 } from '@/lib/admin/uploads';
 import { getDb } from '@/lib/db';
 import { parseScheduleWorkbook } from '@/lib/flights';
-import { ImportRefusedError, publishSchedule } from '@/lib/flights/import';
+import {
+  deleteScheduleUpload,
+  ImportRefusedError,
+  publishSchedule,
+  setActiveSchedule,
+} from '@/lib/flights/import';
+import { getScheduleUploadById } from '@/lib/admin/queries';
 
 export interface UploadState {
   error?: string;
@@ -142,4 +149,63 @@ export async function discardSchedule(formData: FormData): Promise<void> {
   }
 
   redirect('/admin/schedule');
+}
+
+/**
+ * Puts one schedule on the board, or clears the board entirely.
+ *
+ * Both directions are one click and no confirmation, because both are
+ * reversible: whatever you just did, doing it again to another row puts things
+ * back. That is the whole reason this exists next to the delete below —
+ * "take this off the public site" should not require destroying it.
+ */
+export async function setActiveScheduleAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await assertSameOrigin();
+
+  const id = formData.get('id');
+  // An empty id is the deliberate "nothing live" case, not a missing field.
+  const uploadId = typeof id === 'string' && id.length > 0 ? id : null;
+
+  if (uploadId !== null && !getScheduleUploadById(uploadId)) {
+    redirect('/admin?schedule=missing');
+  }
+
+  setActiveSchedule(getDb(), uploadId);
+  revalidatePublicBoard();
+
+  redirect(uploadId === null ? '/admin?schedule=cleared' : '/admin?schedule=live');
+}
+
+/**
+ * Deletes a schedule, its flights and its workbook.
+ *
+ * The week has to be typed back, and it is checked here rather than only in the
+ * browser, because this is the request that destroys the rows — a dialog in
+ * front of it would be decoration. Same shape as deleting a news post.
+ *
+ * The file is unlinked after the row is gone. If that order were reversed, a
+ * failure in between would leave a row pointing at nothing, which is the
+ * version of this that breaks the public download link.
+ */
+export async function deleteScheduleAction(formData: FormData): Promise<void> {
+  await requireAdmin();
+  await assertSameOrigin();
+
+  const id = formData.get('id');
+  if (typeof id !== 'string') return;
+
+  const upload = getScheduleUploadById(id);
+  const typed = formData.get('confirmWeek');
+  const expected = upload?.weekStart ?? '';
+
+  if (!upload || typeof typed !== 'string' || typed.trim() !== expected) {
+    redirect(`/admin?schedule=mismatch&id=${encodeURIComponent(id)}`);
+  }
+
+  const storedPath = deleteScheduleUpload(getDb(), id);
+  if (storedPath) deleteStoredWorkbook(storedPath);
+
+  revalidatePublicBoard();
+  redirect('/admin?schedule=deleted');
 }

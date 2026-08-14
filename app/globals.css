@@ -165,7 +165,7 @@
   --backdrop-a: rgb(206 123 68 / 0.16);
   --backdrop-b: rgb(15 122 115 / 0.1);
   --backdrop-c: rgb(206 123 68 / 0.08);
-  --lattice-opacity: 0.07;
+  --backdrop-mark-opacity: 0.07;
 }
 
 /* ---------------------------------------------------------------------------
@@ -194,7 +194,7 @@
     --backdrop-a: transparent;
     --backdrop-b: transparent;
     --backdrop-c: transparent;
-    --lattice-opacity: 0;
+    --backdrop-mark-opacity: 0;
   }
 }
 
@@ -213,15 +213,15 @@
     --backdrop-a: transparent;
     --backdrop-b: transparent;
     --backdrop-c: transparent;
-    --lattice-opacity: 0;
+    --backdrop-mark-opacity: 0;
   }
 }
 
 /* The admin panel keeps the surfaces and loses most of the atmosphere. Staff
-   read tables of two hundred documents there; a lattice under dense rows is
+   read tables of two hundred documents there; a drawing under dense rows is
    something to see past rather than something to enjoy. */
 .admin-shell {
-  --lattice-opacity: 0.025;
+  --backdrop-mark-opacity: 0.025;
   --backdrop-c: transparent;
 }
 
@@ -437,12 +437,10 @@
      tinted rectangle — a backdrop that scrolls with the content would sit
      still behind it and the blur would look like a texture.
 
-     Two warm-and-cool pools of the airport's own colours, and the façade
-     lattice over both. The lattice matters more than it looks: a blur applied
-     to a flat wash produces another flat wash, so without something structured
-     underneath there is nothing to see through the glass at all. It used to
-     appear only behind the masthead; it runs the height of the page now, which
-     is what gives every panel below the fold something to blur.
+     Two warm-and-cool pools of the airport's own colours, and the mosque over
+     both. The mark matters more than it looks: a blur applied to a flat wash
+     produces another flat wash, so without something structured underneath
+     there is nothing to see through the glass at all.
      ------------------------------------------------------------------------- */
   .app-backdrop {
     position: fixed;
@@ -455,13 +453,34 @@
       radial-gradient(70rem 50rem at 50% 108%, var(--backdrop-c), transparent 60%), var(--surface);
   }
 
+  /*
+    The mosque, once, rather than a tile repeated to the horizon.
+
+    This was a 60×60 façade-lattice tile. A drawing of a building does not tile:
+    repeat it and it stops being a mark and becomes wallpaper, with seams where
+    the domes meet the next copy along. So it is placed — one impression, low
+    and centred, large enough to read as architecture and faint enough to stay
+    behind the words.
+
+    Fixed with the rest of the backdrop, so the page travels over it. That
+    relative motion is what makes the frosted header read as a pane of glass
+    rather than a tinted bar; a mark that scrolled with the content would sit
+    still behind the blur and look like a texture baked into it.
+
+    `--backdrop-mark-opacity: 0` still removes it entirely for raised contrast and for
+    `prefers-reduced-transparency`, exactly as it removed the lattice.
+  */
   .app-backdrop::before {
     content: '';
     position: absolute;
     inset: 0;
-    opacity: var(--lattice-opacity);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23CE7B44' stroke-width='1'%3E%3Cpath d='M52 30 30 52 8 30 30 8Z'/%3E%3Cpath d='M45.6 14.4v31.2H14.4V14.4z'/%3E%3C/g%3E%3C/svg%3E");
-    background-size: 60px 60px;
+    opacity: var(--backdrop-mark-opacity);
+    background-image: url('/media/mosque.png');
+    background-repeat: no-repeat;
+    /* Wide enough to be architecture on a laptop, never wider than the phone
+       it is drawn on. */
+    background-size: min(64rem, 92vw) auto;
+    background-position: center 82%;
   }
 
   /* -------------------------------------------------------------------------

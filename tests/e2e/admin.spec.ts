@@ -11,6 +11,19 @@ import { expect, test, type Page } from '@playwright/test';
  * schedule intact.
  */
 
+/*
+ * The whole file, serially.
+ *
+ * Every describe below writes the same global state: there is exactly one
+ * active schedule in the database, and several of these tests change which one
+ * it is. Marking the individual blocks serial was not enough — two serial
+ * describes still interleave across workers, so `take off the board` could
+ * clear the board and another block publish a schedule back before the
+ * assertion ran. That failed roughly one run in three and looked like a bug in
+ * the download route.
+ */
+test.describe.configure({ mode: 'serial' });
+
 const PASSWORD = 'e2e-admin-password';
 // Playwright's TS transform is CommonJS, so `__dirname` is available here and
 // `import.meta` is not — the reverse of the Vitest suites.
@@ -228,5 +241,130 @@ test.describe('staged upload ids', () => {
       ).toHaveCount(0);
       await expect(page.getByTestId('preview-flights')).toHaveCount(0);
     }
+  });
+});
+
+/**
+ * Choosing and removing schedules (wave 2).
+ *
+ * Serial, and for a sharper reason than the publish tests above: these change
+ * which schedule the public board is showing, and one of them deletes rows
+ * outright. Each test restores what it changed so the rest of the suite still
+ * sees a published schedule.
+ */
+test.describe('schedule controls', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  /** The history table row for a given week, by its start date. */
+  const rowFor = (page: Page, week: string) => page.locator('tbody tr').filter({ hasText: week });
+
+  test('publishes another schedule so there is more than one to choose between', async ({
+    page,
+  }) => {
+    await signIn(page);
+    await page.goto('/admin');
+    const before = await page.locator('tbody tr').count();
+
+    await page.goto('/admin/schedule');
+    await page.locator('#file').setInputFiles(SAMPLE);
+    await page.getByRole('button', { name: 'Upload and preview' }).click();
+    await page.getByRole('button', { name: /Publish/ }).click();
+
+    await expect(page).toHaveURL(/\/admin\?published=1/);
+    // Relative, not absolute: earlier blocks in this file publish too, and the
+    // seed leaves one behind. Only the delta is this test's business.
+    await expect(page.locator('tbody tr')).toHaveCount(before + 1);
+    // Exactly one is live, and it is the newest.
+    await expect(page.getByText('live', { exact: true })).toHaveCount(1);
+  });
+
+  test('takes the live schedule off the board, leaving nothing live', async ({ page }) => {
+    await signIn(page);
+    await page.goto('/admin');
+
+    await page.getByRole('button', { name: 'Take off the board' }).click();
+
+    await expect(page).toHaveURL(/schedule=cleared/);
+    await expect(page.getByText('live', { exact: true })).toHaveCount(0);
+    // Every upload survives — this is the reversible half.
+    expect(await page.locator('tbody tr').count()).toBeGreaterThan(1);
+
+    // The public board says so rather than showing a stale week.
+    await page.goto('/ru/flights');
+    await expect(page.getByText('Расписание пока не загружено')).toBeVisible();
+
+    // And the download has nothing to serve.
+    expect((await page.request.get('/api/schedule/download')).status()).toBe(404);
+  });
+
+  test('puts a chosen schedule back on the board', async ({ page }) => {
+    await signIn(page);
+    await page.goto('/admin');
+
+    await page.getByRole('button', { name: 'Make live' }).first().click();
+
+    await expect(page).toHaveURL(/schedule=live/);
+    await expect(page.getByText('live', { exact: true })).toHaveCount(1);
+
+    await page.goto('/ru/flights');
+    await expect(page.locator('[data-flight-row]').first()).toBeVisible();
+  });
+
+  test('refuses to delete when the typed week does not match', async ({ page }) => {
+    await signIn(page);
+    await page.goto('/admin');
+
+    const before = await page.locator('tbody tr').count();
+
+    const row = rowFor(page, '2024-04-01').first();
+    await row.getByPlaceholder('2024-04-01').fill('not-the-week');
+    await row.getByRole('button', { name: 'Delete' }).click();
+
+    await expect(page).toHaveURL(/schedule=mismatch/);
+    // Scoped to the row: Next's route announcer is also `role="alert"`.
+    await expect(rowFor(page, '2024-04-01').first().getByRole('alert')).toContainText(
+      'Nothing was deleted'
+    );
+    expect(await page.locator('tbody tr').count()).toBe(before);
+  });
+
+  test('deletes a schedule once its week is typed back', async ({ page }) => {
+    await signIn(page);
+    await page.goto('/admin');
+
+    const before = await page.locator('tbody tr').count();
+
+    // Delete a schedule that is not live, so the board is untouched by it.
+    const row = page
+      .locator('tbody tr')
+      .filter({ hasNot: page.getByText('live', { exact: true }) })
+      .first();
+    await row.getByRole('textbox').fill('2024-04-01');
+    await row.getByRole('button', { name: 'Delete' }).click();
+
+    await expect(page).toHaveURL(/schedule=deleted/);
+    await expect(page.locator('tbody tr')).toHaveCount(before - 1);
+
+    // The live schedule is still live and the board still renders.
+    await expect(page.getByText('live', { exact: true })).toHaveCount(1);
+    await page.goto('/ru/flights');
+    await expect(page.locator('[data-flight-row]').first()).toBeVisible();
+  });
+
+  test('the controls work with no JavaScript at all', async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+
+    await signIn(page);
+    await page.goto('/admin');
+
+    await page.getByRole('button', { name: 'Take off the board' }).click();
+    await expect(page).toHaveURL(/schedule=cleared/);
+
+    await page.getByRole('button', { name: 'Make live' }).first().click();
+    await expect(page).toHaveURL(/schedule=live/);
+    await expect(page.getByText('live', { exact: true })).toHaveCount(1);
+
+    await context.close();
   });
 });

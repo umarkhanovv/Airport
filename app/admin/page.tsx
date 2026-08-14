@@ -7,11 +7,20 @@ import { countUnreadFeedback } from '@/lib/feedback/store';
 import { getActiveSchedule } from '@/lib/flights/queries';
 
 import { AdminNav } from './admin-nav';
+import { ScheduleRowActions } from './schedule-row-actions';
 
 export const metadata: Metadata = { title: 'Overview' };
 
 /** Reads the session cookie and live database state. Never prerendered. */
 export const dynamic = 'force-dynamic';
+
+const SCHEDULE_NOTICES: Record<string, string> = {
+  live: 'That schedule is now on the public board.',
+  cleared:
+    'No schedule is on the board. The public site says none has been published; the upload is still here and can be put back.',
+  deleted: 'Schedule deleted, along with its flights and its workbook.',
+  missing: 'That schedule no longer exists. Nothing changed.',
+};
 
 function formatTimestamp(iso: string): string {
   const parsed = new Date(iso.includes('T') ? iso : `${iso.replace(' ', 'T')}Z`);
@@ -22,7 +31,7 @@ function formatTimestamp(iso: string): string {
 export default async function AdminDashboardPage({ searchParams }: PageProps<'/admin'>) {
   await requireAdmin('/admin');
 
-  const { published } = await searchParams;
+  const { published, schedule: scheduleNotice, id: mismatchId } = await searchParams;
   const active = getActiveSchedule();
   const history = listScheduleUploads();
 
@@ -39,6 +48,20 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<'/a
             className="border-arrival bg-arrival-soft mt-4 rounded-md border px-4 py-3 text-sm"
           >
             Schedule published. The public board is showing it now.
+          </p>
+        ) : null}
+
+        {/*
+          One notice per outcome, and each says what the public site is doing
+          now rather than that the click worked — the click is not the thing
+          anybody is worried about.
+        */}
+        {SCHEDULE_NOTICES[scheduleNotice as string] ? (
+          <p
+            role="status"
+            className="border-arrival bg-arrival-soft mt-4 rounded-md border px-4 py-3 text-sm"
+          >
+            {SCHEDULE_NOTICES[scheduleNotice as string]}
           </p>
         ) : null}
 
@@ -85,7 +108,9 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<'/a
         <section className="mt-10">
           <h2 className="text-lg font-medium">Upload history</h2>
           <p className="text-text-muted mt-1 text-sm">
-            Previous schedules are kept, not deleted — the original workbooks stay downloadable.
+            Publishing keeps the previous schedule rather than replacing it, so you can put an
+            earlier week back on the board at any time. Taking one off the board is reversible;
+            deleting is not.
           </p>
 
           {history.length === 0 ? (
@@ -110,6 +135,9 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<'/a
                     <th scope="col" className="px-4 py-2 font-medium">
                       File
                     </th>
+                    <th scope="col" className="px-4 py-2 font-medium">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-surface">
@@ -129,6 +157,14 @@ export default async function AdminDashboardPage({ searchParams }: PageProps<'/a
                       <td className="px-4 py-2">{row.entryCount}</td>
                       <td className="px-4 py-2">{row.warnings.length}</td>
                       <td className="px-4 py-2 break-all">{row.originalFilename}</td>
+                      <td className="px-4 py-2">
+                        <ScheduleRowActions
+                          id={row.id}
+                          isActive={row.isActive}
+                          weekStart={row.weekStart}
+                          mismatch={scheduleNotice === 'mismatch' && mismatchId === row.id}
+                        />
+                      </td>
                     </tr>
                   ))}
                 </tbody>

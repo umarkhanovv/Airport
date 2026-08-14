@@ -9,7 +9,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 import * as schema from '@/lib/db/schema';
 import { flightEntries, scheduleUploads } from '@/lib/db/schema';
-import { ImportRefusedError, publishSchedule, sha256 } from '@/lib/flights/import';
+import {
+  deleteScheduleUpload,
+  ImportRefusedError,
+  publishSchedule,
+  setActiveSchedule,
+  sha256,
+} from '@/lib/flights/import';
 import { parseScheduleWorkbook } from '@/lib/flights';
 import type { ParseResult } from '@/lib/flights';
 
@@ -139,5 +145,77 @@ describe('failure leaves the board untouched', () => {
     const outcome = publishSchedule(db, parsed, meta());
     db.delete(scheduleUploads).where(eq(scheduleUploads.id, outcome.uploadId)).run();
     expect(db.select().from(flightEntries).all()).toHaveLength(0);
+  });
+});
+
+describe('choosing what the board shows', () => {
+  it('makes an earlier upload live again, standing the current one down', () => {
+    const first = publishSchedule(db, parsed, meta('week1.xlsx'));
+    publishSchedule(db, parsed, meta('week2.xlsx'));
+
+    setActiveSchedule(db, first.uploadId);
+
+    const active = db
+      .select()
+      .from(scheduleUploads)
+      .where(eq(scheduleUploads.isActive, true))
+      .all();
+    expect(active, 'exactly one upload may be live').toHaveLength(1);
+    expect(active[0].id).toBe(first.uploadId);
+  });
+
+  it('can leave nothing live at all', () => {
+    publishSchedule(db, parsed, meta('week1.xlsx'));
+
+    setActiveSchedule(db, null);
+
+    expect(
+      db.select().from(scheduleUploads).where(eq(scheduleUploads.isActive, true)).all()
+    ).toHaveLength(0);
+    // The upload itself survives — this is the reversible half of removing it.
+    expect(db.select().from(scheduleUploads).all()).toHaveLength(1);
+    expect(db.select().from(flightEntries).all()).toHaveLength(38);
+  });
+});
+
+describe('deleting a schedule', () => {
+  it('takes its flights with it and reports the workbook to unlink', () => {
+    const first = publishSchedule(db, parsed, meta('week1.xlsx'));
+    const second = publishSchedule(db, parsed, meta('week2.xlsx'));
+    expect(db.select().from(flightEntries).all()).toHaveLength(76);
+
+    const storedPath = deleteScheduleUpload(db, first.uploadId);
+
+    expect(storedPath, 'the caller needs this to unlink the file').toBe(
+      'uploads/schedules/week1.xlsx'
+    );
+    expect(db.select().from(scheduleUploads).all()).toHaveLength(1);
+
+    // The cascade is the point: orphaned flight rows would still be readable.
+    const remaining = db.select().from(flightEntries).all();
+    expect(remaining).toHaveLength(38);
+    expect(remaining.every((row) => row.uploadId === second.uploadId)).toBe(true);
+  });
+
+  it('leaves nothing live when the live schedule is the one deleted', () => {
+    publishSchedule(db, parsed, meta('week1.xlsx'));
+    const live = publishSchedule(db, parsed, meta('week2.xlsx'));
+
+    deleteScheduleUpload(db, live.uploadId);
+
+    // Deliberately not promoting the predecessor: putting a different week on
+    // the board because somebody deleted this one is a surprise a flight board
+    // must not spring. The remaining upload is still there to be chosen.
+    expect(
+      db.select().from(scheduleUploads).where(eq(scheduleUploads.isActive, true)).all()
+    ).toHaveLength(0);
+    expect(db.select().from(scheduleUploads).all()).toHaveLength(1);
+  });
+
+  it('is a no-op for an id that does not exist', () => {
+    publishSchedule(db, parsed, meta('week1.xlsx'));
+
+    expect(deleteScheduleUpload(db, 'no-such-upload')).toBeNull();
+    expect(db.select().from(scheduleUploads).all()).toHaveLength(1);
   });
 });
