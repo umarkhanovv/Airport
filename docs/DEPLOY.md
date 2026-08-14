@@ -17,7 +17,7 @@ Three things, and the third is the one that catches people out.
 1. **Node and a C toolchain** — supplied by the image, not the host.
    `better-sqlite3` compiles from source; the `Dockerfile` installs
    `build-essential python3` in the build stage for exactly that.
-2. **Four environment variables** — §3.
+2. **Five environment variables** — §3.
 3. **A persistent disk.** Everything the airport has entered lives in one
    directory: the SQLite database and every uploaded schedule, news image and
    document. On an ephemeral filesystem all of it is destroyed on every deploy,
@@ -96,18 +96,40 @@ addresses nobody can open.
 
 Service → **Variables**.
 
-| Variable         | Value                                  | Why                                                                                                                    |
-| ---------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `ADMIN_PASSWORD` | _a long random string_                 | The only credential in the system. There are no user accounts anywhere (spec §8, §14).                                 |
-| `SESSION_SECRET` | _a second one_                         | Signs the admin session cookie.                                                                                        |
-| `SITE_URL`       | `https://<your-app>.up.railway.app`    | Canonical origin for `hreflang`, canonicals and the sitemap. Wrong here and the site advertises URLs nobody can reach. |
-| `PREVIEW`        | `true` **while this is a review copy** | `robots.txt` becomes `Disallow: /` and no sitemap is published.                                                        |
+| Variable          | Value                                  | Why                                                                                                                    |
+| ----------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `ADMIN_PASSWORD`  | _a long random string_                 | The only credential in the system. There are no user accounts anywhere (spec §8, §14).                                 |
+| `SESSION_SECRET`  | _a second one_                         | Signs the admin session cookie.                                                                                        |
+| `SITE_URL`        | `https://<your-app>.up.railway.app`    | Canonical origin for `hreflang`, canonicals and the sitemap. Wrong here and the site advertises URLs nobody can reach. |
+| `PREVIEW`         | `true` **while this is a review copy** | `robots.txt` becomes `Disallow: /` and no sitemap is published.                                                        |
+| `RAILWAY_RUN_UID` | `0`                                    | Lets the process write to its own volume. See below — without it the site starts and then cannot save anything.        |
 
 Generate the secrets rather than inventing them:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ```
+
+`DATA_DIR`, `PORT` and `NODE_ENV` are already in the image. Railway injects its
+own `PORT` and the server honours it.
+
+### `RAILWAY_RUN_UID=0`, and why a well-behaved image needs it
+
+The image runs as the unprivileged `node` user, which is right, and it creates
+`/var/lib/hsairport` owned by that user at build time. Then Railway mounts the
+volume over that path **owned by root**, covering the ownership the build set
+up. The container is left running as `node` with a data directory it cannot
+write to.
+
+The failure is quiet in the worst way: the build succeeds, the container starts,
+pages render. It breaks the first time something writes — publishing a schedule,
+sending feedback — and it breaks as a permissions error nobody is looking at.
+
+`RAILWAY_RUN_UID=0` runs the process as root so it can write. That is Railway's
+own answer to this, and it is a real trade: on this platform the container is
+isolated and the alternative is an entrypoint that fixes ownership and drops
+privileges, which is more moving parts than a single-tenant timetable warrants.
+The image stays non-root everywhere else, which is where it matters.
 
 ### `SESSION_SECRET` must not reference a Railway variable
 
@@ -120,9 +142,6 @@ and nothing else.
 
 The same goes for `ADMIN_PASSWORD`. Both are the entire access control on this
 site — there are no user accounts to fall back on.
-
-`DATA_DIR`, `PORT` and `NODE_ENV` are already in the image. Railway injects its
-own `PORT` and the server honours it.
 
 ### About `PREVIEW`
 
@@ -222,6 +241,15 @@ against another fails at startup with a message that reads like a missing file.
 **Build fails on a missing `vendor/xlsx-0.20.3.tgz`.** SheetJS is a local
 tarball, not a registry dependency, so `COPY vendor ./vendor` has to come before
 `npm ci`. It already does; do not "tidy" it away.
+
+**`dockerfile invalid: docker VOLUME … is not supported, use Railway Volumes`.**
+Railway rejects the whole file over a `VOLUME` instruction, because it wants to
+manage mounts itself. The instruction has been removed; do not add it back for
+the benefit of `docker run`, which mounts a `-v` over that path regardless.
+
+**Uploads and schedule publishing fail on a live site that otherwise works.**
+Permissions on the volume — `RAILWAY_RUN_UID=0`, see §3. This one does not show
+up until something writes, so it will look like a bug in the admin panel.
 
 **Site is up but empty.** The volume has not been seeded — §4.
 

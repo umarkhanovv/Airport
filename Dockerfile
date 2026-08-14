@@ -51,7 +51,21 @@ COPY --from=build /app/.next/standalone ./
 RUN mkdir -p ${DATA_DIR} && chown -R node:node ${DATA_DIR}
 USER node
 
-VOLUME ["/var/lib/hsairport"]
+# No `VOLUME` instruction. It belonged here for plain `docker run`, where it
+# declares the mount point, but Railway rejects the whole Dockerfile over it:
+#
+#   dockerfile invalid: docker VOLUME at Line 54 is not supported,
+#   use Railway Volumes
+#
+# Nothing is lost by dropping it. The directory is created and owned above, and
+# a `-v` on the command line mounts over it just the same; the instruction only
+# ever added an anonymous volume for people who forgot to pass one, which is
+# not a favour worth doing to a database.
+#
+# The chown above does not survive a platform mount, either — a volume arrives
+# owned by root and covers whatever was underneath. On Railway that means
+# setting RAILWAY_RUN_UID=0 so the process can write to its own data directory;
+# see docs/DEPLOY.md.
 EXPOSE 3000
 
 # ADMIN_PASSWORD, SESSION_SECRET and SITE_URL are supplied at run time and are
