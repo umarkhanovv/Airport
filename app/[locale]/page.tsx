@@ -2,8 +2,6 @@ import Image from 'next/image';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
 import { FlightPreview } from '@/components/flight-preview';
-import { SECTIONS } from '@/lib/constants';
-import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
 
 /**
@@ -20,7 +18,6 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
 
   const t = await getTranslations('Home');
   const tSite = await getTranslations('Site');
-  const tSections = await getTranslations('Sections');
 
   return (
     <>
@@ -53,40 +50,18 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
 
       <FlightPreview locale={locale as Locale} />
 
-      <section className="mt-16">
-        <h2 className="text-text text-2xl font-semibold tracking-tight">{t('sectionsHeading')}</h2>
-        {/*
-          Seven tiles, not seven equal tiles.
-
-          They were identical, which said that flights matter as much as
-          partner tariffs. They do not: the board is why almost everyone is
-          here, and a grid that flattens that is making a false claim about the
-          content. Flights takes the width of two, which is the whole of the
-          hierarchy — no second accent on top of it, because the size is
-          already saying it.
-
-          Seven into a 2-up and a 3-up both come out even once the first tile
-          is double width, so nothing is left ragged at the end of a row.
-        */}
-        <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {SECTIONS.map((section) => (
-            <li key={section} className={section === 'flights' ? 'sm:col-span-2' : undefined}>
-              <Link href={`/${section}`} className="glass glass-card block h-full p-5">
-                <span className="text-text block font-semibold">
-                  {tSections(`${section}.title`)}
-                </span>
-                <span className="text-text-muted mt-1 block text-sm">
-                  {tSections(`${section}.description`)}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
       {/*
+        There was a grid of seven section tiles here, headed "Разделы сайта".
+        It was the site map printed twice: every one of those destinations is in
+        the header on every page, and repeating them under the board made the
+        home page a menu with a timetable at the top rather than a timetable.
+
         The photograph earns its place here rather than at the top: below the
-        fold, lazy-loaded, and never the LCP element.
+        fold, lazy-loaded, and never the LCP element. Its caption is gone —
+        explaining the façade pattern to someone checking a departure time was
+        a note about the design, addressed to nobody who came here. The `alt`
+        text stays, because that is not a caption; it is what the picture is,
+        for a reader who cannot see it.
       */}
       <section className="mt-16">
         <figure className="panel overflow-hidden">
@@ -99,9 +74,6 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
             loading="lazy"
             className="h-auto w-full"
           />
-          <figcaption className="text-text-muted border-border border-t px-5 py-3 text-sm">
-            {t('terminalPhotoCaption')}
-          </figcaption>
         </figure>
       </section>
     </>

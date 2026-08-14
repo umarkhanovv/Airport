@@ -23,8 +23,7 @@
     "label": "Main menu",
     "allPages": "All pages in this section",
     "close": "Close menu",
-    "departures": "Departures",
-    "arrivals": "Arrivals",
+    "board": "Board",
     "passengers": "Passengers",
     "partners": "Partners",
     "press": "Press centre",
@@ -115,9 +114,7 @@
   "Home": {
     "title": "Turkistan International Airport",
     "intro": "Flight schedule, airport services and passenger information.",
-    "sectionsHeading": "Browse the site",
-    "terminalPhotoAlt": "The Turkistan airport terminal at dusk. Its façade is clad in perforated geometric screens, lit warmly from within.",
-    "terminalPhotoCaption": "The terminal. Its façade follows traditional lattice geometry — the same pattern is used as a texture across this site."
+    "terminalPhotoAlt": "The Turkistan airport terminal at dusk. Its façade is clad in perforated geometric screens, lit warmly from within."
   },
   "Board": {
     "today": "Today",
@@ -176,18 +173,10 @@
     "pageOf": "Page {page} of {total}"
   },
   "Appearance": {
-    "label": "Display",
-    "textSize": "Text size",
-    "size0": "Normal",
-    "size1": "Large",
-    "size2": "Largest",
     "theme": "Theme",
     "system": "System",
     "light": "Light",
-    "dark": "Dark",
-    "contrast": "Contrast",
-    "normal": "Normal",
-    "high": "High"
+    "dark": "Dark"
   },
   "Map": {
     "airportLabel": "Turkistan International Airport",
@@ -255,8 +244,6 @@
     "explanation": "Content for this section is being migrated from the previous site. The navigation structure is already in place."
   },
   "Footer": {
-    "rights": "Turkistan International Airport",
-    "coordinates": "Airport coordinates",
-    "quickLinks": "Quick links"
+    "rights": "Turkistan International Airport"
   }
 }

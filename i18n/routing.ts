@@ -57,3 +57,19 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   en: 'English',
   kk: 'Қазақша',
 };
+
+/**
+ * Two-letter labels for the language button in the header.
+ *
+ * `KZ` rather than `KK`, deliberately: this is the label a visitor reads, and
+ * the URL they are about to land on says `/kz`. The identifier stays `kk`
+ * everywhere it means something to a machine — `<html lang>`, `hreflang`, the
+ * message catalogues — for the reason set out at the top of this file. A label
+ * is not a language tag, and this is the one place the two are allowed to
+ * differ.
+ */
+export const LOCALE_SHORT_LABELS: Record<Locale, string> = {
+  ru: 'RU',
+  en: 'EN',
+  kk: 'KZ',
+};

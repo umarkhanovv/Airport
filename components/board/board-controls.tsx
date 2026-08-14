@@ -15,9 +15,20 @@ import type { FlightKind } from '@/lib/flights/types';
 export async function BoardControls({
   state,
   counts,
+  compact = false,
 }: {
   state: BoardState;
   counts: { arrival: number; departure: number };
+  /**
+   * Direction tabs only, no view or traffic filters.
+   *
+   * For the home page, which shows today's flights and nothing else. Because
+   * `boardHref` always writes `/flights`, both tabs there lead to the full
+   * board with that direction already selected — which is the intended
+   * journey: glance at the home page, tap through when you want more than a
+   * glance.
+   */
+  compact?: boolean;
 }) {
   const t = await getTranslations('Board');
 
@@ -68,49 +79,55 @@ export async function BoardControls({
         </ul>
       </nav>
 
-      <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
-        <fieldset>
-          <legend className="text-text mb-1 text-sm font-medium">{t('viewLabel')}</legend>
-          <div className="border-border-strong flex overflow-hidden rounded-md border">
-            {(['today', 'week'] as const).map((view) => (
-              <Link
-                key={view}
-                href={boardHref(state, { view, date: null })}
-                aria-current={state.view === view && !state.date ? 'true' : undefined}
-                className={[
-                  'px-3 py-1.5 text-sm',
-                  state.view === view && !state.date
-                    ? 'bg-brand text-on-brand font-semibold'
-                    : 'bg-surface text-text hover:bg-surface-sunken',
-                ].join(' ')}
-              >
-                {view === 'today' ? t('viewToday') : t('viewWeek')}
-              </Link>
-            ))}
-          </div>
-        </fieldset>
+      {/* Not hidden with a class — not rendered. A filter that is present in
+          the DOM but invisible is still something a script or a stylesheet can
+          bring back by accident, and on the home page these controls have
+          nothing to filter. */}
+      {compact ? null : (
+        <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+          <fieldset>
+            <legend className="text-text mb-1 text-sm font-medium">{t('viewLabel')}</legend>
+            <div className="border-border-strong flex overflow-hidden rounded-md border">
+              {(['today', 'week'] as const).map((view) => (
+                <Link
+                  key={view}
+                  href={boardHref(state, { view, date: null })}
+                  aria-current={state.view === view && !state.date ? 'true' : undefined}
+                  className={[
+                    'px-3 py-1.5 text-sm',
+                    state.view === view && !state.date
+                      ? 'bg-brand text-on-brand font-semibold'
+                      : 'bg-surface text-text hover:bg-surface-sunken',
+                  ].join(' ')}
+                >
+                  {view === 'today' ? t('viewToday') : t('viewWeek')}
+                </Link>
+              ))}
+            </div>
+          </fieldset>
 
-        <fieldset>
-          <legend className="text-text mb-1 text-sm font-medium">{t('trafficLabel')}</legend>
-          <div className="border-border-strong flex overflow-hidden rounded-md border">
-            {traffic.map((option) => (
-              <Link
-                key={option.value}
-                href={boardHref(state, { traffic: option.value })}
-                aria-current={state.traffic === option.value ? 'true' : undefined}
-                className={[
-                  'px-3 py-1.5 text-sm',
-                  state.traffic === option.value
-                    ? 'bg-brand text-on-brand font-semibold'
-                    : 'bg-surface text-text hover:bg-surface-sunken',
-                ].join(' ')}
-              >
-                {option.label}
-              </Link>
-            ))}
-          </div>
-        </fieldset>
-      </div>
+          <fieldset>
+            <legend className="text-text mb-1 text-sm font-medium">{t('trafficLabel')}</legend>
+            <div className="border-border-strong flex overflow-hidden rounded-md border">
+              {traffic.map((option) => (
+                <Link
+                  key={option.value}
+                  href={boardHref(state, { traffic: option.value })}
+                  aria-current={state.traffic === option.value ? 'true' : undefined}
+                  className={[
+                    'px-3 py-1.5 text-sm',
+                    state.traffic === option.value
+                      ? 'bg-brand text-on-brand font-semibold'
+                      : 'bg-surface text-text hover:bg-surface-sunken',
+                  ].join(' ')}
+                >
+                  {option.label}
+                </Link>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+      )}
     </div>
   );
 }

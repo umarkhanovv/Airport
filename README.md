@@ -41,19 +41,33 @@ connections this site is read on are not. What the budget was protecting is
 asserted directly instead: the board still renders with JavaScript switched off.
 
 **Frosted glass** sits over a fixed, tinted backdrop carrying the terminal's
-façade lattice — and it is spent in six places, not everywhere. It went onto
+façade lattice — and it is spent in a few places, not everywhere. It went onto
 every surface first, which is self-defeating: a frosted pane says "this floats
 above the page", and when everything says it, nothing does. It now marks the
-sticky header, the flight board, the section tiles on the home page, the admin
-bar, the appearance popover and the map. Every other surface is `.panel`, a
-border and a raised fill.
+sticky header, the flight board, the admin bar and the map. Every other surface
+is `.panel`, a border and a raised fill.
 
 Built at 72–85% opacity rather than the 10% the technique is usually written
 with, because the effective background under the text has to stay close enough
 to `--surface` for the contrast ratios to hold; those ratios are asserted, and
 axe runs over every page. It turns itself off in three cases, all of them real:
-the high-contrast theme, a browser asking for reduced transparency, and any
-engine without `backdrop-filter`.
+raised contrast, a browser asking for reduced transparency, and any engine
+without `backdrop-filter`.
+
+The **menu panels are not glass**, and were the clearest case of the rule above.
+They carried it, so the page read through the one surface that has to sit in
+front of everything — and the blur was decorative anyway: the header is itself
+backdrop-filtered, which makes it the backdrop root for anything inside it, so a
+nested blur had only the header to frost. They are opaque, and they fade in over
+160 ms.
+
+The header carries **two menus**, `components/site-nav-desktop.tsx` and
+`site-nav-mobile.tsx`, built from the same `NAVIGATION` array and swapped at
+`md`: a row of tabs dropping full-width panels above it, three lines opening a
+vertical accordion below. Both are `<details>`, so both work with no JavaScript;
+the phone tree uses a shared `name` so the browser keeps exactly one branch
+open. Language and theme are one button each, and the language button stays real
+anchors so the `hreflang` alternates remain crawlable.
 
 When a page fails, `app/[locale]/error.tsx` shows a localised 500 inside the
 normal chrome, with a retry and a way home. It shows the `digest` — the hash
@@ -152,8 +166,8 @@ Built and green through **Stage 10**; nothing is outstanding.
   airport self-hosts, and CI runs `next build && next start` on every push to
   keep that honest
 - **next-intl** — Russian, English and Kazakh, with `kk` served under `/kz`
-- **Tailwind CSS v4** with a token layer that drives light, dark and
-  high-contrast themes
+- **Tailwind CSS v4** with a token layer that drives light and dark, and a
+  raised-contrast palette answering `prefers-contrast`
 - **SQLite** via `better-sqlite3` + **Drizzle** — one file on local disk, backed
   up by copying it
 - **SheetJS** (vendored) for parsing the weekly workbook, server-side only

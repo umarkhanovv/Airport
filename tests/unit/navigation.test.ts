@@ -59,11 +59,14 @@ describe('the header menu', () => {
     }
   });
 
-  it('keeps the three destinations that are pages, not panels', () => {
-    // Departures, arrivals and feedback are where someone is going, not a place
-    // to choose from — the client's decision, and the legacy site's.
+  it('keeps the destinations that are pages, not panels', () => {
+    // The board and feedback are where someone is going, not a place to choose
+    // from. There were two board entries here — Вылет and Прилёт, as the legacy
+    // menu had them — until today's flights moved onto the home page, where the
+    // direction tabs are the first thing a visitor meets. One link back to the
+    // full board is what the menu still owes.
     const plain = NAVIGATION.filter((item) => item.kind === 'link').map((item) => item.key);
-    expect(plain).toEqual(['departures', 'arrivals', 'feedback']);
+    expect(plain).toEqual(['board', 'feedback']);
   });
 
   it('names each entry once, so a label cannot drift between panels', () => {

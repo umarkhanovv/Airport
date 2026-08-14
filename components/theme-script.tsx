@@ -1,11 +1,11 @@
 import { THEME_STORAGE_KEY } from '@/lib/appearance';
 
 /**
- * Applies saved appearance preferences before first paint.
+ * Applies the saved theme before first paint.
  *
  * This must run synchronously in <head>, ahead of React, or someone who chose
  * the dark theme gets a white flash on every navigation — actively unpleasant
- * for the light-sensitive users the accessibility panel exists to serve.
+ * for exactly the light-sensitive readers who chose it.
  *
  * Deliberately tiny, dependency-free and wrapped in try/catch: if localStorage
  * is unavailable the site falls back to the system preference rather than
@@ -24,8 +24,6 @@ const script = `
     var root = document.documentElement;
     if (p.theme === 'dark') root.classList.add('theme-dark');
     if (p.theme === 'light') root.classList.add('theme-light');
-    if (p.contrast === 'high') root.classList.add('contrast-high');
-    if (p.fontScale && p.fontScale !== 1) root.style.setProperty('--font-scale', String(p.fontScale));
   } catch (e) {}
 })();
 `;

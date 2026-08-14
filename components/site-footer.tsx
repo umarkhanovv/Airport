@@ -1,16 +1,22 @@
 import { useTranslations } from 'next-intl';
 
-import { AIRPORT_CONTACTS, AIRPORT_COORDS } from '@/lib/constants';
-import { Link } from '@/i18n/navigation';
+import { AIRPORT_CONTACTS } from '@/lib/constants';
+
+import { SocialIcons } from './social-icons';
 
 /**
  * The call centre number and e-mail are here as well as on the contacts page,
  * as they were on the legacy site: a passenger looking for a phone number
  * should not have to work out which section it is filed under.
+ *
+ * What is no longer here: a column of quick links, which repeated four of the
+ * seven destinations already in the header on every page, and the airport's
+ * coordinates as raw decimals — `43.30965, 68.54065` is not something anybody
+ * reads off a footer, and the contacts page has an actual map. The social
+ * accounts take their place, which is where people look for them.
  */
 export function SiteFooter() {
   const t = useTranslations('Footer');
-  const tNav = useTranslations('Nav');
   const tContacts = useTranslations('Contacts');
 
   return (
@@ -18,9 +24,6 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:grid-cols-2">
         <div>
           <p className="text-text font-semibold">{t('rights')}</p>
-          <p className="tabular text-text-muted mt-1 text-sm">
-            {t('coordinates')}: {AIRPORT_COORDS.latitude}, {AIRPORT_COORDS.longitude}
-          </p>
 
           {/*
             The landline and the airport's own address only. The contacts page
@@ -50,18 +53,12 @@ export function SiteFooter() {
           </p>
         </div>
 
-        <nav aria-label={t('quickLinks')}>
-          <h2 className="text-text text-sm font-semibold">{t('quickLinks')}</h2>
-          <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
-            {(['flights', 'contacts', 'press', 'passengers'] as const).map((section) => (
-              <li key={section}>
-                <Link href={`/${section}`} className="text-text-muted hover:text-brand-text">
-                  {tNav(section)}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <div>
+          <h2 className="text-text text-sm font-semibold">{tContacts('social')}</h2>
+          <div className="mt-2">
+            <SocialIcons />
+          </div>
+        </div>
       </div>
     </footer>
   );

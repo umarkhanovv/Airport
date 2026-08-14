@@ -94,9 +94,6 @@
   --focus: #9a5c33;
 
   --font-sans: 'Golos Text', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-
-  /* Driven by the accessibility panel (§17.7). */
-  --font-scale: 1;
 }
 
 /* Twilight, not grey — the sky in the terminal photograph. */
@@ -138,33 +135,70 @@
   --focus: #e3874b;
 }
 
-/* Accessibility panel: maximum contrast for low vision (§17.7). */
-:root.contrast-high {
-  --surface: #ffffff;
-  --surface-raised: #ffffff;
-  --surface-sunken: #ffffff;
-  --text: #000000;
-  --text-muted: #1f1a17;
-  --border: #000000;
-  --border-strong: #000000;
-  --brand-text: #7a4826;
-  --brand-text-strong: #6b3f21;
-  --arrival: #044b46;
-  --focus: #000000;
+/* ---------------------------------------------------------------------------
+   Maximum contrast for low vision (§17.7).
+
+   This used to be a switch in the appearance panel. The panel is gone — it is
+   one theme button now — but the palette is not, because the palette was never
+   the part that needed simplifying. It answers `prefers-contrast` instead, so
+   somebody who has already told their operating system that they need more
+   contrast gets it here without having to find a control and ask again.
+
+   The ratios these hexes hold are asserted in
+   tests/unit/design-tokens.test.ts.
+   --------------------------------------------------------------------------- */
+@media (prefers-contrast: more) {
+  :root {
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --surface-sunken: #ffffff;
+    --text: #000000;
+    --text-muted: #1f1a17;
+    --border: #000000;
+    --border-strong: #000000;
+    --brand-text: #7a4826;
+    --brand-text-strong: #6b3f21;
+    --arrival: #044b46;
+    --focus: #000000;
+  }
+
+  :root.theme-dark {
+    --surface: #000000;
+    --surface-raised: #000000;
+    --surface-sunken: #000000;
+    --text: #ffffff;
+    --text-muted: #e6e6e6;
+    --border: #ffffff;
+    --border-strong: #ffffff;
+    --brand-text: #f0a068;
+    --brand-text-strong: #f0a068;
+    --arrival: #7ce6dc;
+    --focus: #ffffff;
+  }
 }
 
-:root.theme-dark.contrast-high {
-  --surface: #000000;
-  --surface-raised: #000000;
-  --surface-sunken: #000000;
-  --text: #ffffff;
-  --text-muted: #e6e6e6;
-  --border: #ffffff;
-  --border-strong: #ffffff;
-  --brand-text: #f0a068;
-  --brand-text-strong: #f0a068;
-  --arrival: #7ce6dc;
-  --focus: #ffffff;
+/*
+  The same dark palette again, for the reader who never picked a theme and
+  whose system is dark. Worth the eleven repeated lines: this case did not
+  exist while high contrast was a button — you turned it on, saw white, and
+  turned the theme dark yourself. Answering `prefers-contrast` means nobody
+  turns anything on, so a system-dark reader raising their contrast would have
+  been handed a white screen without ever asking for one.
+*/
+@media (prefers-contrast: more) and (prefers-color-scheme: dark) {
+  :root:not(.theme-light) {
+    --surface: #000000;
+    --surface-raised: #000000;
+    --surface-sunken: #000000;
+    --text: #ffffff;
+    --text-muted: #e6e6e6;
+    --border: #ffffff;
+    --border-strong: #ffffff;
+    --brand-text: #f0a068;
+    --brand-text-strong: #f0a068;
+    --arrival: #7ce6dc;
+    --focus: #ffffff;
+  }
 }
 
 /* ===========================================================================
@@ -249,8 +283,8 @@
    is not tidiness: the base tokens above are unlayered too, and an unlayered
    declaration wins over anything inside `@layer components` however specific
    it is, because layer order is resolved before specificity. Written down
-   beside the `.glass` rules, `:root.contrast-high` lost to a plain `:root` and
-   the high-contrast theme kept its frosted panels.
+   beside the `.glass` rules, the raised-contrast override lost to a plain
+   `:root` and high contrast kept its frosted panels.
    --------------------------------------------------------------------------- */
 
 /* A translucent surface with something moving behind it is a readability
@@ -270,21 +304,23 @@
   }
 }
 
-/* The high-contrast theme is a request for edges, not atmosphere. */
-:root.contrast-high {
-  --glass-bg: var(--surface);
-  --glass-bg-strong: var(--surface);
-  --glass-border: var(--border);
-  --glass-shadow: none;
-  --glass-highlight: transparent;
-  --glass-blur: 0px;
-  --glass-saturate: 1;
-  --glass-hover-border: var(--brand-text-strong);
-  --glass-hover-glow: transparent;
-  --backdrop-a: transparent;
-  --backdrop-b: transparent;
-  --backdrop-c: transparent;
-  --lattice-opacity: 0;
+/* Raised contrast is a request for edges, not atmosphere. */
+@media (prefers-contrast: more) {
+  :root {
+    --glass-bg: var(--surface);
+    --glass-bg-strong: var(--surface);
+    --glass-border: var(--border);
+    --glass-shadow: none;
+    --glass-highlight: transparent;
+    --glass-blur: 0px;
+    --glass-saturate: 1;
+    --glass-hover-border: var(--brand-text-strong);
+    --glass-hover-glow: transparent;
+    --backdrop-a: transparent;
+    --backdrop-b: transparent;
+    --backdrop-c: transparent;
+    --lattice-opacity: 0;
+  }
 }
 
 /* The admin panel keeps the surfaces and loses most of the atmosphere. Staff
@@ -317,7 +353,6 @@
 @layer base {
   html {
     font-family: var(--font-sans);
-    font-size: calc(100% * var(--font-scale));
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
   }
@@ -472,7 +507,12 @@
 
   .menu-item,
   .menu-link,
-  .board-icon-button {
+  .board-icon-button,
+  .nav-row,
+  .nav-sub-link,
+  .chip-button,
+  .lang-option,
+  .social-link {
     transition: transform 120ms;
   }
 
@@ -484,7 +524,12 @@
 
   .menu-item:active,
   .menu-link:active,
-  .board-icon-button:active {
+  .board-icon-button:active,
+  .nav-row:active,
+  .nav-sub-link:active,
+  .chip-button:active,
+  .lang-option:active,
+  .social-link:active {
     transform: scale(0.96);
   }
 
@@ -541,9 +586,9 @@
   /* The token overrides that do this live beside the tokens themselves, above
      and outside any layer. They have to: the base values are unlayered, and an
      unlayered declaration beats anything in `@layer components` no matter how
-     specific — so a `:root.contrast-high` override written down here silently
-     lost to the plain `:root` above, and the high-contrast theme kept its
-     frosted panels. Layer order is resolved before specificity.
+     specific — so a raised-contrast override written down here silently lost
+     to the plain `:root` above, and high contrast kept its frosted panels.
+     Layer order is resolved before specificity.
 
      What is left here is the one case tokens cannot express: no such property,
      so no such filter. */
@@ -587,6 +632,292 @@
 
   .menu-summary::-webkit-details-marker {
     display: none;
+  }
+
+  /* -------------------------------------------------------------------------
+     The dropdown panel, and it is opaque on purpose.
+
+     It used to be `.glass-strong` — 85% white over whatever was behind it —
+     and the page showed through a menu, which is the one surface that must
+     read as being in front. Worse, the blur was never doing anything: the
+     header is itself backdrop-filtered and is therefore the backdrop root for
+     everything inside it, so the panel could only ever frost the header, not
+     the page hanging below. What looked like glass was 15% of the page
+     bleeding through for nothing.
+
+     Flat `--surface-raised` instead, keeping the glass shadow so it still
+     reads as floating.
+     ------------------------------------------------------------------------- */
+  .menu-panel {
+    border-bottom: 1px solid var(--border);
+    background-color: var(--surface-raised);
+    box-shadow: var(--glass-shadow);
+  }
+
+  /*
+    An animation rather than a transition, because there is nothing to
+    transition from: a closed `<details>` does not render its contents, so the
+    panel has no previous state to interpolate away from. Transitioning one
+    needs `::details-content`, which is too new to hang a menu on.
+
+    Opacity and transform only — both composite, so the reveal costs no layout,
+    and the reduced-motion block above collapses it to nothing. Closing stays
+    instant; animating that direction needs script and is not worth script.
+  */
+  details[open] > .menu-panel,
+  details[open] > .nav-drawer-panel,
+  details[open] > .lang-menu {
+    animation: menu-in 160ms ease-out;
+  }
+
+  @keyframes menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.375rem);
+    }
+  }
+
+  /* -------------------------------------------------------------------------
+     The phone menu.
+
+     There was none. The same wrapping row of pills rendered at every width,
+     and opening Пассажирам on a 375px screen stacked four headings and
+     eighteen links in one column — over a thousand pixels of menu above the
+     page you came to read.
+
+     So below `md` the whole thing folds behind three lines, and the sections
+     become an accordion: `name="nav-mobile"` makes the browser close one when
+     another opens, so exactly one is ever expanded. The same `<details>`
+     mechanism as the desktop panels, and the same promise — it works with no
+     JavaScript.
+     ------------------------------------------------------------------------- */
+  .nav-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* 44px, the size everything tappable on this site is. */
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    list-style: none;
+    color: var(--text);
+  }
+
+  .nav-toggle::-webkit-details-marker {
+    display: none;
+  }
+
+  .nav-toggle:hover {
+    background-color: var(--surface-sunken);
+  }
+
+  /* The three bars, and the ✕ they become. Two rotate onto each other and the
+     middle one goes; no second icon to download or swap. */
+  .nav-bars {
+    position: relative;
+    display: block;
+    width: 1.25rem;
+    height: 0.875rem;
+  }
+
+  .nav-bars span {
+    position: absolute;
+    inset-inline: 0;
+    height: 2px;
+    border-radius: 1px;
+    background-color: currentColor;
+    transition:
+      transform 160ms ease,
+      opacity 120ms ease;
+  }
+
+  .nav-bars span:nth-child(1) {
+    top: 0;
+  }
+  .nav-bars span:nth-child(2) {
+    top: calc(50% - 1px);
+  }
+  .nav-bars span:nth-child(3) {
+    bottom: 0;
+  }
+
+  details[open] > .nav-toggle .nav-bars span:nth-child(1) {
+    transform: translateY(calc(0.4375rem - 1px)) rotate(45deg);
+  }
+  details[open] > .nav-toggle .nav-bars span:nth-child(2) {
+    opacity: 0;
+  }
+  details[open] > .nav-toggle .nav-bars span:nth-child(3) {
+    transform: translateY(calc(-0.4375rem + 1px)) rotate(-45deg);
+  }
+
+  /* Hangs below the header at full width, like the desktop panels, and scrolls
+     inside itself rather than pushing the document down — a menu taller than
+     the screen that moves the page under it is how you lose your place. */
+  .nav-drawer-panel {
+    position: absolute;
+    /* Pinned to the bottom of the header rather than left at its static
+       position, which would be partway up the masthead — the toggle sits in
+       the top row, not below it. The containing block is the `<header>`, which
+       is positioned by virtue of being sticky. */
+    top: 100%;
+    inset-inline: 0;
+    z-index: 30;
+    max-height: calc(100dvh - 100%);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-bottom: 1px solid var(--border);
+    background-color: var(--surface-raised);
+    box-shadow: var(--glass-shadow);
+  }
+
+  /* One row of the tree: a link, or the summary that opens a branch. */
+  .nav-row {
+    display: flex;
+    min-height: 2.75rem;
+    width: 100%;
+    cursor: pointer;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9375rem;
+    list-style: none;
+    color: var(--text);
+  }
+
+  .nav-row::-webkit-details-marker {
+    display: none;
+  }
+
+  .nav-row:hover {
+    background-color: var(--surface-sunken);
+  }
+
+  /* Indented under its branch, with a rule down the inline-start edge so the
+     nesting is visible and not just implied by whitespace. */
+  .nav-branch-body {
+    margin-inline-start: 0.75rem;
+    border-inline-start: 1px solid var(--border);
+    padding-inline-start: 0.75rem;
+    padding-block-end: 0.5rem;
+  }
+
+  .nav-sub-link {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    border-radius: var(--radius-sm);
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+  }
+
+  .nav-sub-link:hover {
+    color: var(--brand-text);
+    background-color: var(--surface-sunken);
+  }
+
+  .nav-row:focus-visible,
+  .nav-sub-link:focus-visible,
+  .nav-toggle:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--focus);
+  }
+
+  /* -------------------------------------------------------------------------
+     Language and theme, one button each.
+
+     The switcher used to print `Русский English Қазақша` — twenty-four
+     characters of header at every width, most of it naming languages you are
+     not reading in. Now it names the one you are, and offers the other two on
+     a tap. Still real anchors, so the `hreflang` alternates a `<select>` would
+     have hidden are still there to be crawled, and it still works with no
+     JavaScript.
+     ------------------------------------------------------------------------- */
+  .chip-button {
+    display: inline-flex;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-strong);
+    padding-inline: 0.5rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    list-style: none;
+    color: var(--text);
+  }
+
+  .chip-button::-webkit-details-marker {
+    display: none;
+  }
+
+  .chip-button:hover {
+    background-color: var(--surface-sunken);
+  }
+
+  .chip-button:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--focus);
+  }
+
+  .lang-menu {
+    position: absolute;
+    inset-inline-end: 0;
+    z-index: 50;
+    margin-top: 0.375rem;
+    min-width: 100%;
+    overflow: hidden;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background-color: var(--surface-raised);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .lang-option {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    padding-inline: 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .lang-option:hover {
+    color: var(--text);
+    background-color: var(--surface-sunken);
+  }
+
+  .lang-option:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px var(--focus);
+  }
+
+  /* The footer's social accounts. Icons rather than the words "Instagram
+     Facebook X", which is how every other site on the internet writes them and
+     how a visitor scanning a footer expects to find them. Each still carries
+     its name for a screen reader. */
+  .social-link {
+    display: inline-flex;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-md);
+    color: var(--text-muted);
+  }
+
+  .social-link:hover {
+    color: var(--brand-text);
+    background-color: var(--surface-sunken);
   }
 
   .menu-group-title {

@@ -28,7 +28,7 @@ test.describe('renders without JavaScript', () => {
 
   test('tabs and filters are links that work without scripting', async ({ page }) => {
     await page.goto('/flights?view=week');
-    // Scoped to the body: the header menu also links Вылет, to the same view.
+    // Scoped to the body: the home page board has its own direction tabs.
     const main = page.getByRole('main');
 
     await main.getByRole('link', { name: /Вылет/ }).click();

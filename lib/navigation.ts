@@ -42,13 +42,17 @@ export type NavItem =
   | { kind: 'menu'; key: string; href: string; groups: NavGroup[] };
 
 /**
- * The board's two views are separate destinations here, as they were on the
- * legacy site — a passenger meeting someone off a flight should not have to
- * find a tab.
+ * One board link, not two.
+ *
+ * The legacy menu had Вылет and Прилёт as separate destinations, and this
+ * copied it. They are gone: today's flights now open on the home page, so the
+ * direction tabs are the first thing a visitor meets and the menu does not need
+ * to duplicate them. What the menu still owes is a way back to the full board —
+ * the week view, the search, the workbook download — from any page on the site.
+ * That is this one entry.
  */
 export const NAVIGATION: NavItem[] = [
-  { kind: 'link', key: 'departures', href: '/flights?kind=departures' },
-  { kind: 'link', key: 'arrivals', href: '/flights?kind=arrivals' },
+  { kind: 'link', key: 'board', href: '/flights' },
 
   {
     kind: 'menu',

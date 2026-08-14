@@ -5,10 +5,16 @@ import { expect, test } from '@playwright/test';
  * scheme inherited from the legacy site (plan §1.3, decision #4).
  */
 
+/**
+ * `nav` is the header's board link, which is the shortest string on the page
+ * that is definitely translated. It used to be the section label "Рейсы", read
+ * off the home page's grid of section cards; that grid is gone — it repeated
+ * the header on every visit — so the assertion reads the header itself.
+ */
 const LOCALES = [
-  { id: 'ru', path: '/', lang: 'ru', nav: 'Рейсы' },
-  { id: 'en', path: '/en', lang: 'en', nav: 'Flights' },
-  { id: 'kk', path: '/kz', lang: 'kk', nav: 'Рейстер' },
+  { id: 'ru', path: '/', lang: 'ru', nav: 'Табло' },
+  { id: 'en', path: '/en', lang: 'en', nav: 'Board' },
+  { id: 'kk', path: '/kz', lang: 'kk', nav: 'Тақта' },
 ] as const;
 
 for (const locale of LOCALES) {
