@@ -165,7 +165,12 @@
   --backdrop-a: rgb(206 123 68 / 0.16);
   --backdrop-b: rgb(15 122 115 / 0.1);
   --backdrop-c: rgb(206 123 68 / 0.08);
-  --backdrop-mark-opacity: 0.07;
+  /* Higher than the 0.07 the mosque wanted, and the same amount of presence.
+     That drawing was terracotta line work on white; this ornament is a light
+     tan only about a fifth of the way from the surface colour to black, so a
+     given opacity buys roughly a fifth as much. The token means "how present
+     is the mark", not a fixed quantity of ink. */
+  --backdrop-mark-opacity: 0.4;
 }
 
 /* ---------------------------------------------------------------------------
@@ -221,7 +226,7 @@
    read tables of two hundred documents there; a drawing under dense rows is
    something to see past rather than something to enjoy. */
 .admin-shell {
-  --backdrop-mark-opacity: 0.025;
+  --backdrop-mark-opacity: 0.15;
   --backdrop-c: transparent;
 }
 
@@ -454,33 +459,40 @@
   }
 
   /*
-    The mosque, once, rather than a tile repeated to the horizon.
+    An ornament, repeated, rather than one placed mark.
 
-    This was a 60×60 façade-lattice tile. A drawing of a building does not tile:
-    repeat it and it stops being a mark and becomes wallpaper, with seams where
-    the domes meet the next copy along. So it is placed — one impression, low
-    and centred, large enough to read as architecture and faint enough to stay
-    behind the words.
+    This has been a 60×60 façade lattice and then a single drawing of the
+    mosque; it is now floral filigree, and that changes the rule. A building
+    cannot tile — repeat it and the domes grow seams — but an allover ornament
+    is nothing else: its whole nature is to carry on past the edge of what you
+    can see, so it repeats and is never positioned.
+
+    The file behind it is built, not dropped in. `pattern.webp` is the source
+    artwork mirrored into a 2×2 block, so every edge meets its own reflection
+    and the tile wraps by construction: the original does not tile at all, and
+    has no repeat period hiding inside it either. The recipe is in the commit.
+
+    `background-size` is in px, not vw. The motif is a physical thing — the
+    same ornament should be the same size on a phone and on a 27-inch monitor,
+    and a viewport-relative size makes it swell into wallpaper on the desk and
+    shrink into noise in the hand.
 
     Fixed with the rest of the backdrop, so the page travels over it. That
     relative motion is what makes the frosted header read as a pane of glass
     rather than a tinted bar; a mark that scrolled with the content would sit
     still behind the blur and look like a texture baked into it.
 
-    `--backdrop-mark-opacity: 0` still removes it entirely for raised contrast and for
-    `prefers-reduced-transparency`, exactly as it removed the lattice.
+    `--backdrop-mark-opacity: 0` still removes it entirely for raised contrast
+    and for `prefers-reduced-transparency`, exactly as it removed the lattice.
   */
   .app-backdrop::before {
     content: '';
     position: absolute;
     inset: 0;
     opacity: var(--backdrop-mark-opacity);
-    background-image: url('/media/mosque.png');
-    background-repeat: no-repeat;
-    /* Wide enough to be architecture on a laptop, never wider than the phone
-       it is drawn on. */
-    background-size: min(64rem, 92vw) auto;
-    background-position: center 82%;
+    background-image: url('/media/pattern.webp');
+    background-repeat: repeat;
+    background-size: 400px auto;
   }
 
   /* -------------------------------------------------------------------------

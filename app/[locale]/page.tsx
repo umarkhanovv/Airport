@@ -34,8 +34,8 @@ export default async function HomePage({ params }: PageProps<'/[locale]'>) {
         airport is called. The name still comes first, because it is how a
         visitor confirms they are in the right place, and it stops competing.
 
-        The façade lattice that used to be a layer of this section now runs the
-        whole page, in `.app-backdrop`.
+        The ornament that used to be a layer of this section now runs the whole
+        page, in `.app-backdrop`.
       */}
       <section className="relative isolate">
         <div className="py-8 sm:py-10">
