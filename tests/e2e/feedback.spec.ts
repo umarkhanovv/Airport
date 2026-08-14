@@ -11,6 +11,17 @@ import { ADMIN_STORAGE_STATE } from './admin-session';
  * socket in tests/unit/feedback-mail.test.ts.
  */
 
+/*
+ * The whole file, serially.
+ *
+ * One test below empties the read half of the inbox, which is global state
+ * every other test in here shares. Run in parallel, it deletes the message a
+ * neighbouring test has just marked read and is about to assert on — the same
+ * class of interleaving that made `tests/e2e/admin.spec.ts` serial, and it
+ * would fail intermittently while looking like a bug in the delete action.
+ */
+test.describe.configure({ mode: 'serial' });
+
 const CONTACTS = '/ru/contacts';
 
 /** Unique per test run, so parallel tests never read each other's messages. */
@@ -223,5 +234,74 @@ test.describe('the admin inbox, signed in', () => {
     expect(
       await page.evaluate(() => (window as unknown as { __xss?: boolean }).__xss)
     ).toBeUndefined();
+  });
+
+  test('refuses to delete a message unless the sender is typed back', async ({ page }) => {
+    const message = uniqueMessage('Keepme');
+
+    await page.goto(CONTACTS);
+    await fillForm(page, message, 'Мұрат Ералы');
+    await page.waitForTimeout(2100);
+    await page.getByRole('button', { name: 'Отправить' }).click();
+    await expect(page.getByRole('status')).toBeVisible();
+
+    await page.goto('/admin/feedback');
+    const item = page.locator('[data-testid="feedback-item"]', { hasText: message });
+    await expect(item).toHaveCount(1);
+
+    // Wrong name: it says so, and the message is still there.
+    await item.getByRole('textbox').fill('кто-то другой');
+    await item.getByRole('button', { name: 'Delete' }).click();
+
+    const after = page.locator('[data-testid="feedback-item"]', { hasText: message });
+    await expect(after).toHaveCount(1);
+    await expect(after.getByRole('alert')).toBeVisible();
+
+    // Right name: gone.
+    await after.getByRole('textbox').fill('Мұрат Ералы');
+    await after.getByRole('button', { name: 'Delete' }).click();
+    await expect(page.locator('[data-testid="feedback-item"]', { hasText: message })).toHaveCount(
+      0
+    );
+  });
+
+  test('empties the read half of the inbox, and never the unread half', async ({ page }) => {
+    const readMessage = uniqueMessage('Clearme');
+    const unreadMessage = uniqueMessage('Leaveme');
+
+    for (const message of [readMessage, unreadMessage]) {
+      await page.goto(CONTACTS);
+      await fillForm(page, message, 'Сәуле Қасымова');
+      await page.waitForTimeout(2100);
+      await page.getByRole('button', { name: 'Отправить' }).click();
+      await expect(page.getByRole('status')).toBeVisible();
+    }
+
+    await page.goto('/admin/feedback');
+    await page
+      .locator('[data-testid="feedback-item"]', { hasText: readMessage })
+      .getByRole('button', { name: 'Mark read' })
+      .click();
+
+    // Wait for the re-render, not just the click. Reading the button's count
+    // straight afterwards caught the previous render, which was one behind —
+    // the button promised 1 and the action correctly deleted 2.
+    await expect(
+      page.locator('[data-testid="feedback-item"]', { hasText: readMessage })
+    ).toHaveAttribute('data-read', 'true');
+
+    // The count is on the face of the button, because reading it is the
+    // confirmation — so it has to be the number of rows that actually go.
+    const clear = page.getByRole('button', { name: /^Delete \d+ read messages?$/ });
+    const promised = Number((await clear.textContent())?.match(/\d+/)?.[0]);
+    await clear.click();
+
+    await expect(page.getByRole('status')).toContainText(String(promised));
+    await expect(
+      page.locator('[data-testid="feedback-item"]', { hasText: readMessage })
+    ).toHaveCount(0);
+    await expect(
+      page.locator('[data-testid="feedback-item"]', { hasText: unreadMessage })
+    ).toHaveCount(1);
   });
 });

@@ -58,14 +58,22 @@ function submittedValues(formData: FormData): NewsFormValues {
 /**
  * Refreshes the public pages that read news.
  *
- * Both the list and the detail pages are statically generated from published
- * posts, so nothing an editor does appears until they are revalidated —
- * including a post being *unpublished*, which is the case that matters: taking
- * an announcement down has to take it down.
+ * The list and the detail pages are statically generated from published posts,
+ * so nothing an editor does appears until they are revalidated — including a
+ * post being *unpublished*, which is the case that matters: taking an
+ * announcement down has to take it down.
+ *
+ * The home page is on this list too, and was missing from it. It grew a
+ * three-newest-stories block in the last wave and nobody came back here, so
+ * publishing an announcement left the front page — the most-read page on the
+ * site — showing the previous three until its own 60-second window elapsed.
+ * Sixty seconds is not a catastrophe, but an editor who publishes something
+ * and then looks at the home page to check should see it there.
  */
 function revalidatePublicNews(): void {
   revalidatePath('/[locale]/news', 'page');
   revalidatePath('/[locale]/news/[slug]', 'page');
+  revalidatePath('/[locale]', 'page');
 }
 
 /**
