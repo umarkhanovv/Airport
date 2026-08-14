@@ -39,6 +39,11 @@ ENV NODE_ENV=production
 # and this is the one thing that must survive it.
 ENV DATA_DIR=/var/lib/hsairport
 ENV PORT=3000
+# Next's standalone server does `process.env.HOSTNAME || '0.0.0.0'`, and every
+# container runtime sets HOSTNAME to the container id. So it binds to that name
+# instead of every interface, the platform's proxy cannot reach it, and the
+# health check fails while the process looks perfectly healthy in the logs.
+ENV HOSTNAME=0.0.0.0
 
 WORKDIR /app
 
