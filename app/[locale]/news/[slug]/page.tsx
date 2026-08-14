@@ -3,6 +3,7 @@ import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 
 import { MdxContent } from '@/components/mdx-content';
+import { NewsCover } from '@/components/news-cover';
 import { getNewsPost, getTranslations as getPostTranslations } from '@/lib/news/queries';
 import type { NewsLocale } from '@/lib/db/schema';
 import { formatLongDate } from '@/lib/date';
@@ -53,6 +54,8 @@ export default async function NewsPostPage({ params }: PageProps<'/[locale]/news
       </h1>
 
       {post.excerpt && <p className="text-text-muted mt-4 text-lg">{post.excerpt}</p>}
+
+      {post.coverImage && <NewsCover name={post.coverImage} alt={post.coverAlt} variant="hero" />}
 
       {/*
         Which other languages this story exists in.

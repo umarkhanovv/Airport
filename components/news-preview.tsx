@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { formatLongDate } from '@/lib/date';
+import { NewsCover } from '@/components/news-cover';
 import { listLatestNews } from '@/lib/news/queries';
 import { Link } from '@/i18n/navigation';
 import type { NewsLocale } from '@/lib/db/schema';
@@ -39,22 +40,27 @@ export async function NewsPreview({ locale }: { locale: Locale }) {
       <ul className="mt-6 space-y-6">
         {posts.map((post) => (
           <li key={post.id} className="border-border border-b pb-6 last:border-0 last:pb-0">
-            <article>
-              <p className="text-text-muted tabular text-sm">
-                <time dateTime={post.publishedAt.slice(0, 10)}>
-                  {formatLongDate(post.publishedAt.slice(0, 10), locale)}
-                </time>
-              </p>
-              <h3 className="mt-1 text-lg font-semibold tracking-tight">
-                <Link href={`/news/${post.slug}`} className="text-text hover:text-brand-text">
-                  {post.title}
-                </Link>
-              </h3>
-              {post.excerpt && (
-                <p className="text-text-muted mt-1 line-clamp-2 max-w-2xl text-sm">
-                  {post.excerpt}
-                </p>
+            <article className="flex gap-4 sm:gap-6">
+              {post.coverImage && (
+                <NewsCover name={post.coverImage} alt={post.coverAlt} variant="thumbnail" />
               )}
+              <div className="min-w-0">
+                <p className="text-text-muted tabular text-sm">
+                  <time dateTime={post.publishedAt.slice(0, 10)}>
+                    {formatLongDate(post.publishedAt.slice(0, 10), locale)}
+                  </time>
+                </p>
+                <h3 className="mt-1 text-lg font-semibold tracking-tight">
+                  <Link href={`/news/${post.slug}`} className="text-text hover:text-brand-text">
+                    {post.title}
+                  </Link>
+                </h3>
+                {post.excerpt && (
+                  <p className="text-text-muted mt-1 line-clamp-2 max-w-2xl text-sm">
+                    {post.excerpt}
+                  </p>
+                )}
+              </div>
             </article>
           </li>
         ))}

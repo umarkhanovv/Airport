@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
+import { NewsCover } from '@/components/news-cover';
 import { listNews, NEWS_PAGE_SIZE } from '@/lib/news/queries';
 import type { NewsLocale } from '@/lib/db/schema';
 import { formatLongDate } from '@/lib/date';
@@ -49,18 +50,30 @@ export default async function NewsPage({ params, searchParams }: PageProps<'/[lo
         <ul className="mt-10 space-y-8">
           {posts.map((post) => (
             <li key={post.id} className="border-border border-b pb-8 last:border-0">
-              <article>
-                <p className="text-text-muted tabular text-sm">
-                  <time dateTime={post.publishedAt.slice(0, 10)}>
-                    {formatLongDate(post.publishedAt.slice(0, 10), locale)}
-                  </time>
-                </p>
-                <h2 className="mt-1 text-xl font-semibold tracking-tight">
-                  <Link href={`/news/${post.slug}`} className="text-text hover:text-brand-text">
-                    {post.title}
-                  </Link>
-                </h2>
-                {post.excerpt && <p className="text-text-muted mt-2 max-w-2xl">{post.excerpt}</p>}
+              {/*
+                The thumbnail is not a link. The headline beside it already
+                goes to the post, and a second link to the same place is a
+                second tab stop and a second thing read out for no new
+                information. `min-w-0` on the text column so a long unbroken
+                word cannot push the image off the row.
+              */}
+              <article className="flex gap-4 sm:gap-6">
+                {post.coverImage && (
+                  <NewsCover name={post.coverImage} alt={post.coverAlt} variant="thumbnail" />
+                )}
+                <div className="min-w-0">
+                  <p className="text-text-muted tabular text-sm">
+                    <time dateTime={post.publishedAt.slice(0, 10)}>
+                      {formatLongDate(post.publishedAt.slice(0, 10), locale)}
+                    </time>
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold tracking-tight">
+                    <Link href={`/news/${post.slug}`} className="text-text hover:text-brand-text">
+                      {post.title}
+                    </Link>
+                  </h2>
+                  {post.excerpt && <p className="text-text-muted mt-2 max-w-2xl">{post.excerpt}</p>}
+                </div>
               </article>
             </li>
           ))}

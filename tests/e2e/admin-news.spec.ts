@@ -33,11 +33,17 @@ async function fillPost(
     body = 'Body text long enough to pass validation.',
     publish = false,
     locale = 'en',
+    // Old by default, so a published test post never displaces the fixture at
+    // the top of the public list and never changes what "newest first" means
+    // there. Overridden only where a test needs the post to be among the
+    // newest — the home page shows three, and nothing else can put it there.
+    publishedAt = '2019-01-15',
   } = {} as {
     title: string;
     body?: string;
     publish?: boolean;
     locale?: string;
+    publishedAt?: string;
   }
 ) {
   if (await page.locator('select#locale').count()) {
@@ -45,9 +51,7 @@ async function fillPost(
   }
   await page.locator('#title').fill(title);
   await page.locator('#body').fill(body);
-  // Old, so a published test post never displaces the fixture at the top of
-  // the public list and never changes what "newest first" means there.
-  await page.locator('#publishedAt').fill('2019-01-15');
+  await page.locator('#publishedAt').fill(publishedAt);
   if (publish) await page.locator('input[name="isPublished"]').check();
 }
 
@@ -216,6 +220,45 @@ test.describe('cover images', () => {
     expect(response.status()).toBe(200);
     expect(response.headers()['content-type']).toBe('image/png');
     expect(response.headers()['x-content-type-options']).toBe('nosniff');
+  });
+
+  /*
+   * The test above passed for months while covers were invisible to the
+   * public, because it asserted the image on the admin edit screen — the one
+   * page that always rendered it. Uploading worked, storing worked, serving
+   * worked, and no public page had an `<img>` at all.
+   *
+   * So this one never looks at the panel. It publishes a post with a cover and
+   * then goes to the three places a reader could meet it.
+   */
+  test('shows the cover to readers, on the post, the list and the home page', async ({ page }) => {
+    const { title, slug } = uniqueTitle('publiccover');
+    const alt = 'An aircraft on the apron at dusk';
+
+    await page.goto('/admin/news/new');
+    // Recent, because the home page shows the three newest and nothing else.
+    await fillPost(page, { title, publish: true, publishedAt: '2030-01-15' });
+    await page
+      .locator('#cover')
+      .setInputFiles({ name: 'apron.png', mimeType: 'image/png', buffer: PNG });
+    await page.locator('#coverAlt').fill(alt);
+    await page.getByRole('button', { name: 'Create post' }).click();
+    await expect(page).toHaveURL(/\/admin\/news\?saved=1/);
+
+    for (const path of [`/en/news/${slug}`, '/en/news', '/en']) {
+      await page.goto(path);
+
+      const image = page.locator(`main img[src^="/api/news/image/"][alt="${alt}"]`);
+      await expect(image, `no cover on ${path}`).toHaveCount(1);
+
+      // Reserved before it loads: a list that reflows as its images arrive is
+      // the failure this site is built to avoid.
+      await expect(image).toHaveAttribute('width', /\d+/);
+      await expect(image).toHaveAttribute('height', /\d+/);
+
+      const source = await image.getAttribute('src');
+      expect((await page.request.get(source!)).status(), `broken cover on ${path}`).toBe(200);
+    }
   });
 });
 
