@@ -20,10 +20,16 @@ import {
   titleFromFilename,
 } from '@/lib/documents/types';
 
+/** One refusal, named rather than worded — see `DocumentRejectedError`. */
+export interface DocumentRejectionReport {
+  key: string;
+  params: Record<string, string | number>;
+}
+
 export interface DocumentsState {
-  error?: string;
+  errorKey?: string;
   /** Files that were refused, so a batch upload reports each one. */
-  rejected?: string[];
+  rejected?: DocumentRejectionReport[];
   uploaded?: number;
 }
 
@@ -76,7 +82,7 @@ export async function uploadDocuments(
 
   const pagePath = formData.get('pagePath');
   if (typeof pagePath !== 'string' || pagePath === '') {
-    return { error: 'Choose the page these belong to.' };
+    return { errorKey: 'errorChoosePage' };
   }
 
   const publishedAt = formData.get('publishedAt');
@@ -89,10 +95,10 @@ export async function uploadDocuments(
 
   const files = formData.getAll('files').filter((file): file is File => file instanceof File);
   if (files.length === 0 || files.every((file) => file.size === 0)) {
-    return { error: 'Choose at least one file.' };
+    return { errorKey: 'errorChooseFile' };
   }
 
-  const rejected: string[] = [];
+  const rejected: DocumentRejectionReport[] = [];
   let uploaded = 0;
 
   for (const file of files) {
@@ -101,7 +107,10 @@ export async function uploadDocuments(
     // Checked before the stream is read, so an oversized file is refused
     // without being buffered into memory first.
     if (file.size > MAX_DOCUMENT_BYTES) {
-      rejected.push(`${file.name} — ${(file.size / 1024 / 1024).toFixed(1)} MB, over the limit`);
+      rejected.push({
+        key: 'errorTooLarge',
+        params: { filename: file.name, size: (file.size / 1024 / 1024).toFixed(1) },
+      });
       continue;
     }
 
@@ -120,7 +129,7 @@ export async function uploadDocuments(
       uploaded += 1;
     } catch (error) {
       if (error instanceof DocumentRejectedError) {
-        rejected.push(error.message);
+        rejected.push({ key: error.code, params: error.params });
         continue;
       }
       throw error;

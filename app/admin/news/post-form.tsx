@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useActionState } from 'react';
 
 import { NEWS_LIMITS, type NewsErrorField } from '@/lib/news/validate';
@@ -11,10 +12,15 @@ const INITIAL: NewsFormState = {};
 const FIELD_CLASS =
   'border-border-strong bg-surface focus:ring-focus w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:outline-none';
 
-const LOCALE_LABELS: Record<string, string> = {
-  ru: 'Russian',
-  en: 'English',
-  kk: 'Kazakh',
+/** The catalogue key for each language's own name, so the list is translated. */
+const LOCALE_KEYS = { ru: 'langRu', en: 'langEn', kk: 'langKk' } as const;
+
+/** Only these fields have a length limit; the rest resolve `{max}` to nothing. */
+const LIMITS: Partial<Record<NewsErrorField, number>> = {
+  title: NEWS_LIMITS.title.max,
+  excerpt: NEWS_LIMITS.excerpt.max,
+  body: NEWS_LIMITS.body.max,
+  coverAlt: NEWS_LIMITS.coverAlt.max,
 };
 
 /**
@@ -88,10 +94,28 @@ export function PostForm({
   today: string;
 }) {
   const [state, action, pending] = useActionState(saveNewsPost, INITIAL);
+  const t = useTranslations('Admin.news');
 
   const values = state.values;
-  const error = (field: NewsErrorField) => state.errors?.[field];
-  const describedBy = (field: NewsErrorField) => (error(field) ? `${field}-error` : undefined);
+  const describedBy = (field: NewsErrorField) =>
+    state.errors?.[field] ? `${field}-error` : undefined;
+
+  /*
+   * A field's error, resolved from its key.
+   *
+   * The validator has no locale and says only what went wrong; the wording and
+   * the numbers in it arrive here. `max` comes from `NEWS_LIMITS` rather than
+   * being sent along with the key — the form already imports the limits to
+   * enforce them in the browser, and two copies of a constant is one too many.
+   */
+  const message = (field: NewsErrorField) => {
+    const key = state.errors?.[field];
+    if (!key) return undefined;
+    return t(key, { max: LIMITS[field] ?? 0, ...state.errorParams?.[field] });
+  };
+
+  const localeName = (locale: string) =>
+    locale in LOCALE_KEYS ? t(LOCALE_KEYS[locale as keyof typeof LOCALE_KEYS]) : locale;
 
   // The date input wants `YYYY-MM-DD`; the column holds a full ISO instant.
   const dateValue = values?.publishedAt ?? post?.publishedAt.slice(0, 10) ?? today;
@@ -104,16 +128,16 @@ export function PostForm({
     <form action={action} encType="multipart/form-data" className="mt-6 flex flex-col gap-5">
       {post ? <input type="hidden" name="id" value={post.id} /> : null}
 
-      {state.error ? (
+      {state.errorKey ? (
         <p role="alert" className="text-sm text-red-700 dark:text-red-400">
-          {state.error}
+          {t(state.errorKey)}
         </p>
       ) : null}
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="flex flex-col gap-1.5">
           <label htmlFor="locale" className="text-sm font-medium">
-            Language
+            {t('language')}
           </label>
           {post ? (
             <>
@@ -123,33 +147,30 @@ export function PostForm({
                 a new post, linked to this one below.
               */}
               <p id="locale" className="text-text-muted py-2 text-sm">
-                {LOCALE_LABELS[post.locale] ?? post.locale} · <code>/news/{post.slug}</code>
+                {localeName(post.locale)} · <code>/news/{post.slug}</code>
               </p>
-              <p className="text-text-muted text-xs">
-                The language and the address are fixed once a post exists, so links to it keep
-                working.
-              </p>
+              <p className="text-text-muted text-xs">{t('languageFixed')}</p>
             </>
           ) : (
             <select
               id="locale"
               name="locale"
               defaultValue={values?.locale || 'ru'}
-              aria-invalid={error('locale') ? true : undefined}
+              aria-invalid={state.errors?.locale ? true : undefined}
               aria-describedby={describedBy('locale')}
               className={FIELD_CLASS}
             >
-              <option value="ru">Russian</option>
-              <option value="en">English</option>
-              <option value="kk">Kazakh</option>
+              <option value="ru">{t('langRu')}</option>
+              <option value="en">{t('langEn')}</option>
+              <option value="kk">{t('langKk')}</option>
             </select>
           )}
-          <FieldError field="locale" message={error('locale')} />
+          <FieldError field="locale" message={message('locale')} />
         </div>
 
         <div className="flex flex-col gap-1.5">
           <label htmlFor="publishedAt" className="text-sm font-medium">
-            Publication date
+            {t('publicationDate')}
           </label>
           <input
             id="publishedAt"
@@ -157,17 +178,17 @@ export function PostForm({
             type="date"
             required
             defaultValue={dateValue}
-            aria-invalid={error('publishedAt') ? true : undefined}
+            aria-invalid={state.errors?.publishedAt ? true : undefined}
             aria-describedby={describedBy('publishedAt')}
             className={FIELD_CLASS}
           />
-          <FieldError field="publishedAt" message={error('publishedAt')} />
+          <FieldError field="publishedAt" message={message('publishedAt')} />
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="title" className="text-sm font-medium">
-          Headline
+          {t('headline')}
         </label>
         <input
           id="title"
@@ -176,16 +197,16 @@ export function PostForm({
           required
           maxLength={NEWS_LIMITS.title.max}
           defaultValue={values?.title ?? post?.title ?? ''}
-          aria-invalid={error('title') ? true : undefined}
+          aria-invalid={state.errors?.title ? true : undefined}
           aria-describedby={describedBy('title')}
           className={FIELD_CLASS}
         />
-        <FieldError field="title" message={error('title')} />
+        <FieldError field="title" message={message('title')} />
       </div>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="excerpt" className="text-sm font-medium">
-          Summary <span className="text-text-muted font-normal">(optional)</span>
+          {t('summary')} <span className="text-text-muted font-normal">{t('optional')}</span>
         </label>
         <textarea
           id="excerpt"
@@ -193,20 +214,17 @@ export function PostForm({
           rows={2}
           maxLength={NEWS_LIMITS.excerpt.max}
           defaultValue={values?.excerpt ?? post?.excerpt ?? ''}
-          aria-invalid={error('excerpt') ? true : undefined}
+          aria-invalid={state.errors?.excerpt ? true : undefined}
           aria-describedby={describedBy('excerpt')}
           className={FIELD_CLASS}
         />
-        <p className="text-text-muted text-xs">
-          Shown in the news list and to search engines. Left empty, the list shows the headline
-          alone.
-        </p>
-        <FieldError field="excerpt" message={error('excerpt')} />
+        <p className="text-text-muted text-xs">{t('summaryHint')}</p>
+        <FieldError field="excerpt" message={message('excerpt')} />
       </div>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="body" className="text-sm font-medium">
-          Text
+          {t('text')}
         </label>
         <textarea
           id="body"
@@ -215,19 +233,20 @@ export function PostForm({
           rows={18}
           maxLength={NEWS_LIMITS.body.max}
           defaultValue={values?.body ?? post?.body ?? ''}
-          aria-invalid={error('body') ? true : undefined}
+          aria-invalid={state.errors?.body ? true : undefined}
           aria-describedby={describedBy('body')}
           className={`${FIELD_CLASS} font-mono`}
         />
+        {/* The markers themselves are part of the sentence, so they travel with
+            it into the catalogue rather than being spliced around it. */}
         <p className="text-text-muted text-xs">
-          Markdown. A blank line starts a paragraph; <code>## </code> makes a heading,{' '}
-          <code>- </code> a list item, and <code>[text](https://…)</code> a link.
+          {t.rich('markdownHint', { code: (chunks) => <code>{chunks}</code> })}
         </p>
-        <FieldError field="body" message={error('body')} />
+        <FieldError field="body" message={message('body')} />
       </div>
 
       <fieldset className="panel p-4">
-        <legend className="px-1 text-sm font-medium">Cover image</legend>
+        <legend className="px-1 text-sm font-medium">{t('coverImage')}</legend>
 
         {post?.coverImage ? (
           <div className="flex flex-wrap items-center gap-4">
@@ -245,30 +264,30 @@ export function PostForm({
             />
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" name="removeCover" className="size-4" />
-              Remove this image
+              {t('removeImage')}
             </label>
           </div>
         ) : null}
 
         <div className="mt-4 flex flex-col gap-1.5">
           <label htmlFor="cover" className="text-sm font-medium">
-            {post?.coverImage ? 'Replace with' : 'Upload'} a JPEG, PNG, WebP or AVIF (max 2 MB)
+            {post?.coverImage ? t('coverReplace') : t('coverUpload')}
           </label>
           <input
             id="cover"
             name="cover"
             type="file"
             accept="image/jpeg,image/png,image/webp,image/avif"
-            aria-invalid={error('cover') ? true : undefined}
+            aria-invalid={state.errors?.cover ? true : undefined}
             aria-describedby={describedBy('cover')}
             className={FIELD_CLASS}
           />
-          <FieldError field="cover" message={error('cover')} />
+          <FieldError field="cover" message={message('cover')} />
         </div>
 
         <div className="mt-4 flex flex-col gap-1.5">
           <label htmlFor="coverAlt" className="text-sm font-medium">
-            Image description
+            {t('imageDescription')}
           </label>
           <input
             id="coverAlt"
@@ -276,22 +295,18 @@ export function PostForm({
             type="text"
             maxLength={NEWS_LIMITS.coverAlt.max}
             defaultValue={values?.coverAlt ?? post?.coverAlt ?? ''}
-            aria-invalid={error('coverAlt') ? true : undefined}
+            aria-invalid={state.errors?.coverAlt ? true : undefined}
             aria-describedby={describedBy('coverAlt')}
             className={FIELD_CLASS}
           />
-          <p className="text-text-muted text-xs">
-            Required when there is an image: it is what a screen reader announces, and what shows if
-            the picture fails to load. Describe what it shows, not that it is a photograph.
-          </p>
-          <FieldError field="coverAlt" message={error('coverAlt')} />
+          <p className="text-text-muted text-xs">{t('imageDescriptionHint')}</p>
+          <FieldError field="coverAlt" message={message('coverAlt')} />
         </div>
       </fieldset>
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="translationOf" className="text-sm font-medium">
-          Same story in another language{' '}
-          <span className="text-text-muted font-normal">(optional)</span>
+          {t('translationOf')} <span className="text-text-muted font-normal">{t('optional')}</span>
         </label>
         <select
           id="translationOf"
@@ -299,17 +314,14 @@ export function PostForm({
           defaultValue={values?.translationOf ?? linkedCandidate?.id ?? ''}
           className={FIELD_CLASS}
         >
-          <option value="">Not a translation of anything</option>
+          <option value="">{t('notATranslation')}</option>
           {candidates.map((candidate) => (
             <option key={candidate.id} value={candidate.id}>
-              [{LOCALE_LABELS[candidate.locale] ?? candidate.locale}] {candidate.title}
+              [{localeName(candidate.locale)}] {candidate.title}
             </option>
           ))}
         </select>
-        <p className="text-text-muted text-xs">
-          Linked posts point at each other on the public site, so a reader who opens the wrong
-          language is told where the right one is.
-        </p>
+        <p className="text-text-muted text-xs">{t('translationHint')}</p>
       </div>
 
       <label className="flex items-center gap-2 text-sm">
@@ -319,7 +331,7 @@ export function PostForm({
           defaultChecked={values ? values.isPublished : (post?.isPublished ?? false)}
           className="size-4"
         />
-        Published — visible on the public site
+        {t('publishedCheckbox')}
       </label>
 
       <button
@@ -327,7 +339,7 @@ export function PostForm({
         disabled={pending}
         className="bg-brand text-on-brand focus:ring-focus self-start rounded-md px-5 py-2.5 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:opacity-60"
       >
-        {pending ? 'Saving…' : post ? 'Save changes' : 'Create post'}
+        {pending ? t('saving') : post ? t('save') : t('create')}
       </button>
     </form>
   );

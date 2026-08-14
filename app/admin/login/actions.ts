@@ -13,8 +13,17 @@ import {
 } from '@/lib/admin/session';
 import { getAdminPassword, getSessionSecret } from '@/lib/env';
 
+/**
+ * A failure is a message *key*, not a sentence.
+ *
+ * The panel is read in three languages now, and a server action has no locale:
+ * it runs before the component that will show its answer. So it names the
+ * message and hands over any numbers in it, and `login-form.tsx` resolves both
+ * in whichever language the reader chose.
+ */
 export interface LoginState {
-  error?: string;
+  errorKey?: 'notConfigured' | 'tooManyAttempts' | 'passwordRequired' | 'incorrect';
+  params?: Record<string, string | number>;
 }
 
 /**
@@ -37,10 +46,7 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
     getAdminPassword();
     getSessionSecret();
   } catch {
-    return {
-      error:
-        'Admin access is not configured on this server. Set ADMIN_PASSWORD and SESSION_SECRET.',
-    };
+    return { errorKey: 'notConfigured' };
   }
 
   const ip = await clientIp();
@@ -49,16 +55,16 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
   // still allow unlimited timing probes at full speed.
   const limit = consumeLoginAttempt(ip);
   if (!limit.allowed) {
-    return { error: `Too many attempts. Try again in ${limit.retryAfterSeconds}s.` };
+    return { errorKey: 'tooManyAttempts', params: { seconds: limit.retryAfterSeconds } };
   }
 
   const password = formData.get('password');
   if (typeof password !== 'string' || password === '') {
-    return { error: 'Enter the admin password.' };
+    return { errorKey: 'passwordRequired' };
   }
 
   if (!verifyPassword(password)) {
-    return { error: 'Incorrect password.' };
+    return { errorKey: 'incorrect' };
   }
 
   const { token, expiresAt } = issueSessionToken();

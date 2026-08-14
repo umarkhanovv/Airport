@@ -12,7 +12,7 @@ import {
   updateNewsPost,
 } from '@/lib/news/admin';
 import { ImageRejectedError, MAX_COVER_BYTES, storeNewsCover } from '@/lib/news/images';
-import { validateNewsPost, type NewsErrors } from '@/lib/news/validate';
+import { validateNewsPost, type NewsErrorField, type NewsErrors } from '@/lib/news/validate';
 
 /** What the editor typed, echoed back so a rejected form is not a lost draft. */
 export interface NewsFormValues {
@@ -28,8 +28,14 @@ export interface NewsFormValues {
 
 export interface NewsFormState {
   errors?: NewsErrors;
+  /**
+   * Values for the two field messages that interpolate one — the size in an
+   * over-large image, so far. Keyed by field, merged with the length limits
+   * the form already knows about when the message is finally resolved.
+   */
+  errorParams?: Partial<Record<NewsErrorField, Record<string, string | number>>>;
   /** A failure that belongs to the form rather than to one field. */
-  error?: string;
+  errorKey?: 'errorPostGone';
   values?: NewsFormValues;
 }
 
@@ -96,7 +102,7 @@ export async function saveNewsPost(
   const id = typeof rawId === 'string' && rawId !== '' ? rawId : null;
   const existing = id ? getNewsPostById(id) : null;
 
-  if (id && !existing) return { error: 'That post no longer exists.', values };
+  if (id && !existing) return { errorKey: 'errorPostGone', values };
 
   const file = formData.get('cover');
   const uploaded = file instanceof File && file.size > 0 ? file : null;
@@ -107,9 +113,8 @@ export async function saveNewsPost(
   if (uploaded && uploaded.size > MAX_COVER_BYTES) {
     return {
       values,
-      errors: {
-        cover: `That image is ${(uploaded.size / 1024 / 1024).toFixed(1)} MB. The limit is 2 MB.`,
-      },
+      errors: { cover: 'errorImageTooLarge' },
+      errorParams: { cover: { size: (uploaded.size / 1024 / 1024).toFixed(1) } },
     };
   }
 
@@ -139,7 +144,7 @@ export async function saveNewsPost(
       storedCover = storeNewsCover(Buffer.from(await uploaded.arrayBuffer()));
     } catch (error) {
       if (error instanceof ImageRejectedError) {
-        return { errors: { cover: error.message }, values };
+        return { errors: { cover: error.code }, errorParams: { cover: error.params }, values };
       }
       throw error;
     }

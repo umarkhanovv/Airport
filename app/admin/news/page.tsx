@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 
 import { requireAdmin } from '@/lib/admin/auth';
+import { readAdminLocale } from '@/lib/admin/locale';
 import { countUnreadFeedback } from '@/lib/feedback/store';
 import { listAllNews } from '@/lib/news/admin';
 
@@ -9,10 +11,14 @@ import { AdminNav } from '../admin-nav';
 
 import { toggleNewsPublished } from './actions';
 
-export const metadata: Metadata = { title: 'News' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations({ locale: await readAdminLocale(), namespace: 'Admin.meta' });
+  return { title: t('news') };
+}
 
 export const dynamic = 'force-dynamic';
 
+/** Two letters, not a translated language name: the column is 4rem wide. */
 const LOCALE_LABELS: Record<string, string> = { ru: 'RU', en: 'EN', kk: 'KK' };
 
 /**
@@ -27,6 +33,8 @@ export default async function AdminNewsPage({ searchParams }: PageProps<'/admin/
   await requireAdmin('/admin/news');
 
   const { saved, deleted } = await searchParams;
+  const t = await getTranslations({ locale: await readAdminLocale(), namespace: 'Admin.news' });
+
   const posts = listAllNews();
   const drafts = posts.filter((post) => !post.isPublished).length;
 
@@ -36,12 +44,12 @@ export default async function AdminNewsPage({ searchParams }: PageProps<'/admin/
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
         <div className="flex flex-wrap items-center gap-4">
-          <h1 className="text-2xl font-semibold">News</h1>
+          <h1 className="text-2xl font-semibold">{t('title')}</h1>
           <Link
             href="/admin/news/new"
             className="bg-brand text-on-brand focus:ring-focus ms-auto rounded-md px-4 py-2 text-sm font-medium focus:ring-2 focus:ring-offset-2 focus:outline-none"
           >
-            Write a post
+            {t('write')}
           </Link>
         </div>
 
@@ -50,25 +58,22 @@ export default async function AdminNewsPage({ searchParams }: PageProps<'/admin/
             role="status"
             className="border-arrival bg-arrival-soft mt-4 rounded-md border px-4 py-3 text-sm"
           >
-            Saved.
+            {t('saved')}
           </p>
         ) : null}
         {deleted ? (
           <p role="status" className="panel mt-4 px-4 py-3 text-sm">
-            The post was deleted.
+            {t('deleted')}
           </p>
         ) : null}
 
         <p className="text-text-muted mt-2 text-sm">
-          {posts.length === 0
-            ? 'Nothing has been written yet.'
-            : `${posts.length} post${posts.length === 1 ? '' : 's'}, ${drafts} unpublished.`}
+          {posts.length === 0 ? t('none') : t('count', { count: posts.length, drafts })}
         </p>
 
         {posts.length === 0 ? (
           <p className="border-border text-text-muted mt-6 rounded-lg border border-dashed p-6 text-sm">
-            Posts written here appear in the press centre. Nothing is public until it is marked
-            published, so a draft can be prepared in advance.
+            {t('emptyHint')}
           </p>
         ) : (
           <div className="panel mt-6 overflow-x-auto">
@@ -76,19 +81,19 @@ export default async function AdminNewsPage({ searchParams }: PageProps<'/admin/
               <thead className="bg-surface-sunken text-text-muted text-left">
                 <tr>
                   <th scope="col" className="px-4 py-2 font-medium">
-                    Date
+                    {t('columnDate')}
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
-                    Lang
+                    {t('columnLang')}
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
-                    Headline
+                    {t('columnHeadline')}
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
-                    Status
+                    {t('columnStatus')}
                   </th>
                   <th scope="col" className="px-4 py-2 font-medium">
-                    <span className="sr-only">Actions</span>
+                    <span className="sr-only">{t('columnActions')}</span>
                   </th>
                 </tr>
               </thead>
@@ -115,11 +120,11 @@ export default async function AdminNewsPage({ searchParams }: PageProps<'/admin/
                     <td className="px-4 py-2">
                       {post.isPublished ? (
                         <span className="bg-arrival-soft text-arrival rounded px-1.5 py-0.5 text-xs font-medium">
-                          published
+                          {t('statusPublished')}
                         </span>
                       ) : (
                         <span className="border-border-strong text-text-muted rounded border px-1.5 py-0.5 text-xs font-medium">
-                          draft
+                          {t('statusDraft')}
                         </span>
                       )}
                     </td>
@@ -135,7 +140,7 @@ export default async function AdminNewsPage({ searchParams }: PageProps<'/admin/
                           type="submit"
                           className="border-border-strong focus:ring-focus rounded-md border px-3 py-1 text-xs focus:ring-2 focus:outline-none"
                         >
-                          {post.isPublished ? 'Unpublish' : 'Publish'}
+                          {post.isPublished ? t('unpublish') : t('publish')}
                         </button>
                       </form>
                     </td>

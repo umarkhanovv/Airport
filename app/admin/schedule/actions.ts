@@ -23,12 +23,20 @@ import {
 } from '@/lib/flights/import';
 import { getScheduleUploadById } from '@/lib/admin/queries';
 
+/**
+ * A failure is a message key, not a sentence — the panel reads in three
+ * languages and this file runs before the component that will show its answer.
+ * `Admin.schedule` holds the wording; the rejection errors thrown out of
+ * `lib/admin/uploads.ts` already carry their own key and values.
+ */
 export interface UploadState {
-  error?: string;
+  errorKey?: string;
+  params?: Record<string, string | number>;
 }
 
 export interface PublishState {
-  error?: string;
+  errorKey?: string;
+  params?: Record<string, string | number>;
 }
 
 /**
@@ -53,13 +61,16 @@ export async function uploadSchedule(
 
   const file = formData.get('file');
   if (!(file instanceof File) || file.size === 0) {
-    return { error: 'Choose an .xlsx file to upload.' };
+    return { errorKey: 'errorChooseFile' };
   }
 
   // Checked before reading the stream so an oversized file is refused without
   // buffering it into memory first.
   if (file.size > MAX_SCHEDULE_BYTES) {
-    return { error: `That file is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 5 MB.` };
+    return {
+      errorKey: 'errorTooLarge',
+      params: { size: (file.size / 1024 / 1024).toFixed(1) },
+    };
   }
 
   let stagedId: string;
@@ -67,7 +78,9 @@ export async function uploadSchedule(
     const buffer = Buffer.from(await file.arrayBuffer());
     stagedId = stageUpload(buffer, file.name).id;
   } catch (error) {
-    if (error instanceof UploadRejectedError) return { error: error.message };
+    if (error instanceof UploadRejectedError) {
+      return { errorKey: error.code, params: error.params };
+    }
     throw error;
   }
 
@@ -91,24 +104,26 @@ export async function publishStagedSchedule(
 
   const id = formData.get('id');
   if (typeof id !== 'string') {
-    return { error: 'Unknown upload.' };
+    return { errorKey: 'errorUnknownUpload' };
   }
 
   let staged: ReturnType<typeof readStagedUpload>;
   try {
     staged = readStagedUpload(id);
   } catch (error) {
-    if (error instanceof UploadRejectedError) return { error: error.message };
+    if (error instanceof UploadRejectedError) {
+      return { errorKey: error.code, params: error.params };
+    }
     throw error;
   }
 
   if (!staged) {
-    return { error: 'That upload is no longer available. Upload the file again.' };
+    return { errorKey: 'errorExpired' };
   }
 
   const parsed = parseScheduleWorkbook(staged.buffer);
   if (!parsed.ok) {
-    return { error: 'This file has errors and cannot be published. Fix them and upload again.' };
+    return { errorKey: 'errorHasErrors' };
   }
 
   // The workbook is copied into permanent storage before the transaction, the
@@ -123,7 +138,7 @@ export async function publishStagedSchedule(
     });
   } catch (error) {
     if (error instanceof ImportRefusedError) {
-      return { error: 'This file failed validation and was not published.' };
+      return { errorKey: 'errorFailedValidation' };
     }
     throw error;
   }

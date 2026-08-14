@@ -36,18 +36,26 @@ import {
 /** Validates and stores one file, returning the generated name. */
 export function storeDocument(buffer: Buffer, uploadedName: string): string {
   if (buffer.length === 0) {
-    throw new DocumentRejectedError(`${uploadedName} is empty.`);
+    throw new DocumentRejectedError('errorEmpty', `${uploadedName} is empty.`, {
+      filename: uploadedName,
+    });
   }
   if (buffer.length > MAX_DOCUMENT_BYTES) {
+    const size = (buffer.length / 1024 / 1024).toFixed(1);
     throw new DocumentRejectedError(
-      `${uploadedName} is ${(buffer.length / 1024 / 1024).toFixed(1)} MB. The limit is 25 MB.`
+      'errorTooLarge',
+      `${uploadedName} is ${size} MB. The limit is 25 MB.`,
+      { filename: uploadedName, size }
     );
   }
 
   const extension = extensionOf(uploadedName);
   if (!DOCUMENT_TYPES[extension]) {
+    const allowed = Object.keys(DOCUMENT_TYPES).join(', ');
     throw new DocumentRejectedError(
-      `${uploadedName} is not a document. Allowed: ${Object.keys(DOCUMENT_TYPES).join(', ')}.`
+      'errorNotADocument',
+      `${uploadedName} is not a document. Allowed: ${allowed}.`,
+      { filename: uploadedName, allowed }
     );
   }
 

@@ -24,10 +24,22 @@ import { env } from '../env.ts';
 /** Comfortably above a press photo, far below anything worth storing. */
 export const MAX_COVER_BYTES = 2 * 1024 * 1024;
 
+/**
+ * Why a cover was refused, as a message key — the wording lives under
+ * `Admin.news` in the catalogues. Same reasoning as the other two rejection
+ * errors; the English `message` is kept for stack traces.
+ */
+export type ImageRejection = 'errorImageEmpty' | 'errorImageTooLarge' | 'errorImageType';
+
 export class ImageRejectedError extends Error {
-  constructor(message: string) {
+  readonly code: ImageRejection;
+  readonly params?: Record<string, string | number>;
+
+  constructor(code: ImageRejection, message: string, params?: Record<string, string | number>) {
     super(message);
     this.name = 'ImageRejectedError';
+    this.code = code;
+    this.params = params;
   }
 }
 
@@ -71,17 +83,20 @@ export function detectImageExtension(buffer: Buffer): string | null {
  */
 export function storeNewsCover(buffer: Buffer): string {
   if (buffer.length === 0) {
-    throw new ImageRejectedError('That file is empty.');
+    throw new ImageRejectedError('errorImageEmpty', 'That file is empty.');
   }
   if (buffer.length > MAX_COVER_BYTES) {
+    const size = (buffer.length / 1024 / 1024).toFixed(1);
     throw new ImageRejectedError(
-      `That image is ${(buffer.length / 1024 / 1024).toFixed(1)} MB. The limit is 2 MB.`
+      'errorImageTooLarge',
+      `That image is ${size} MB. The limit is 2 MB.`,
+      { size }
     );
   }
 
   const extension = detectImageExtension(buffer);
   if (!extension) {
-    throw new ImageRejectedError('That is not a JPEG, PNG, WebP or AVIF image.');
+    throw new ImageRejectedError('errorImageType', 'That is not a JPEG, PNG, WebP or AVIF image.');
   }
 
   fs.mkdirSync(env.paths.newsUploads, { recursive: true });

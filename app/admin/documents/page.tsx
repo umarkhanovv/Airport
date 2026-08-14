@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 import { requireAdmin } from '@/lib/admin/auth';
+import { readAdminLocale } from '@/lib/admin/locale';
 import { SECTIONS } from '@/lib/constants';
 import { airportToday } from '@/lib/date';
 import { env } from '@/lib/env';
@@ -13,7 +15,10 @@ import { AdminNav } from '../admin-nav';
 import { deleteDocumentAction, renameDocument, toggleDocumentPublished } from './actions';
 import { UploadForm } from './upload-form';
 
-export const metadata: Metadata = { title: 'Documents' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations({ locale: await readAdminLocale(), namespace: 'Admin.meta' });
+  return { title: t('documents') };
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +39,11 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps<'/a
   await requireAdmin('/admin/documents');
 
   const { saved, deleted } = await searchParams;
+  const t = await getTranslations({
+    locale: await readAdminLocale(),
+    namespace: 'Admin.documents',
+  });
+
   const documents = listAllDocuments();
 
   // Every content page, in Russian — the paths are the same in all three, and
@@ -61,39 +71,35 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps<'/a
       <AdminNav current="documents" unreadFeedback={countUnreadFeedback()} />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-        <h1 className="text-2xl font-semibold">Documents</h1>
-        <p className="text-text-muted mt-2 text-sm">
-          Files published on the site&apos;s pages — orders, protocols, tariffs. They appear under
-          the page they are filed against, newest first.
-        </p>
+        <h1 className="text-2xl font-semibold">{t('title')}</h1>
+        <p className="text-text-muted mt-2 text-sm">{t('intro')}</p>
 
         {saved ? (
           <p
             role="status"
             className="border-arrival bg-arrival-soft mt-4 rounded-md border px-4 py-3 text-sm"
           >
-            Saved.
+            {t('saved')}
           </p>
         ) : null}
         {deleted ? (
           <p role="status" className="panel mt-4 px-4 py-3 text-sm">
-            The document was deleted.
+            {t('deleted')}
           </p>
         ) : null}
 
         <section className="panel mt-6 p-5">
-          <h2 className="font-medium">Upload</h2>
+          <h2 className="font-medium">{t('uploadHeading')}</h2>
           <UploadForm pages={pages} today={airportToday(env.airportTz)} />
         </section>
 
         <h2 className="mt-10 text-lg font-medium">
-          {documents.length} document{documents.length === 1 ? '' : 's'}
+          {t('countHeading', { count: documents.length })}
         </h2>
 
         {documents.length === 0 ? (
           <p className="border-border text-text-muted mt-3 rounded-lg border border-dashed p-6 text-sm">
-            Nothing uploaded yet. Files added here appear on the page they are filed against, with
-            their format and size shown next to the link.
+            {t('emptyHint')}
           </p>
         ) : (
           [...byPage.entries()].map(([pagePath, rows]) => (
@@ -116,7 +122,7 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps<'/a
                     <form action={renameDocument} className="flex flex-1 items-center gap-2">
                       <input type="hidden" name="id" value={document.id} />
                       <label className="sr-only" htmlFor={`title-${document.id}`}>
-                        Title of {document.originalFilename}
+                        {t('titleOf', { filename: document.originalFilename })}
                       </label>
                       <input
                         id={`title-${document.id}`}
@@ -128,7 +134,7 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps<'/a
                         type="submit"
                         className="border-border-strong focus:ring-focus rounded-md border px-3 py-1 text-xs focus:ring-2 focus:outline-none"
                       >
-                        Rename
+                        {t('rename')}
                       </button>
                     </form>
 
@@ -140,7 +146,7 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps<'/a
                       href={`/api/documents/${document.storedName}`}
                       className="text-brand-text-strong text-xs underline"
                     >
-                      Download
+                      {t('download')}
                     </a>
 
                     <form action={toggleDocumentPublished}>
@@ -154,7 +160,7 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps<'/a
                         type="submit"
                         className="border-border-strong focus:ring-focus rounded-md border px-3 py-1 text-xs focus:ring-2 focus:outline-none"
                       >
-                        {document.isPublished ? 'Unpublish' : 'Publish'}
+                        {document.isPublished ? t('unpublish') : t('publish')}
                       </button>
                     </form>
 
@@ -164,7 +170,7 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps<'/a
                         type="submit"
                         className="focus:ring-focus rounded-md border border-red-700 px-3 py-1 text-xs text-red-700 focus:ring-2 focus:outline-none dark:border-red-400 dark:text-red-400"
                       >
-                        Delete
+                        {t('delete')}
                       </button>
                     </form>
                   </li>

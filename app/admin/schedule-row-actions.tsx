@@ -1,3 +1,7 @@
+import { getTranslations } from 'next-intl/server';
+
+import { readAdminLocale } from '@/lib/admin/locale';
+
 import { deleteScheduleAction, setActiveScheduleAction } from './schedule/actions';
 
 /**
@@ -17,7 +21,7 @@ import { deleteScheduleAction, setActiveScheduleAction } from './schedule/action
  * `confirm()`. The admin panel works without JavaScript and this is not the
  * place to stop.
  */
-export function ScheduleRowActions({
+export async function ScheduleRowActions({
   id,
   isActive,
   weekStart,
@@ -28,6 +32,11 @@ export function ScheduleRowActions({
   weekStart: string | null;
   mismatch: boolean;
 }) {
+  const t = await getTranslations({
+    locale: await readAdminLocale(),
+    namespace: 'Admin.dashboard',
+  });
+
   return (
     <div className="flex flex-wrap items-start gap-x-3 gap-y-2">
       {isActive ? (
@@ -38,7 +47,7 @@ export function ScheduleRowActions({
             type="submit"
             className="border-border-strong text-text hover:bg-surface-sunken focus:ring-focus rounded-md border px-2.5 py-1 text-xs font-medium focus:ring-2 focus:outline-none"
           >
-            Take off the board
+            {t('takeOff')}
           </button>
         </form>
       ) : (
@@ -48,7 +57,7 @@ export function ScheduleRowActions({
             type="submit"
             className="border-border-strong text-text hover:bg-surface-sunken focus:ring-focus rounded-md border px-2.5 py-1 text-xs font-medium focus:ring-2 focus:outline-none"
           >
-            Make live
+            {t('makeLive')}
           </button>
         </form>
       )}
@@ -57,13 +66,13 @@ export function ScheduleRowActions({
         <input type="hidden" name="id" value={id} />
         <div>
           <label htmlFor={`confirm-${id}`} className="sr-only">
-            Type the week start date {weekStart ?? ''} to confirm deletion
+            {t('confirmWeek', { week: weekStart ?? '' })}
           </label>
           <input
             id={`confirm-${id}`}
             name="confirmWeek"
             required
-            placeholder={weekStart ?? 'week'}
+            placeholder={weekStart ?? ''}
             aria-invalid={mismatch || undefined}
             aria-describedby={mismatch ? `confirm-error-${id}` : undefined}
             className="border-border-strong bg-surface focus:ring-focus w-28 rounded-md border px-2 py-1 text-xs focus:ring-2 focus:outline-none"
@@ -74,7 +83,7 @@ export function ScheduleRowActions({
               role="alert"
               className="text-brand-text-strong mt-1 text-xs"
             >
-              That is not this schedule’s week. Nothing was deleted.
+              {t('confirmMismatch')}
             </p>
           ) : null}
         </div>
@@ -82,7 +91,7 @@ export function ScheduleRowActions({
           type="submit"
           className="border-brand text-brand-text-strong hover:bg-surface-sunken focus:ring-focus rounded-md border px-2.5 py-1 text-xs font-medium focus:ring-2 focus:outline-none"
         >
-          Delete
+          {t('delete')}
         </button>
       </form>
     </div>

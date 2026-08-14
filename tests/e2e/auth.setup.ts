@@ -1,6 +1,6 @@
 import { expect, test as setup } from '@playwright/test';
 
-import { ADMIN_PASSWORD, ADMIN_STORAGE_STATE } from './admin-session';
+import { ADMIN_PASSWORD, ADMIN_STORAGE_STATE, useEnglishAdmin } from './admin-session';
 
 /**
  * Signs in to the admin panel once and saves the session for reuse.
@@ -14,9 +14,14 @@ import { ADMIN_PASSWORD, ADMIN_STORAGE_STATE } from './admin-session';
  * only thing standing between a single env password and an offline-speed
  * guessing attack. Specs that test the login flow itself opt out and sign in
  * for real.
+ *
+ * The saved state carries the panel's language cookie as well as the session,
+ * so every spec that reuses it reads English — see `useEnglishAdmin`.
  */
 
-setup('authenticate as admin', async ({ page }) => {
+setup('authenticate as admin', async ({ page, baseURL }) => {
+  await useEnglishAdmin(page.context(), baseURL);
+
   await page.goto('/admin/login');
   await page.locator('#password').fill(ADMIN_PASSWORD);
   await page.getByRole('button', { name: 'Sign in' }).click();

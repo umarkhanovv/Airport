@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { deleteNewsPostAction } from '../actions';
 
 /**
@@ -19,12 +21,14 @@ export function DeleteForm({
   title: string;
   mismatch: boolean;
 }) {
+  const t = useTranslations('Admin.news');
+
   return (
     <form action={deleteNewsPostAction} className="mt-4 flex flex-col items-start gap-3">
       <input type="hidden" name="id" value={id} />
 
       <label htmlFor="confirmTitle" className="text-sm">
-        To delete this post, type its headline: <strong>{title}</strong>
+        {t('confirmTitle')} <strong>{title}</strong>
       </label>
       <input
         id="confirmTitle"
@@ -39,7 +43,7 @@ export function DeleteForm({
 
       {mismatch ? (
         <p id="confirm-error" role="alert" className="text-sm text-red-700 dark:text-red-400">
-          That is not the headline of this post. Nothing was deleted.
+          {t('confirmMismatch')}
         </p>
       ) : null}
 
@@ -47,7 +51,7 @@ export function DeleteForm({
         type="submit"
         className="focus:ring-focus rounded-md border border-red-700 px-4 py-2 text-sm font-medium text-red-700 focus:ring-2 focus:outline-none dark:border-red-400 dark:text-red-400"
       >
-        Delete permanently
+        {t('deleteButton')}
       </button>
     </form>
   );

@@ -2,6 +2,8 @@ import path from 'node:path';
 
 import { expect, test, type Page } from '@playwright/test';
 
+import { ADMIN_STORAGE_STATE, useEnglishAdmin } from './admin-session';
+
 /**
  * Admin panel — Stage 6 (spec §8, plan §5.8, §5.9, §9.1).
  *
@@ -23,6 +25,18 @@ import { expect, test, type Page } from '@playwright/test';
  * the download route.
  */
 test.describe.configure({ mode: 'serial' });
+
+/*
+ * English, for every test in this file including the signed-out ones.
+ *
+ * The panel defaults to Russian — that is what the staff who use it read — so
+ * a spec asserting English has to say so rather than assume it. The default
+ * itself is not left untested: `the panel's language` at the foot of this file
+ * clears the cookie and checks Russian comes back.
+ */
+test.beforeEach(async ({ context, baseURL }) => {
+  await useEnglishAdmin(context, baseURL);
+});
 
 const PASSWORD = 'e2e-admin-password';
 // Playwright's TS transform is CommonJS, so `__dirname` is available here and
@@ -351,8 +365,10 @@ test.describe('schedule controls', () => {
     await expect(page.locator('[data-flight-row]').first()).toBeVisible();
   });
 
-  test('the controls work with no JavaScript at all', async ({ browser }) => {
+  test('the controls work with no JavaScript at all', async ({ browser, baseURL }) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
+    // Its own context, so the file-level beforeEach has not reached it.
+    await useEnglishAdmin(context, baseURL);
     const page = await context.newPage();
 
     await signIn(page);
@@ -366,5 +382,67 @@ test.describe('schedule controls', () => {
     await expect(page.getByText('live', { exact: true })).toHaveCount(1);
 
     await context.close();
+  });
+});
+
+/**
+ * The panel's language.
+ *
+ * The whole file above pins it to English so the assertions read in one
+ * language; this is the part that proves the feature those assertions are
+ * quietly relying on. Three properties: Russian is what you get when nothing
+ * has been chosen, the buttons change it, and the choice survives a
+ * navigation — the last one being the reason the switcher is a form and a
+ * redirect rather than a client-side setter, since a layout does not re-render
+ * on client navigation.
+ */
+test.describe('the panel language', () => {
+  test.use({ storageState: ADMIN_STORAGE_STATE });
+
+  test('defaults to Russian, switches, and stays switched', async ({ context, page }) => {
+    await context.clearCookies({ name: 'admin_locale' });
+
+    await page.goto('/admin');
+    await expect(page.getByRole('heading', { name: 'Обзор' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'ru');
+
+    // The switcher is three submit buttons in one form, so this works with no
+    // JavaScript — the rule everywhere in this panel.
+    await page.getByRole('button', { name: 'EN', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+
+    // Still English on another screen, and after a full load.
+    await page.goto('/admin/feedback');
+    await expect(page.getByRole('heading', { name: 'Feedback' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'KZ', exact: true }).click();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'kk');
+    // The text too, not only the attribute. Asserting `lang` alone passed
+    // happily while the Kazakh catalogue was failing to resolve and every
+    // string on the screen was a raw key.
+    await expect(page.getByRole('heading', { name: 'Өтініштер' })).toBeVisible();
+    // Switching language must not also move you off the screen you were on.
+    await expect(page).toHaveURL(/\/admin\/feedback$/);
+  });
+
+  test('a server-action failure is reported in the chosen language', async ({ page }) => {
+    await page.goto('/admin/schedule');
+
+    // Waited for, not fired and forgotten: the switcher is a POST and a
+    // redirect, and navigating on top of it races the redirect away.
+    await page.getByRole('button', { name: 'RU', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Загрузка расписания' })).toBeVisible();
+
+    await page
+      .locator('#file')
+      .setInputFiles({ name: 'notes.xlsx', mimeType: 'text/plain', buffer: Buffer.from('hello') });
+    await page.getByRole('button', { name: 'Загрузить и проверить' }).click();
+
+    // The message left the action as a key and was resolved in the component,
+    // which is the whole point of that indirection: a Server Action runs
+    // before anything knows what language the answer will be read in.
+    await expect(page.locator('#upload-error')).toContainText('книга');
+    await expect(page.locator('#upload-error')).toContainText('.xlsx');
   });
 });

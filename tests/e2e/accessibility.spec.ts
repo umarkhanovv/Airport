@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 
-import { ADMIN_STORAGE_STATE } from './admin-session';
+import { ADMIN_STORAGE_STATE, useEnglishAdmin } from './admin-session';
 
 /**
  * Accessibility — Stage 9 (plan §9.3).
@@ -149,7 +149,12 @@ test.describe('admin', () => {
 
 test.describe('the sign-in screen', () => {
   // Signed out on purpose: it is the one admin screen a visitor can reach, and
-  // the only one nobody is ever authenticated on while using it.
+  // the only one nobody is ever authenticated on while using it. The panel
+  // defaults to Russian, so the language is pinned rather than assumed.
+  test.beforeEach(async ({ context, baseURL }) => {
+    await useEnglishAdmin(context, baseURL);
+  });
+
   test('is accessible', async ({ page }) => {
     await page.goto('/admin/login');
     await expect(page.getByRole('heading', { name: 'Airport admin' })).toBeVisible();

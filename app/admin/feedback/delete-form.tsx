@@ -1,3 +1,7 @@
+import { getTranslations } from 'next-intl/server';
+
+import { readAdminLocale } from '@/lib/admin/locale';
+
 import { deleteFeedbackAction } from './actions';
 
 /**
@@ -12,7 +16,7 @@ import { deleteFeedbackAction } from './actions';
  * A plain server-action form with no client state, so it works with scripting
  * off like everything else in the panel.
  */
-export function FeedbackDeleteForm({
+export async function FeedbackDeleteForm({
   id,
   name,
   mismatch,
@@ -21,13 +25,15 @@ export function FeedbackDeleteForm({
   name: string;
   mismatch: boolean;
 }) {
+  const t = await getTranslations({ locale: await readAdminLocale(), namespace: 'Admin.feedback' });
+
   return (
     <form action={deleteFeedbackAction} className="flex flex-wrap items-start gap-2">
       <input type="hidden" name="id" value={id} />
 
       <div>
         <label htmlFor={`confirm-${id}`} className="sr-only">
-          To delete this message, type the sender’s name: {name}
+          {t('confirmName', { name })}
         </label>
         <input
           id={`confirm-${id}`}
@@ -46,7 +52,7 @@ export function FeedbackDeleteForm({
         type="submit"
         className="border-brand text-brand-text-strong hover:bg-surface-sunken focus:ring-focus rounded-md border px-3 py-1.5 text-sm font-medium focus:ring-2 focus:outline-none"
       >
-        Delete
+        {t('delete')}
       </button>
 
       {mismatch ? (
@@ -55,7 +61,7 @@ export function FeedbackDeleteForm({
           role="alert"
           className="text-brand-text-strong w-full text-sm"
         >
-          That is not this sender’s name. Nothing was deleted.
+          {t('confirmMismatch')}
         </p>
       ) : null}
     </form>

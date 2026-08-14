@@ -24,7 +24,36 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 export type NewsErrorField =
   'locale' | 'title' | 'excerpt' | 'body' | 'publishedAt' | 'coverAlt' | 'cover';
 
-export type NewsErrors = Partial<Record<NewsErrorField, string>>;
+/**
+ * A field's problem, named rather than worded.
+ *
+ * This module has no locale and no business having one — it is a pure function
+ * over form data, called from a Server Action and from `scripts/seed-news.mts`
+ * alike. So it names the message under `Admin.news` in the catalogues, and the
+ * form resolves it in whichever language the panel is being read in. The
+ * length limits are not passed along: the form already imports `NEWS_LIMITS`
+ * to enforce them in the browser, and re-sending a constant would be the kind
+ * of duplication that drifts.
+ */
+export type NewsErrorKey =
+  | 'errorLocale'
+  | 'errorTitleRequired'
+  | 'errorTitleShort'
+  | 'errorTitleLong'
+  | 'errorExcerptLong'
+  | 'errorBodyRequired'
+  | 'errorBodyShort'
+  | 'errorBodyLong'
+  | 'errorDateRequired'
+  | 'errorDateInvalid'
+  | 'errorAltRequired'
+  | 'errorAltShort'
+  | 'errorAltLong'
+  | 'errorImageEmpty'
+  | 'errorImageTooLarge'
+  | 'errorImageType';
+
+export type NewsErrors = Partial<Record<NewsErrorField, NewsErrorKey>>;
 
 export interface NewsPostInput {
   locale: NewsLocale;
@@ -94,41 +123,37 @@ export function validateNewsPost(
   const errors: NewsErrors = {};
 
   const locale = form.locale;
-  if (!isNewsLocale(locale)) errors.locale = 'Choose a language.';
+  if (!isNewsLocale(locale)) errors.locale = 'errorLocale';
 
   const title = clean(form.title);
-  if (title === null) errors.title = 'A headline is required.';
-  else if (title.length < NEWS_LIMITS.title.min) errors.title = 'That headline is too short.';
-  else if (title.length > NEWS_LIMITS.title.max) {
-    errors.title = `Headlines are limited to ${NEWS_LIMITS.title.max} characters.`;
-  }
+  if (title === null) errors.title = 'errorTitleRequired';
+  else if (title.length < NEWS_LIMITS.title.min) errors.title = 'errorTitleShort';
+  else if (title.length > NEWS_LIMITS.title.max) errors.title = 'errorTitleLong';
 
   const excerpt = clean(form.excerpt);
   if (excerpt !== null && excerpt.length > NEWS_LIMITS.excerpt.max) {
-    errors.excerpt = `The summary is limited to ${NEWS_LIMITS.excerpt.max} characters.`;
+    errors.excerpt = 'errorExcerptLong';
   }
 
   const body = cleanBody(form.body);
-  if (body === null) errors.body = 'The post needs some text.';
-  else if (body.length < NEWS_LIMITS.body.min) errors.body = 'That is too short to publish.';
-  else if (body.length > NEWS_LIMITS.body.max) {
-    errors.body = `The post is limited to ${NEWS_LIMITS.body.max} characters.`;
-  }
+  if (body === null) errors.body = 'errorBodyRequired';
+  else if (body.length < NEWS_LIMITS.body.min) errors.body = 'errorBodyShort';
+  else if (body.length > NEWS_LIMITS.body.max) errors.body = 'errorBodyLong';
 
   const publishedAt = clean(form.publishedAt);
-  if (publishedAt === null) errors.publishedAt = 'A date is required.';
+  if (publishedAt === null) errors.publishedAt = 'errorDateRequired';
   else if (!DATE_RE.test(publishedAt) || Number.isNaN(Date.parse(publishedAt))) {
-    errors.publishedAt = 'That is not a date.';
+    errors.publishedAt = 'errorDateInvalid';
   }
 
   const coverAlt = clean(form.coverAlt);
   if (hasCover) {
     if (coverAlt === null) {
-      errors.coverAlt = 'Describe the image for readers who cannot see it.';
+      errors.coverAlt = 'errorAltRequired';
     } else if (coverAlt.length < NEWS_LIMITS.coverAlt.min) {
-      errors.coverAlt = 'That description is too short to be useful.';
+      errors.coverAlt = 'errorAltShort';
     } else if (coverAlt.length > NEWS_LIMITS.coverAlt.max) {
-      errors.coverAlt = `Image descriptions are limited to ${NEWS_LIMITS.coverAlt.max} characters.`;
+      errors.coverAlt = 'errorAltLong';
     }
   }
 

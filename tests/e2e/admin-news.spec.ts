@@ -245,11 +245,22 @@ test.describe('cover images', () => {
     await page.getByRole('button', { name: 'Create post' }).click();
     await expect(page).toHaveURL(/\/admin\/news\?saved=1/);
 
-    for (const path of [`/en/news/${slug}`, '/en/news', '/en']) {
-      await page.goto(path);
+    const image = page.locator(`main img[src^="/api/news/image/"][alt="${alt}"]`);
 
-      const image = page.locator(`main img[src^="/api/news/image/"][alt="${alt}"]`);
-      await expect(image, `no cover on ${path}`).toHaveCount(1);
+    for (const path of [`/en/news/${slug}`, '/en/news', '/en']) {
+      /*
+       * Reloaded until it appears, rather than fetched once.
+       *
+       * All three pages are statically generated and revalidated by the save
+       * action. `revalidatePath` marks a page stale rather than rebuilding it,
+       * so a request that arrives while the regeneration is still in flight is
+       * served the previous copy — which is correct behaviour and exactly what
+       * happened when the suite ran this file alongside twenty others.
+       */
+      await expect(async () => {
+        await page.goto(path);
+        await expect(image, `no cover on ${path}`).toHaveCount(1);
+      }).toPass({ timeout: 15_000 });
 
       // Reserved before it loads: a list that reflows as its images arrive is
       // the failure this site is built to avoid.

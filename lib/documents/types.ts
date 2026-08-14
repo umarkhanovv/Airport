@@ -42,10 +42,23 @@ export const STORED_NAME_RE = new RegExp(
       .join('|')})$`
 );
 
+/**
+ * Why a file was refused, as a message key. Same reasoning as
+ * `UploadRejectedError`: this runs on the server with no locale, so it names
+ * the message and carries the values that go in it. `Admin.documents` in the
+ * catalogues holds the wording; the English `message` is for stack traces.
+ */
+export type DocumentRejection = 'errorEmpty' | 'errorTooLarge' | 'errorNotADocument';
+
 export class DocumentRejectedError extends Error {
-  constructor(message: string) {
+  readonly code: DocumentRejection;
+  readonly params: Record<string, string | number>;
+
+  constructor(code: DocumentRejection, message: string, params: Record<string, string | number>) {
     super(message);
     this.name = 'DocumentRejectedError';
+    this.code = code;
+    this.params = params;
   }
 }
 

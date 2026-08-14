@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
 import { requireAdmin } from '@/lib/admin/auth';
+import { readAdminLocale } from '@/lib/admin/locale';
 import { formatAirportDateTime } from '@/lib/date';
 import { env } from '@/lib/env';
 import { countReadFeedback, countUnreadFeedback, listFeedback } from '@/lib/feedback/store';
@@ -10,7 +12,10 @@ import { AdminNav } from '../admin-nav';
 import { deleteReadFeedbackAction, toggleFeedbackRead } from './actions';
 import { FeedbackDeleteForm } from './delete-form';
 
-export const metadata: Metadata = { title: 'Feedback' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations({ locale: await readAdminLocale(), namespace: 'Admin.meta' });
+  return { title: t('feedback') };
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +36,7 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps<'/ad
   await requireAdmin('/admin/feedback');
 
   const { deleted, confirm, id: mismatchId } = await searchParams;
+  const t = await getTranslations({ locale: await readAdminLocale(), namespace: 'Admin.feedback' });
 
   const submissions = listFeedback();
   const unread = countUnreadFeedback();
@@ -42,11 +48,9 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps<'/ad
       <AdminNav current="feedback" unreadFeedback={unread} />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
-        <h1 className="text-2xl font-semibold">Feedback</h1>
+        <h1 className="text-2xl font-semibold">{t('title')}</h1>
         <p className="text-text-muted mt-2 text-sm">
-          {submissions.length === 0
-            ? 'Nothing has been submitted yet.'
-            : `${submissions.length} message${submissions.length === 1 ? '' : 's'}, ${unread} unread.`}
+          {submissions.length === 0 ? t('none') : t('count', { count: submissions.length, unread })}
         </p>
 
         {/* The count, not the click: "deleted" is obvious from the row being
@@ -56,7 +60,7 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps<'/ad
             role="status"
             className="border-arrival bg-arrival-soft mt-4 rounded-md border px-4 py-3 text-sm"
           >
-            {removed === 1 ? 'Message deleted.' : `${removed} read messages deleted.`}
+            {t('deletedNotice', { count: removed })}
           </p>
         ) : null}
 
@@ -71,15 +75,14 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps<'/ad
               type="submit"
               className="border-border-strong text-text hover:bg-surface-sunken focus:ring-focus rounded-md border px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
             >
-              Delete {read} read message{read === 1 ? '' : 's'}
+              {t('deleteRead', { count: read })}
             </button>
           </form>
         ) : null}
 
         {submissions.length === 0 ? (
           <p className="border-border text-text-muted mt-6 rounded-lg border border-dashed p-6 text-sm">
-            Messages sent through the contacts page appear here. This works with no email
-            configuration at all — SMTP, when set, only adds a copy by mail.
+            {t('emptyHint')}
           </p>
         ) : (
           <ul className="mt-6 flex flex-col gap-4">
@@ -94,7 +97,7 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps<'/ad
                   <span className="font-medium">{item.name}</span>
                   {item.isRead ? null : (
                     <span className="bg-brand text-on-brand rounded px-1.5 py-0.5 text-xs font-medium">
-                      new
+                      {t('new')}
                     </span>
                   )}
                   <span className="text-text-muted ms-auto text-xs">
@@ -109,7 +112,7 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps<'/ad
                 <dl className="text-text-muted mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm">
                   {item.email ? (
                     <div className="flex gap-1.5">
-                      <dt>Email:</dt>
+                      <dt>{t('email')}:</dt>
                       {/*
                         mailto is built from an address that has passed
                         validation, so it cannot carry a scheme of its own.
@@ -123,7 +126,7 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps<'/ad
                   ) : null}
                   {item.phone ? (
                     <div className="flex gap-1.5">
-                      <dt>Phone:</dt>
+                      <dt>{t('phone')}:</dt>
                       <dd>{item.phone}</dd>
                     </div>
                   ) : null}
@@ -137,7 +140,7 @@ export default async function AdminFeedbackPage({ searchParams }: PageProps<'/ad
                       type="submit"
                       className="border-border-strong focus:ring-focus rounded-md border px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
                     >
-                      {item.isRead ? 'Mark unread' : 'Mark read'}
+                      {item.isRead ? t('markUnread') : t('markRead')}
                     </button>
                   </form>
 

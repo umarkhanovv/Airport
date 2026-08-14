@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { requireAdmin } from '@/lib/admin/auth';
+import { readAdminLocale } from '@/lib/admin/locale';
 import { airportToday } from '@/lib/date';
 import { env } from '@/lib/env';
 import { countUnreadFeedback } from '@/lib/feedback/store';
@@ -13,7 +15,10 @@ import { PostForm } from '../post-form';
 
 import { DeleteForm } from './delete-form';
 
-export const metadata: Metadata = { title: 'Edit post' };
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations({ locale: await readAdminLocale(), namespace: 'Admin.meta' });
+  return { title: t('editPost') };
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -34,39 +39,45 @@ export default async function EditNewsPostPage({
   if (!post) notFound();
 
   const { confirm } = await searchParams;
+  const t = await getTranslations({ locale: await readAdminLocale(), namespace: 'Admin.news' });
   const candidates = listTranslationCandidates(post.locale, post.id);
+
+  const path = publicPath(post.locale, post.slug);
 
   return (
     <>
-      <AdminNav current="news" unreadFeedback={countUnreadFeedback()} />
+      <AdminNav
+        current="news"
+        unreadFeedback={countUnreadFeedback()}
+        back={`/admin/news/${post.id}`}
+      />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
         <p className="text-sm">
           <Link href="/admin/news" className="text-text-muted hover:text-text">
-            ← All news
+            ← {t('back')}
           </Link>
         </p>
 
-        <h1 className="mt-2 text-2xl font-semibold">Edit post</h1>
+        <h1 className="mt-2 text-2xl font-semibold">{t('edit')}</h1>
 
         <p className="text-text-muted mt-2 text-sm">
           {post.isPublished ? (
             <>
-              Live at{' '}
-              <a
-                href={publicPath(post.locale, post.slug)}
-                className="text-brand-text-strong underline"
-              >
-                {publicPath(post.locale, post.slug)}
+              {t('liveAt')}{' '}
+              <a href={path} className="text-brand-text-strong underline">
+                {path}
               </a>
             </>
           ) : (
-            <>Not published. It will appear at {publicPath(post.locale, post.slug)}.</>
+            t('notPublished', { path })
           )}
         </p>
 
         {post.legacyUrl ? (
-          <p className="text-text-muted mt-1 text-xs break-all">Migrated from {post.legacyUrl}</p>
+          <p className="text-text-muted mt-1 text-xs break-all">
+            {t('migratedFrom', { url: post.legacyUrl })}
+          </p>
         ) : null}
 
         <PostForm
@@ -77,11 +88,8 @@ export default async function EditNewsPostPage({
         />
 
         <section className="border-border mt-12 rounded-lg border border-dashed p-5">
-          <h2 className="font-medium">Delete this post</h2>
-          <p className="text-text-muted mt-1 text-sm">
-            Permanent. To take a post off the public site while keeping it, unpublish it instead —
-            that is reversible, and one click on the news list.
-          </p>
+          <h2 className="font-medium">{t('deleteHeading')}</h2>
+          <p className="text-text-muted mt-1 text-sm">{t('deleteIntro')}</p>
 
           <DeleteForm id={post.id} title={post.title} mismatch={confirm === 'mismatch'} />
         </section>
