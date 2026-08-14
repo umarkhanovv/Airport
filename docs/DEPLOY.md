@@ -34,9 +34,28 @@ database. 1 GB leaves room for years.
 
 **New Project → Deploy from GitHub repo → `umarkhanovv/Airport`.**
 
-Railway detects the `Dockerfile` at the repository root and builds with it; there
-is no builder to configure. Leave automatic deploys on — that is the feature we
-are here for.
+Leave automatic deploys on — that is the feature we are here for.
+
+### The builder is not automatic
+
+Railway defaults to **Railpack**, its own builder, and it will not switch to the
+Dockerfile just because one exists. Railpack inspects the project, fails to make
+sense of it, and the build dies in about five seconds with "Failed to build an
+image" — which reads like a broken Dockerfile rather than a Dockerfile nobody
+opened.
+
+`railway.json` at the repository root pins it:
+
+```json
+{
+  "build": { "builder": "DOCKERFILE", "dockerfilePath": "Dockerfile" }
+}
+```
+
+Config-as-code overrides the dashboard, so this travels with the repository and
+cannot be lost by clicking around. It also sets the health check to `/` and the
+restart policy. If you ever need to check what is actually in force, Settings →
+Build will show the builder the last deployment used.
 
 ## 2. Add the volume
 
@@ -59,6 +78,20 @@ over a network mount is how databases get corrupted. A regional airport's
 timetable is not going to outgrow one container, and scaling this would mean
 changing databases, not settings.
 
+Without a volume the service still starts, still builds, and still serves pages.
+It simply forgets everything on each deploy. That is the failure worth watching
+for, because nothing about it looks like a failure.
+
+## 2b. Generate the domain
+
+Settings → **Networking → Generate Domain**. Railway issues
+`<something>.up.railway.app`.
+
+`SITE_URL` must then match it exactly, scheme included. It is what the site
+publishes as its canonical URL and in every `hreflang` alternate, so a value
+pointing at a domain that was never generated means the site is advertising
+addresses nobody can open.
+
 ## 3. Environment variables
 
 Service → **Variables**.
@@ -75,6 +108,18 @@ Generate the secrets rather than inventing them:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ```
+
+### `SESSION_SECRET` must not reference a Railway variable
+
+`${{RAILWAY_ENVIRONMENT_ID}}` and its siblings are **identifiers, not secrets**.
+They are visible in the dashboard, returned by Railway's API, and stable for the
+life of the environment. This value signs the admin session cookie: anyone who
+learns it can mint a cookie the server accepts and walk into the admin panel
+without ever seeing the password. Paste a random string from the command above
+and nothing else.
+
+The same goes for `ADMIN_PASSWORD`. Both are the entire access control on this
+site — there are no user accounts to fall back on.
 
 `DATA_DIR`, `PORT` and `NODE_ENV` are already in the image. Railway injects its
 own `PORT` and the server honours it.
