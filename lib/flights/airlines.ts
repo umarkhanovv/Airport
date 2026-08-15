@@ -17,53 +17,57 @@
  * are named rather than redrawn: an approximation of an airline's logo would be
  * both worse and less honest than none.
  *
- * NOTE: the Kazakh names are provisional and want a native speaker, the same
- * caveat that stands over the city dictionary.
+ * One name, in English, on all three versions of the site. A company's own
+ * name is not a word to be translated — «Эйр Астана» is a transliteration of
+ * `Air Astana` rather than a Russian name for it, and half the carriers here
+ * (Qazaq Air, Wizz Air Abu Dhabi, Turkish Airlines) never had one to begin
+ * with. Rendering the same string everywhere also means it matches the mark
+ * beside it and the livery on the aircraft.
  */
 
 export interface AirlineInfo {
   /** IATA designator, exactly two characters. `5W` and `9C` are legal too. */
   code: string;
-  names: { ru: string; en: string; kk: string };
+  /** As the carrier writes it. Not localised — see above. */
+  name: string;
   /**
    * Filename under `public/airlines`, or `null` when we have no mark for this
    * carrier yet.
    *
    * Null is the switch, not an accident. An `<img>` pointed at a file that does
    * not exist renders a broken-image glyph in the middle of a flight board, so
-   * a logo is declared here only once the file is actually committed. Dropping
-   * `kc.svg` into `public/airlines` and changing one `null` on the line below
-   * is the whole of turning a logo on.
+   * a logo is declared here only once the file is actually committed — and the
+   * board falls back to the carrier's name in plain text.
    */
   logo: string | null;
 }
 
+/*
+ * Every mark below came from Wikimedia, where each is published as
+ * {{PD-textlogo}} — lettering below the threshold of originality, so not
+ * copyrightable — and flagged as trademarked, which is the part that matters
+ * and the part this use satisfies. A timetable naming the carrier that operates
+ * a flight is nominative use, the same thing every departure board in the world
+ * does. Sources, in case they ever need re-fetching:
+ *
+ *   KC  en.wikipedia.org/wiki/File:Air_Astana_logo.svg
+ *   DV  commons.wikimedia.org/wiki/File:SCAT_Air_Company_Logo.svg
+ *   IQ  commons.wikimedia.org/wiki/File:Qazaq_Air_logo.svg
+ *   TK  commons.wikimedia.org/wiki/File:Turkish_Airlines_logo_2019_compact.svg
+ *   5W  commons.wikimedia.org/wiki/File:Wizz_Air_logo_2015.svg
+ *
+ * Wizz Air Abu Dhabi flies under the Wizz Air mark; there is no separate one.
+ * All five are wordmarks rather than symbols — between two and four times as
+ * wide as they are tall — which is why the board gives them a line of their
+ * own instead of a square badge, and why they replace the printed name rather
+ * than sitting beside it.
+ */
 const AIRLINES: readonly AirlineInfo[] = [
-  {
-    code: 'KC',
-    names: { ru: 'Эйр Астана', en: 'Air Astana', kk: 'Эйр Астана' },
-    logo: null,
-  },
-  {
-    code: 'DV',
-    names: { ru: 'СКАТ', en: 'SCAT Airlines', kk: 'СКАТ' },
-    logo: null,
-  },
-  {
-    code: 'IQ',
-    names: { ru: 'Qazaq Air', en: 'Qazaq Air', kk: 'Qazaq Air' },
-    logo: null,
-  },
-  {
-    code: 'TK',
-    names: { ru: 'Turkish Airlines', en: 'Turkish Airlines', kk: 'Turkish Airlines' },
-    logo: null,
-  },
-  {
-    code: '5W',
-    names: { ru: 'Wizz Air Abu Dhabi', en: 'Wizz Air Abu Dhabi', kk: 'Wizz Air Abu Dhabi' },
-    logo: null,
-  },
+  { code: 'KC', name: 'Air Astana', logo: 'kc.svg' },
+  { code: 'DV', name: 'SCAT Airlines', logo: 'dv.svg' },
+  { code: 'IQ', name: 'Qazaq Air', logo: 'iq.svg' },
+  { code: 'TK', name: 'Turkish Airlines', logo: 'tk.svg' },
+  { code: '5W', name: 'Wizz Air Abu Dhabi', logo: '5w.svg' },
 ];
 
 const BY_CODE = new Map(AIRLINES.map((airline) => [airline.code, airline]));
@@ -82,9 +86,9 @@ export function airlineForFlightNo(flightNoNorm: string): AirlineInfo | null {
   return BY_CODE.get(flightNoNorm.slice(0, 2)) ?? null;
 }
 
-/** The carrier's name in one locale, or `null` when we do not know the carrier. */
-export function airlineName(flightNoNorm: string, locale: 'ru' | 'en' | 'kk'): string | null {
-  return airlineForFlightNo(flightNoNorm)?.names[locale] ?? null;
+/** The carrier's name, or `null` when we do not know the carrier. */
+export function airlineName(flightNoNorm: string): string | null {
+  return airlineForFlightNo(flightNoNorm)?.name ?? null;
 }
 
 /** Public URL of a carrier's mark, or `null` when there is no file for it. */

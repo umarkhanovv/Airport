@@ -1,5 +1,0 @@
-Airline marks go here, one file per carrier, named as `lib/flights/airlines.ts`
-declares it — e.g. `kc.svg` for Air Astana. SVG preferred; a PNG at 2x the 20px
-box is fine. Committing the file is only half of it: the carrier's `logo: null`
-in that dictionary has to name the file too, which is the switch that stops an
-`<img>` ever pointing at something that is not there.

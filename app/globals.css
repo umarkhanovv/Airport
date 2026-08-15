@@ -1128,28 +1128,27 @@
      the logo box appears only on a table that has at least one logo to put in
      it, so the numbers never sit indented against an empty column.
      ------------------------------------------------------------------------- */
-  .board-flight-line {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  /* The mark sits on the line under the flight number, where the carrier's
+     name would otherwise be.
+
+     Its *height* is fixed and its width is left to the artwork. Every one of
+     these is a wordmark of a different length — Air Astana is four times as
+     wide as it is tall, Wizz Air barely twice — and forcing them into one box
+     would either crop the long ones or strand the short ones in whitespace.
+     Fixing the height is what stops the row growing as the images decode,
+     which is the reflow that actually matters. */
+  .board-airline-mark {
+    display: block;
+    height: 1rem;
+    margin-top: 0.25rem;
   }
 
-  .board-airline-logo {
-    /* Fixed and reserved: a mark that sized itself as it decoded would shunt
-       the flight number sideways after paint, on the one page whose whole
-       argument is that nothing moves while you are reading it. */
-    display: inline-flex;
-    flex: none;
-    align-items: center;
-    justify-content: center;
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
-  .board-airline-logo img {
-    max-width: 100%;
-    max-height: 100%;
+  .board-airline-mark img {
+    height: 100%;
+    width: auto;
+    max-width: 6rem;
     object-fit: contain;
+    object-position: left center;
   }
 
   .board-airline-name {

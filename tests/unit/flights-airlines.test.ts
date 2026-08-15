@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
 import { airlineForFlightNo, airlineLogoSrc, airlineName } from '@/lib/flights/airlines';
@@ -41,29 +44,50 @@ describe('airlineForFlightNo', () => {
 });
 
 describe('airlineName', () => {
-  it('answers in the locale asked for', () => {
-    expect(airlineName('KC7361', 'en')).toBe('Air Astana');
-    expect(airlineName('KC7361', 'ru')).toBe('Эйр Астана');
+  // One name on all three versions of the site: a company's own name is not a
+  // word to be translated, and it has to match the mark printed beside it.
+  it('gives the carrier its own name, whatever the page language', () => {
+    expect(airlineName('KC7361')).toBe('Air Astana');
+    expect(airlineName('DV762')).toBe('SCAT Airlines');
+    expect(airlineName('5W7201')).toBe('Wizz Air Abu Dhabi');
   });
 
   it('is null for an unknown carrier, so the caller shows nothing', () => {
-    expect(airlineName('ZZ1234', 'ru')).toBeNull();
+    expect(airlineName('ZZ1234')).toBeNull();
   });
 });
 
 describe('airlineLogoSrc', () => {
-  /*
-   * Every carrier is currently declared with `logo: null`, because the marks
-   * are the airlines' own and are not in the repository yet. This test pins the
-   * behaviour that matters either way: a carrier with no file must produce no
-   * src at all, never a URL to something that is not there — an <img> pointed
-   * at a missing file draws a broken-image glyph in the middle of the board.
-   */
-  it('is null while a carrier has no mark committed', () => {
-    expect(airlineLogoSrc('KC7361')).toBeNull();
+  it('points into the public folder', () => {
+    expect(airlineLogoSrc('KC7361')).toBe('/airlines/kc.svg');
   });
 
   it('is null for an unknown carrier', () => {
     expect(airlineLogoSrc('ZZ1234')).toBeNull();
+  });
+
+  /*
+   * Every declared mark has to be on disk.
+   *
+   * This is the failure the `logo: null` switch exists to prevent, and the one
+   * a person cannot be relied on to catch: an `<img>` aimed at a file that is
+   * not there draws a broken-image glyph in the middle of a flight board, and
+   * it does it on every row that carrier flies. Deleting a file, renaming one,
+   * or adding a carrier and forgetting the artwork all fail here instead.
+   *
+   * Same guarantee `content-assets.test.ts` gives the `/media/` links.
+   */
+  it('every mark the dictionary declares is actually committed', () => {
+    const declared = ['KC7361', 'DV762', 'IQ365', 'TK256', '5W7201']
+      .map((flightNo) => [flightNo, airlineLogoSrc(flightNo)] as const)
+      .filter(([, src]) => src !== null);
+
+    // If this drops to zero the loop below stops proving anything.
+    expect(declared.length).toBeGreaterThan(0);
+
+    for (const [flightNo, src] of declared) {
+      const file = path.join(process.cwd(), 'public', src!.replace(/^\//, ''));
+      expect(existsSync(file), `${flightNo}: ${src} is declared but not in public/`).toBe(true);
+    }
   });
 });
