@@ -70,13 +70,29 @@ export function hasSlipped(
   return slot + graceMinutes <= now;
 }
 
+/**
+ * The time this flight is actually going by.
+ *
+ * Once staff have said when a flight really went — or when they now expect it —
+ * that is the time the grace period has to be measured from. Measuring from the
+ * scheduled time instead takes a flight somebody has explicitly marked as
+ * running late and hides it half an hour after a time everyone already knows is
+ * wrong, which is the board using the delay to conceal the delay.
+ */
+export function effectiveTime(flight: {
+  scheduledTime: string | null;
+  actualTime?: string | null;
+}): string | null {
+  return flight.actualTime ?? flight.scheduledTime;
+}
+
 /** Today's flights, minus the ones that have gone. Order is preserved. */
-export function stillToCome<T extends { scheduledTime: string | null }>(
+export function stillToCome<T extends { scheduledTime: string | null; actualTime?: string | null }>(
   flights: T[],
   nowTime: string,
   graceMinutes: number = BOARD_GRACE_MINUTES
 ): T[] {
-  return flights.filter((flight) => !hasSlipped(flight.scheduledTime, nowTime, graceMinutes));
+  return flights.filter((flight) => !hasSlipped(effectiveTime(flight), nowTime, graceMinutes));
 }
 
 /**
@@ -88,17 +104,23 @@ export function stillToCome<T extends { scheduledTime: string | null }>(
  * is what makes that correct for a visitor reading the board from Astana, from
  * Istanbul, or with a wrong clock on their laptop.
  *
- * `null` when the flight has no scheduled time, which is the signal not to
- * write the attribute at all — and so the signal never to hide the row.
+ * `null` when the flight has no time at all, which is the signal not to write
+ * the attribute — and so the signal never to hide the row.
+ *
+ * Takes the flight rather than a bare time so that it counts from the same
+ * moment `stillToCome` does. When these two disagree the board contradicts
+ * itself: the server keeps a delayed flight and the browser retires it a minute
+ * later, or the reverse.
  */
 export function expiresAt(
   date: string,
-  scheduledTime: string | null,
+  flight: { scheduledTime: string | null; actualTime?: string | null },
   timeZone: string = DEFAULT_AIRPORT_TZ,
   graceMinutes: number = BOARD_GRACE_MINUTES
 ): number | null {
-  if (minutesPastMidnight(scheduledTime) === null) return null;
+  const time = effectiveTime(flight);
+  if (minutesPastMidnight(time) === null) return null;
 
-  const slot = zonedWallClockToUtc(date, scheduledTime as string, timeZone);
+  const slot = zonedWallClockToUtc(date, time as string, timeZone);
   return slot.getTime() + graceMinutes * 60_000;
 }

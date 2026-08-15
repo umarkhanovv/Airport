@@ -1160,6 +1160,31 @@
     color: var(--text-muted);
   }
 
+  /* -------------------------------------------------------------------------
+     When it actually went, and anything staff wrote about it.
+
+     Both sit under the value they qualify, muted and small, because the
+     schedule is still what a passenger is checking their ticket against. The
+     actual time is the correction to it, not the replacement — someone
+     comparing the two needs both on screen.
+     ------------------------------------------------------------------------- */
+  .board-actual {
+    display: block;
+    margin-top: 0.125rem;
+    font-size: 0.8125rem;
+    line-height: 1.125rem;
+    font-weight: 500;
+    color: var(--text-muted);
+  }
+
+  .board-note {
+    display: block;
+    margin-top: 0.125rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--text-muted);
+  }
+
   .board-day-cell {
     padding: 1.25rem 0 0.5rem;
     font-size: 0.95rem;

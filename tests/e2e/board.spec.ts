@@ -149,11 +149,23 @@ test.describe('board semantics and state', () => {
     await expect(heading).toHaveCount(0);
   });
 
+  /**
+   * The site must not invent a status it has no data for (spec §6.4).
+   *
+   * What this covers is text the *site* generates: its own labels, its own
+   * framing. `факт. 17:52` passes deliberately — it states a time somebody at
+   * the airport typed and claims nothing about why.
+   *
+   * It does not cover a staff note, and should not. A note is the airport
+   * speaking for itself about its own flight, so «задержка» in one is a fact
+   * from the only party who has it, not the site guessing. The seeded workbook
+   * carries no edits, so what is measured here is the site's own vocabulary —
+   * which is the thing the promise was ever about.
+   */
   test('states that times are scheduled, never live', async ({ page }) => {
     await page.goto('/flights');
     await expect(page.getByText('время по расписанию').first()).toBeVisible();
 
-    // No status vocabulary anywhere: we have no data for it (spec §6.4).
     const text = (await page.locator('main').textContent())?.toLowerCase() ?? '';
     for (const forbidden of ['задерж', 'прибыл', 'отменён', 'delayed', 'landed']) {
       expect(text, `board must not claim "${forbidden}"`).not.toContain(forbidden);

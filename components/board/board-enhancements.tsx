@@ -221,8 +221,21 @@ export function BoardEnhancements() {
           badge.dataset.weather = '';
           badge.className = 'board-weather';
           badge.textContent = `${weatherGlyph(reading.code)} ${reading.temperatureC}°`;
-          badge.title = t('weatherIn', { city: cell.textContent?.trim() ?? '' });
-          cell.appendChild(badge);
+          // The cell can now hold a staff note as well, so the name is read
+          // from its own element rather than from everything in the cell.
+          badge.title = t('weatherIn', {
+            city: cell.firstElementChild?.textContent?.trim() ?? '',
+          });
+
+          /*
+           * Beside the city, not at the end of the cell. A note is a block
+           * element under the name, so appending pushed the badge below it and
+           * onto a line of its own — the temperature reading as a caption to a
+           * delay notice.
+           */
+          const note = cell.querySelector('.board-note');
+          if (note) cell.insertBefore(badge, note);
+          else cell.appendChild(badge);
         }
       } catch {
         // Offline, blocked, timed out, or the shape changed. The board does not

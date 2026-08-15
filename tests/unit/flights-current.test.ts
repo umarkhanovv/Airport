@@ -77,16 +77,52 @@ describe('stillToCome', () => {
   it('touches nothing at the start of the day', () => {
     expect(stillToCome(flights, '00:01')).toHaveLength(5);
   });
+
+  /*
+   * The case the whole actual-time feature exists for.
+   *
+   * Staff mark a flight as running late. Measuring the grace from the scheduled
+   * time would then hide it half an hour after a time everyone already knows is
+   * wrong — the board using the delay to conceal the delay, and taking the one
+   * flight a waiting passenger needs off the screen.
+   */
+  it('counts the grace from the actual time, not the scheduled one', () => {
+    const delayed = [{ flightNo: 'KC 7161', scheduledTime: '17:00', actualTime: '18:30' }];
+
+    // Long past 17:30, which is when the scheduled time would have retired it.
+    expect(stillToCome(delayed, '18:00')).toHaveLength(1);
+    expect(stillToCome(delayed, '18:59')).toHaveLength(1);
+    expect(stillToCome(delayed, '19:00')).toHaveLength(0);
+  });
+
+  // The other direction: a flight that actually went early is gone early.
+  it('retires a flight that went before its slot', () => {
+    const early = [{ flightNo: 'KC 7161', scheduledTime: '17:00', actualTime: '16:00' }];
+    expect(stillToCome(early, '16:31')).toHaveLength(0);
+  });
 });
 
 describe('expiresAt', () => {
   it('resolves the airport wall clock to a real instant, grace included', () => {
     // 17:05 Almaty on 2026-08-15 is 12:05Z; the row dies half an hour later.
-    expect(expiresAt('2026-08-15', '17:05', ALMATY)).toBe(Date.parse('2026-08-15T12:35:00Z'));
+    expect(expiresAt('2026-08-15', { scheduledTime: '17:05' }, ALMATY)).toBe(
+      Date.parse('2026-08-15T12:35:00Z')
+    );
+  });
+
+  /*
+   * The deadline the browser is given has to come from the same moment the
+   * server filtered on. If they disagree the board contradicts itself — the
+   * server keeps a delayed flight and the client retires it a minute later.
+   */
+  it('counts from the actual time when there is one', () => {
+    expect(expiresAt('2026-08-15', { scheduledTime: '17:05', actualTime: '18:30' }, ALMATY)).toBe(
+      Date.parse('2026-08-15T14:00:00Z')
+    );
   });
 
   it('is null for a flight with no time, so no attribute is ever written', () => {
-    expect(expiresAt('2026-08-15', null, ALMATY)).toBeNull();
+    expect(expiresAt('2026-08-15', { scheduledTime: null }, ALMATY)).toBeNull();
   });
 
   /*
@@ -95,8 +131,8 @@ describe('expiresAt', () => {
    * reader is sitting.
    */
   it('does not depend on the reader being in Kazakhstan', () => {
-    const almaty = expiresAt('2026-08-15', '17:05', ALMATY);
-    const istanbul = expiresAt('2026-08-15', '17:05', 'Europe/Istanbul');
+    const almaty = expiresAt('2026-08-15', { scheduledTime: '17:05' }, ALMATY);
+    const istanbul = expiresAt('2026-08-15', { scheduledTime: '17:05' }, 'Europe/Istanbul');
     expect(almaty).not.toBe(istanbul);
     expect(istanbul! - almaty!).toBe(2 * 60 * 60 * 1000);
   });

@@ -117,9 +117,7 @@ export async function FlightTable({
            * timezone is wrong. `null` for a flight with no published time, and
            * an absent attribute is what tells the client to leave it alone.
            */
-          const retiresAt = expires
-            ? expiresAt(flight.date, flight.scheduledTime, env.airportTz)
-            : null;
+          const retiresAt = expires ? expiresAt(flight.date, flight, env.airportTz) : null;
 
           const haystack = searchHaystack({
             flightNo: flight.flightNo,
@@ -154,9 +152,30 @@ export async function FlightTable({
                   <span className={`tabular text-xl font-semibold sm:text-2xl ${accent}`}>
                     {flight.scheduledTime ?? '—'}
                   </span>
+                  {/*
+                    When it actually went, if anybody has said.
+
+                    A real element rather than another `::after` on this cell —
+                    the pinned-row date label already occupies that pseudo.
+
+                    The wording states the fact and claims nothing else. The
+                    board has no live feed and says so on every table; "вылетел"
+                    would be a status, and a status nobody typed today is a
+                    status that is wrong. `board.spec.ts` fails the build if
+                    that vocabulary appears here.
+                  */}
+                  {flight.actualTime ? (
+                    <span className="board-actual tabular">
+                      {t('actualAt', { time: flight.actualTime })}
+                    </span>
+                  ) : null}
                 </td>
                 <td role="cell" className="board-td board-city">
                   <span className="text-text font-medium">{city}</span>
+                  {/* Whatever staff wrote about this flight, verbatim. Rendered
+                      as text like every other value on this page, so a note
+                      typed with a bracket in it is a note and not markup. */}
+                  {flight.note ? <span className="board-note">{flight.note}</span> : null}
                 </td>
                 {/*
                   Who is flying it, which the workbook never says in words —
