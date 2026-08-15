@@ -56,10 +56,12 @@ export default async function AdminLayout({ children }: LayoutProps<'/admin'>) {
         <JsMarker />
       </head>
       {/*
-        `admin-shell` turns the backdrop down rather than off. The public site
-        is a shop window and can afford atmosphere behind it; this is a
-        workbench, where staff read tables of two hundred documents and a
-        pattern under dense rows is a cost. Same surfaces, quieter field.
+        `admin-shell` used to turn the backdrop down here — a quarter of the
+        mark, one gradient dropped — on the argument that a workbench wants
+        less atmosphere than a shop window. It is one site, and it now looks
+        like one: two backdrops that differ slightly read as a mistake rather
+        than a decision. The class stays as the obvious place to hang a
+        divergence if one is ever wanted again.
       */}
       <body className="admin-shell text-text flex min-h-screen flex-col">
         <div aria-hidden="true" className="app-backdrop" />

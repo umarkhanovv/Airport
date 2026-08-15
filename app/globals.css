@@ -165,7 +165,7 @@
   --backdrop-a: rgb(206 123 68 / 0.16);
   --backdrop-b: rgb(15 122 115 / 0.1);
   --backdrop-c: rgb(206 123 68 / 0.08);
-  --backdrop-mark-opacity: 0.11;
+  --backdrop-mark-opacity: 0.09;
 }
 
 /* ---------------------------------------------------------------------------
@@ -217,13 +217,20 @@
   }
 }
 
-/* The admin panel keeps the surfaces and loses most of the atmosphere. Staff
-   read tables of two hundred documents there; a drawing under dense rows is
-   something to see past rather than something to enjoy. */
-.admin-shell {
-  --backdrop-mark-opacity: 0.04;
-  --backdrop-c: transparent;
-}
+/*
+   The admin panel used to turn the backdrop down — a quarter of the mark and
+   one of the three gradients removed — on the argument that staff reading
+   tables of two hundred documents want less atmosphere than a visitor does.
+
+   It is one site, and it now looks like one. Two backdrops that differ
+   slightly read as a mistake rather than as a decision, and the difference was
+   never load-bearing: at this weight the lattice is behind the page rather
+   than under the rows, and the panels the tables sit on are opaque.
+
+   `.admin-shell` stays on the body without rules of its own for the moment,
+   so there is somewhere obvious to hang a divergence if one turns out to be
+   wanted.
+*/
 
 @theme inline {
   --color-surface: var(--surface);
@@ -466,24 +473,22 @@
     nothing to fail. The filigree that replaced it was 53 KB and a network round
     trip for something nobody is meant to notice.
 
-    Two strokes, tiled, drawn once and repeated. Unlike a building — which grows
-    seams where the domes meet the next copy along — a lattice is a repeat by
-    nature, so this needs no seam-hiding and no mirroring to wrap.
+    Two strokes at 60px, drawn once and repeated. Unlike a building — which
+    grows seams where the domes meet the next copy along — a lattice is a repeat
+    by nature, so this needs no seam-hiding and no mirroring to wrap.
 
-    Bigger and firmer than the original 1px at 60px, and the reason is not
-    taste. At 7% a fully covered pixel of this terracotta sits 8 levels of 255
-    below the surface — and the strokes cover about 7% of the tile, so the field
-    averages under one level. That is under the threshold at which an eye can
-    resolve a shape but not under the one at which it notices something is
-    there, which is the worst place to be: you end up squinting at a pattern
-    trying to work out what it is. Worse on a laptop panel, which is dimmer and
-    usually seen off-axis.
+    The stroke is 1.4px rather than the 1px it was drawn at, and that is the
+    part doing the work. At 7% a fully covered pixel of this terracotta sat
+    about 8 levels of 255 below the surface, and a hairline loses most of even
+    that to antialiasing on a high-density screen — leaving a mark under the
+    threshold at which an eye can resolve a shape but over the one at which it
+    notices something is there. That is the worst place for a background to be:
+    you end up squinting at it trying to work out what it is. A laptop panel
+    makes it worse, being dimmer and usually seen off-axis.
 
-    So the fix is legibility, not weight. A wider stroke survives the
-    antialiasing that eats a hairline on a high-density screen, and a larger
-    tile puts fewer lines in the same area — a fine pattern at low contrast
-    reads as noise, a coarse one reads as a pattern. The opacity rises only
-    enough to go with them.
+    A wider line survives the antialiasing. The opacity moves with it, 0.07 to
+    0.09, and no further: past that the lattice stops being something the page
+    sits on and starts being something the page sits under.
 
     Fixed with the rest of the backdrop, so the page travels over it. That
     relative motion is what makes the frosted header read as a pane of glass
@@ -499,7 +504,7 @@
     inset: 0;
     opacity: var(--backdrop-mark-opacity);
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23CE7B44' stroke-width='1.4'%3E%3Cpath d='M52 30 30 52 8 30 30 8Z'/%3E%3Cpath d='M45.6 14.4v31.2H14.4V14.4z'/%3E%3C/g%3E%3C/svg%3E");
-    background-size: 84px 84px;
+    background-size: 60px 60px;
   }
 
   /* -------------------------------------------------------------------------
