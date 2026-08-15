@@ -1139,12 +1139,22 @@
      which is the reflow that actually matters. */
   .board-airline-mark {
     display: block;
-    height: 1rem;
     margin-top: 0.25rem;
   }
 
+  /* The height is set on the image itself, not inherited as a percentage of
+     this box. A percentage height resolves against the containing block, and
+     inside a `<td>` that block's height is indefinite until the table has
+     finished laying out — so `height: 100%` is a rule that works in some
+     browsers and quietly becomes `auto` in others, drawing a 600px wordmark in
+     the middle of a flight board.
+
+     The `<img>` also carries real width and height attributes (see
+     `lib/flights/airlines.ts`), so it is the right size before this rule is
+     read at all, and stays right if the stylesheet is stale or missing. */
   .board-airline-mark img {
-    height: 100%;
+    display: block;
+    height: 1rem;
     width: auto;
     max-width: 6rem;
     object-fit: contain;

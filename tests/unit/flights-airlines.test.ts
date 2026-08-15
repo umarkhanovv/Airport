@@ -1,9 +1,17 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { airlineForFlightNo, airlineLogoSrc, airlineName } from '@/lib/flights/airlines';
+import {
+  airlineForFlightNo,
+  airlineLogo,
+  airlineLogoSrc,
+  airlineName,
+} from '@/lib/flights/airlines';
+
+/** One flight number per carrier the dictionary knows. */
+const CARRIERS = ['KC7361', 'DV762', 'IQ365', 'TK256', '5W7201'];
 
 /**
  * Attributing a flight to a carrier.
@@ -78,9 +86,9 @@ describe('airlineLogoSrc', () => {
    * Same guarantee `content-assets.test.ts` gives the `/media/` links.
    */
   it('every mark the dictionary declares is actually committed', () => {
-    const declared = ['KC7361', 'DV762', 'IQ365', 'TK256', '5W7201']
-      .map((flightNo) => [flightNo, airlineLogoSrc(flightNo)] as const)
-      .filter(([, src]) => src !== null);
+    const declared = CARRIERS.map(
+      (flightNo) => [flightNo, airlineLogoSrc(flightNo)] as const
+    ).filter(([, src]) => src !== null);
 
     // If this drops to zero the loop below stops proving anything.
     expect(declared.length).toBeGreaterThan(0);
@@ -88,6 +96,60 @@ describe('airlineLogoSrc', () => {
     for (const [flightNo, src] of declared) {
       const file = path.join(process.cwd(), 'public', src!.replace(/^\//, ''));
       expect(existsSync(file), `${flightNo}: ${src} is declared but not in public/`).toBe(true);
+    }
+  });
+});
+
+describe('airlineLogo', () => {
+  it('sizes the mark to a single row height', () => {
+    const logo = airlineLogo('IQ365')!;
+    expect(logo.height).toBe(16);
+    expect(logo.width).toBe(42);
+    expect(logo.alt).toBe('Qazaq Air');
+  });
+
+  it('is null for a carrier with no mark', () => {
+    expect(airlineLogo('ZZ1234')).toBeNull();
+  });
+
+  /*
+   * The declared aspect has to match the artwork.
+   *
+   * These attributes are what makes the mark the right size before any CSS is
+   * read — and a wrong number is invisible in a browser that does apply the
+   * stylesheet, which is how a 600-pixel-wide wordmark reached a flight board
+   * in Safari while Chromium showed it at 42×16. A file swapped for a squarer
+   * or wider version fails here rather than on somebody's screen.
+   */
+  it('matches the aspect ratio of the file on disk', () => {
+    for (const flightNo of CARRIERS) {
+      const logo = airlineLogo(flightNo);
+      if (!logo) continue;
+
+      const svg = readFileSync(
+        path.join(process.cwd(), 'public', logo.src.replace(/^\//, '')),
+        'utf8'
+      );
+      const viewBox = /viewBox="([^"]+)"/.exec(svg)?.[1];
+
+      // Not every mark carries a viewBox; those state width and height instead.
+      const [w, h] = viewBox
+        ? viewBox
+            .trim()
+            .split(/[\s,]+/)
+            .map(Number)
+            .slice(2)
+        : [Number(/\swidth="([\d.]+)/.exec(svg)?.[1]), Number(/\sheight="([\d.]+)/.exec(svg)?.[1])];
+
+      expect(Number.isFinite(w) && Number.isFinite(h) && h > 0, `${flightNo}: unreadable SVG`).toBe(
+        true
+      );
+
+      const expected = Math.round(16 * (w / h));
+      expect(
+        logo.width,
+        `${flightNo}: declared ${logo.width}px wide, artwork wants ${expected}px`
+      ).toBe(expected);
     }
   });
 });

@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { getTranslations } from 'next-intl/server';
 
-import { airlineLogoSrc, airlineName } from '@/lib/flights/airlines';
+import { airlineLogo, airlineName } from '@/lib/flights/airlines';
 import { cityDisplayName } from '@/lib/flights/cities';
 import { searchHaystack } from '@/lib/flights/board';
 import { expiresAt } from '@/lib/flights/current';
@@ -99,7 +99,7 @@ export async function FlightTable({
 
           const city = cityDisplayName(flight.cityKey, locale, flight.cityRaw);
           const carrier = airlineName(flight.flightNoNorm);
-          const logo = airlineLogoSrc(flight.flightNoNorm);
+          const logo = airlineLogo(flight.flightNoNorm);
           /*
            * A real instant, not a wall-clock string, so the browser can retire
            * the row with one comparison against `Date.now()` — correct whether
@@ -188,10 +188,18 @@ export async function FlightTable({
                           single node. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={logo}
-                        // The name, so a screen reader says "KC 7361 Air
-                        // Astana" rather than skipping the carrier entirely.
-                        alt={carrier ?? ''}
+                        src={logo.src}
+                        // Real dimensions, computed from the mark's own aspect
+                        // ratio. Without them the browser has nothing to size
+                        // by until the stylesheet arrives, and an unstyled
+                        // wordmark draws at its natural several-hundred pixels
+                        // across — which is exactly what a stale stylesheet
+                        // produced on the board.
+                        width={logo.width}
+                        height={logo.height}
+                        // The carrier's name, so a screen reader says
+                        // "KC 7361 Air Astana" rather than skipping it.
+                        alt={logo.alt}
                         loading="lazy"
                         decoding="async"
                       />

@@ -40,7 +40,22 @@ export interface AirlineInfo {
    * board falls back to the carrier's name in plain text.
    */
   logo: string | null;
+  /**
+   * The mark's own width ÷ height, taken from its viewBox.
+   *
+   * Here rather than left to CSS because it is what lets the `<img>` carry real
+   * `width` and `height` attributes. Without them the browser has nothing to go
+   * on until the stylesheet arrives, and an unstyled wordmark renders at its
+   * natural size — which for these is several hundred pixels across, in the
+   * middle of a flight board. That is not a hypothetical: it is what Safari
+   * showed when it had a stale copy of the stylesheet and this file did not yet
+   * supply the numbers.
+   */
+  aspect: number;
 }
+
+/** How tall a mark is drawn, and the height its attributes are computed from. */
+export const AIRLINE_LOGO_HEIGHT = 16;
 
 /*
  * Every mark below came from Wikimedia, where each is published as
@@ -63,11 +78,11 @@ export interface AirlineInfo {
  * than sitting beside it.
  */
 const AIRLINES: readonly AirlineInfo[] = [
-  { code: 'KC', name: 'Air Astana', logo: 'kc.svg' },
-  { code: 'DV', name: 'SCAT Airlines', logo: 'dv.svg' },
-  { code: 'IQ', name: 'Qazaq Air', logo: 'iq.svg' },
-  { code: 'TK', name: 'Turkish Airlines', logo: 'tk.svg' },
-  { code: '5W', name: 'Wizz Air Abu Dhabi', logo: '5w.svg' },
+  { code: 'KC', name: 'Air Astana', logo: 'kc.svg', aspect: 3.9465 },
+  { code: 'DV', name: 'SCAT Airlines', logo: 'dv.svg', aspect: 4.6268 },
+  { code: 'IQ', name: 'Qazaq Air', logo: 'iq.svg', aspect: 2.6161 },
+  { code: 'TK', name: 'Turkish Airlines', logo: 'tk.svg', aspect: 3.7174 },
+  { code: '5W', name: 'Wizz Air Abu Dhabi', logo: '5w.svg', aspect: 2.1667 },
 ];
 
 const BY_CODE = new Map(AIRLINES.map((airline) => [airline.code, airline]));
@@ -95,4 +110,31 @@ export function airlineName(flightNoNorm: string): string | null {
 export function airlineLogoSrc(flightNoNorm: string): string | null {
   const logo = airlineForFlightNo(flightNoNorm)?.logo;
   return logo ? `/airlines/${logo}` : null;
+}
+
+export interface AirlineLogo {
+  src: string;
+  /** Rounded to whole pixels: `<img>` attributes are integers. */
+  width: number;
+  height: number;
+  alt: string;
+}
+
+/**
+ * Everything an `<img>` needs to draw a carrier's mark at the right size.
+ *
+ * The dimensions are real attributes rather than a job left to CSS, so the
+ * board is the right shape from the first byte of HTML — before the stylesheet
+ * lands, if it is cached stale, and if it never arrives at all.
+ */
+export function airlineLogo(flightNoNorm: string): AirlineLogo | null {
+  const airline = airlineForFlightNo(flightNoNorm);
+  if (!airline?.logo) return null;
+
+  return {
+    src: `/airlines/${airline.logo}`,
+    width: Math.round(AIRLINE_LOGO_HEIGHT * airline.aspect),
+    height: AIRLINE_LOGO_HEIGHT,
+    alt: airline.name,
+  };
 }
