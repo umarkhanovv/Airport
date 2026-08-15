@@ -29,6 +29,7 @@ export interface FlightEdit {
   aircraft: string | null;
   actualTime: string | null;
   note: string | null;
+  airline: string | null;
 }
 
 /**
@@ -52,9 +53,10 @@ function merge(row: BoardFlight, edit: FlightEdit): BoardFlight {
     scheduledTime: edit.scheduledTime ?? row.scheduledTime,
     intl: edit.intl ?? row.intl,
     aircraft: edit.aircraft ?? row.aircraft,
-    // These two exist nowhere else, so the edit is the only source.
+    // These three exist nowhere else, so the edit is the only source.
     actualTime: edit.actualTime,
     note: edit.note,
+    airline: edit.airline,
   };
 }
 
@@ -80,6 +82,7 @@ function fromEdit(edit: FlightEdit): BoardFlight {
     aircraft: edit.aircraft,
     actualTime: edit.actualTime,
     note: edit.note,
+    airline: edit.airline,
   };
 }
 

@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server';
 
 import { readAdminLocale } from '@/lib/admin/locale';
+import { AIRLINE_NONE, KNOWN_AIRLINES } from '@/lib/flights/airlines';
 import type { FlightKind } from '@/lib/flights/types';
 
 import { addFlightAction } from './actions';
@@ -120,6 +121,23 @@ export async function AddFlightForm({
         </div>
 
         <div>
+          <label htmlFor={`${id}-airline`} className="text-text mb-1 block text-xs font-medium">
+            {t('fieldAirline')}
+          </label>
+          {/* Left alone, the number decides — so adding `KC 999` gets Air
+              Astana without anybody choosing it. */}
+          <select id={`${id}-airline`} name="airline" defaultValue="" className={fieldClass}>
+            <option value="">{t('airlineFromNumber')}</option>
+            {KNOWN_AIRLINES.map((airline) => (
+              <option key={airline.code} value={airline.code}>
+                {airline.name}
+              </option>
+            ))}
+            <option value={AIRLINE_NONE}>{t('airlineNone')}</option>
+          </select>
+        </div>
+
+        <div>
           <label htmlFor={`${id}-note`} className="text-text mb-1 block text-xs font-medium">
             {t('fieldNote')}
           </label>
@@ -139,7 +157,11 @@ export async function AddFlightForm({
             role="alert"
             className="text-brand-text-strong text-sm sm:col-span-3"
           >
-            {invalidField === 'flightNo' ? t('errorFlightNo') : t('errorTime')}
+            {invalidField === 'flightNo'
+              ? t('errorFlightNo')
+              : invalidField === 'airline'
+                ? t('errorAirline')
+                : t('errorTime')}
           </p>
         ) : null}
 

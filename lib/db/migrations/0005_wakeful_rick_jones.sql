@@ -1,0 +1,1 @@
+ALTER TABLE `flight_edits` ADD `airline` text;

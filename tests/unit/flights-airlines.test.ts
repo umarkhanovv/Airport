@@ -4,11 +4,15 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import {
+  AIRLINE_NONE,
+  airlineForFlight,
   airlineForFlightNo,
   airlineLogo,
-  airlineLogoSrc,
   airlineName,
 } from '@/lib/flights/airlines';
+
+/** The board hands these functions a flight, so the tests do too. */
+const flight = (flightNo: string, airline: string | null = null) => ({ flightNo, airline });
 
 /** One flight number per carrier the dictionary knows. */
 const CARRIERS = ['KC7361', 'DV762', 'IQ365', 'TK256', '5W7201'];
@@ -55,23 +59,58 @@ describe('airlineName', () => {
   // One name on all three versions of the site: a company's own name is not a
   // word to be translated, and it has to match the mark printed beside it.
   it('gives the carrier its own name, whatever the page language', () => {
-    expect(airlineName('KC7361')).toBe('Air Astana');
-    expect(airlineName('DV762')).toBe('SCAT Airlines');
-    expect(airlineName('5W7201')).toBe('Wizz Air Abu Dhabi');
+    expect(airlineName(flight('KC 7361'))).toBe('Air Astana');
+    expect(airlineName(flight('DV 762'))).toBe('SCAT Airlines');
+    expect(airlineName(flight('5W7201'))).toBe('Wizz Air Abu Dhabi');
   });
 
   it('is null for an unknown carrier, so the caller shows nothing', () => {
-    expect(airlineName('ZZ1234')).toBeNull();
+    expect(airlineName(flight('ZZ 1234'))).toBeNull();
   });
 });
 
-describe('airlineLogoSrc', () => {
-  it('points into the public folder', () => {
-    expect(airlineLogoSrc('KC7361')).toBe('/airlines/kc.svg');
+describe('airlineForFlight', () => {
+  /*
+   * The bug this exists to stop.
+   *
+   * The identity key never changes when staff correct a flight number — that is
+   * what keeps an edit attached to its flight across a re-upload. Deriving the
+   * carrier from it therefore left the old airline behind, and the board printed
+   * `KC 365` beside the Qazaq Air mark: the number naming one airline and the
+   * logo another, on the same row.
+   */
+  it('follows the number as displayed, not the identity key', () => {
+    expect(airlineForFlight({ flightNo: 'KC 365' })?.name).toBe('Air Astana');
+    // Spaces and case are the display form's business, not the caller's.
+    expect(airlineForFlight({ flightNo: 'kc 365' })?.name).toBe('Air Astana');
+    expect(airlineForFlight({ flightNo: '5W7201' })?.name).toBe('Wizz Air Abu Dhabi');
   });
 
-  it('is null for an unknown carrier', () => {
-    expect(airlineLogoSrc('ZZ1234')).toBeNull();
+  // A charter, a wet-lease, a codeshare flown on somebody else's aircraft —
+  // cases only staff can know about, where the number is not the operator.
+  it('lets an explicit choice overrule the number', () => {
+    expect(airlineForFlight({ flightNo: 'KC 365', airline: 'DV' })?.name).toBe('SCAT Airlines');
+  });
+
+  it('shows no carrier at all when staff say so', () => {
+    expect(airlineForFlight({ flightNo: 'KC 365', airline: AIRLINE_NONE })).toBeNull();
+    expect(airlineName({ flightNo: 'KC 365', airline: AIRLINE_NONE })).toBeNull();
+    expect(airlineLogo({ flightNo: 'KC 365', airline: AIRLINE_NONE })).toBeNull();
+  });
+
+  // Null is silence, and silence hands the question back to the flight number.
+  it('falls back to the number when the choice is cleared', () => {
+    expect(airlineForFlight({ flightNo: 'KC 365', airline: null })?.name).toBe('Air Astana');
+  });
+
+  it('gives nothing for a code it does not know', () => {
+    expect(airlineForFlight({ flightNo: 'KC 365', airline: 'ZZ' })).toBeNull();
+  });
+});
+
+describe('the marks on disk', () => {
+  it('point into the public folder', () => {
+    expect(airlineLogo(flight('KC 7361'))?.src).toBe('/airlines/kc.svg');
   });
 
   /*
@@ -87,7 +126,7 @@ describe('airlineLogoSrc', () => {
    */
   it('every mark the dictionary declares is actually committed', () => {
     const declared = CARRIERS.map(
-      (flightNo) => [flightNo, airlineLogoSrc(flightNo)] as const
+      (flightNo) => [flightNo, airlineLogo(flight(flightNo))?.src ?? null] as const
     ).filter(([, src]) => src !== null);
 
     // If this drops to zero the loop below stops proving anything.
@@ -102,14 +141,14 @@ describe('airlineLogoSrc', () => {
 
 describe('airlineLogo', () => {
   it('sizes the mark to a single row height', () => {
-    const logo = airlineLogo('IQ365')!;
+    const logo = airlineLogo(flight('IQ 365'))!;
     expect(logo.height).toBe(16);
     expect(logo.width).toBe(42);
     expect(logo.alt).toBe('Qazaq Air');
   });
 
   it('is null for a carrier with no mark', () => {
-    expect(airlineLogo('ZZ1234')).toBeNull();
+    expect(airlineLogo(flight('ZZ 1234'))).toBeNull();
   });
 
   /*
@@ -123,7 +162,7 @@ describe('airlineLogo', () => {
    */
   it('matches the aspect ratio of the file on disk', () => {
     for (const flightNo of CARRIERS) {
-      const logo = airlineLogo(flightNo);
+      const logo = airlineLogo(flight(flightNo));
       if (!logo) continue;
 
       const svg = readFileSync(

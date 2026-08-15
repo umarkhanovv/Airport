@@ -68,6 +68,7 @@ function readInput(formData: FormData): EditInput {
     actualTime: text('actualTime'),
     aircraft: text('aircraft'),
     traffic: text('traffic'),
+    airline: text('airline'),
     note: text('note'),
   };
 }

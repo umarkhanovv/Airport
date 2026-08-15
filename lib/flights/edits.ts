@@ -7,6 +7,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '../db/index.ts';
 import { flightEdits, flightEntries, scheduleUploads } from '../db/schema.ts';
 
+import { AIRLINE_NONE, knownAirline } from './airlines.ts';
 import { normalizeCity, normalizeFlightNo, normalizeTime } from './normalize.ts';
 import type { FlightKind } from './types.ts';
 
@@ -45,10 +46,15 @@ export interface EditInput {
   aircraft?: string;
   /** `'dom'`, `'int'`, or `''` for "no opinion". */
   traffic?: string;
+  /**
+   * An IATA designator, `AIRLINE_NONE`, or `''` for "let the flight number
+   * decide" — which is what the picker submits by default.
+   */
+  airline?: string;
   note?: string;
 }
 
-export type EditFieldError = 'scheduledTime' | 'actualTime' | 'flightNo' | 'city';
+export type EditFieldError = 'scheduledTime' | 'actualTime' | 'flightNo' | 'city' | 'airline';
 
 export class EditRejectedError extends Error {
   readonly field: EditFieldError;
@@ -75,6 +81,26 @@ function readText(value: string | undefined): string | null {
   return trimmed === '' ? null : trimmed;
 }
 
+/**
+ * A carrier chosen by hand.
+ *
+ * `''` is silence and becomes NULL, so the flight number decides again — that
+ * is how staff undo an override. A designator the dictionary does not know is
+ * refused rather than stored: a board naming an airline it has no marks or
+ * spelling for would print a blank where the carrier should be, and nobody
+ * would know why.
+ */
+function readAirline(value: string | undefined): string | null {
+  if (value === undefined || value.trim() === '') return null;
+
+  const choice = value.trim();
+  if (choice === AIRLINE_NONE) return AIRLINE_NONE;
+
+  const airline = knownAirline(choice);
+  if (!airline) throw new EditRejectedError('airline');
+  return airline.code;
+}
+
 /** The columns a patch sets, from what was typed. */
 function columnsFrom(input: EditInput) {
   const city = input.city === undefined ? null : normalizeCity(input.city);
@@ -91,6 +117,7 @@ function columnsFrom(input: EditInput) {
     // workbook's own value through. `normalizeIntl` is not reused because the
     // form speaks in its own tokens rather than the spreadsheet's.
     intl: input.traffic === 'int' ? true : input.traffic === 'dom' ? false : null,
+    airline: readAirline(input.airline),
     note: readText(input.note),
     updatedAt: new Date().toISOString(),
   };

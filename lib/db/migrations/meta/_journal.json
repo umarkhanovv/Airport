@@ -36,6 +36,13 @@
       "when": 1786807743805,
       "tag": "0004_supreme_harpoon",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1786821790295,
+      "tag": "0005_wakeful_rick_jones",
+      "breakpoints": true
     }
   ]
 }

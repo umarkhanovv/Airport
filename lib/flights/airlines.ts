@@ -87,6 +87,19 @@ const AIRLINES: readonly AirlineInfo[] = [
 
 const BY_CODE = new Map(AIRLINES.map((airline) => [airline.code, airline]));
 
+/** Every carrier, in schedule order, for the admin picker. */
+export const KNOWN_AIRLINES: readonly AirlineInfo[] = AIRLINES;
+
+/**
+ * Staff saying "this flight has no carrier to show", as opposed to saying
+ * nothing and letting the flight number decide.
+ *
+ * A word rather than an empty string, because empty already means "no opinion"
+ * everywhere else in `flight_edits` and the two must not collide. Four
+ * characters long, so it can never be mistaken for an IATA designator.
+ */
+export const AIRLINE_NONE = 'none';
+
 /**
  * The carrier operating a flight, read off the front of its number.
  *
@@ -101,15 +114,39 @@ export function airlineForFlightNo(flightNoNorm: string): AirlineInfo | null {
   return BY_CODE.get(flightNoNorm.slice(0, 2)) ?? null;
 }
 
-/** The carrier's name, or `null` when we do not know the carrier. */
-export function airlineName(flightNoNorm: string): string | null {
-  return airlineForFlightNo(flightNoNorm)?.name ?? null;
+/** A designator the dictionary knows, or `null`. Used to validate a choice. */
+export function knownAirline(code: string): AirlineInfo | null {
+  return BY_CODE.get(code.trim().toUpperCase()) ?? null;
 }
 
-/** Public URL of a carrier's mark, or `null` when there is no file for it. */
-export function airlineLogoSrc(flightNoNorm: string): string | null {
-  const logo = airlineForFlightNo(flightNoNorm)?.logo;
-  return logo ? `/airlines/${logo}` : null;
+/**
+ * The carrier to show for a flight.
+ *
+ * Two sources, in order. An explicit choice by staff wins, because they are the
+ * only ones who can know that a flight is being operated by somebody other than
+ * the airline whose number it carries — a charter, a wet-lease, a codeshare
+ * flown on another carrier's aircraft.
+ *
+ * Otherwise it is read off the flight number *as displayed*, not off the
+ * identity key. Those differ precisely when staff have corrected the number,
+ * and reading the key gave a board that printed `KC 365` beside the Qazaq Air
+ * mark: the number said one airline and the logo said another. The identity key
+ * has to stay put so an edit survives a re-upload; what a reader sees has to
+ * follow what a reader sees.
+ */
+export function airlineForFlight(flight: {
+  flightNo: string;
+  airline?: string | null;
+}): AirlineInfo | null {
+  if (flight.airline === AIRLINE_NONE) return null;
+  if (flight.airline) return knownAirline(flight.airline);
+
+  return airlineForFlightNo(flight.flightNo.trim().toUpperCase().replace(/\s+/g, ''));
+}
+
+/** The carrier's name, or `null` when there is none to show. */
+export function airlineName(flight: { flightNo: string; airline?: string | null }): string | null {
+  return airlineForFlight(flight)?.name ?? null;
 }
 
 export interface AirlineLogo {
@@ -127,8 +164,11 @@ export interface AirlineLogo {
  * board is the right shape from the first byte of HTML — before the stylesheet
  * lands, if it is cached stale, and if it never arrives at all.
  */
-export function airlineLogo(flightNoNorm: string): AirlineLogo | null {
-  const airline = airlineForFlightNo(flightNoNorm);
+export function airlineLogo(flight: {
+  flightNo: string;
+  airline?: string | null;
+}): AirlineLogo | null {
+  const airline = airlineForFlight(flight);
   if (!airline?.logo) return null;
 
   return {

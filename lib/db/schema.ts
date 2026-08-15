@@ -135,6 +135,15 @@ export const flightEdits = sqliteTable(
      * one. This is the only fact on the board the workbook cannot supply.
      */
     actualTime: text('actual_time'),
+    /**
+     * Which carrier is operating this, when it is not the one the flight number
+     * names — a charter, a wet-lease, a codeshare flown on somebody else's
+     * aircraft. Only staff can know that.
+     *
+     * An IATA designator, or the `AIRLINE_NONE` sentinel for "show no carrier".
+     * NULL means nobody has said, and the flight number decides.
+     */
+    airline: text('airline'),
     /** A short free-text note shown beside the flight. */
     note: text('note'),
 

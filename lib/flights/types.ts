@@ -61,6 +61,12 @@ export interface BoardFlight {
   actualTime: string | null;
   /** Short free text shown beside the flight. */
   note: string | null;
+  /**
+   * The carrier staff have named, when it is not the one the flight number
+   * implies. Null means nobody has said and the number decides — see
+   * `airlineForFlight`.
+   */
+  airline: string | null;
 }
 
 export type DiagnosticSeverity = 'error' | 'warning';

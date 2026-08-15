@@ -84,7 +84,7 @@ function asBoardFlight(row: {
   intl: boolean | null;
   aircraft: string | null;
 }): BoardFlight {
-  return { ...row, actualTime: null, note: null };
+  return { ...row, actualTime: null, note: null, airline: null };
 }
 
 /**
@@ -111,6 +111,7 @@ function editsBetween(from: string, to: string): FlightEdit[] {
       aircraft: flightEdits.aircraft,
       actualTime: flightEdits.actualTime,
       note: flightEdits.note,
+      airline: flightEdits.airline,
     })
     .from(flightEdits)
     .where(and(gte(flightEdits.date, from), lte(flightEdits.date, to)))
@@ -163,6 +164,7 @@ function editsById(editId: string): FlightEdit | null {
         aircraft: flightEdits.aircraft,
         actualTime: flightEdits.actualTime,
         note: flightEdits.note,
+        airline: flightEdits.airline,
       })
       .from(flightEdits)
       .where(eq(flightEdits.id, editId))

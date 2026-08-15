@@ -103,8 +103,8 @@ export async function FlightTable({
           const showDay = groupByDate && flight.date !== flights[index - 1]?.date;
 
           const city = cityDisplayName(flight.cityKey, locale, flight.cityRaw);
-          const carrier = airlineName(flight.flightNoNorm);
-          const logo = airlineLogo(flight.flightNoNorm);
+          const carrier = airlineName(flight);
+          const logo = airlineLogo(flight);
           /*
            * A real instant, not a wall-clock string, so the browser can retire
            * the row with one comparison against `Date.now()` — correct whether

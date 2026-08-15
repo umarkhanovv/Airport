@@ -25,6 +25,7 @@ function flight(over: Partial<BoardFlight> = {}): BoardFlight {
     aircraft: 'CRJ200',
     actualTime: null,
     note: null,
+    airline: null,
     ...over,
   };
 }
@@ -45,6 +46,7 @@ function edit(over: Partial<FlightEdit> = {}): FlightEdit {
     aircraft: null,
     actualTime: null,
     note: null,
+    airline: null,
     ...over,
   };
 }
