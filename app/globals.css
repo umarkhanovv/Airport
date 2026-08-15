@@ -165,12 +165,7 @@
   --backdrop-a: rgb(206 123 68 / 0.16);
   --backdrop-b: rgb(15 122 115 / 0.1);
   --backdrop-c: rgb(206 123 68 / 0.08);
-  /* Higher than the 0.07 the mosque wanted, and the same amount of presence.
-     That drawing was terracotta line work on white; this ornament is a light
-     tan only about a fifth of the way from the surface colour to black, so a
-     given opacity buys roughly a fifth as much. The token means "how present
-     is the mark", not a fixed quantity of ink. */
-  --backdrop-mark-opacity: 0.4;
+  --backdrop-mark-opacity: 0.07;
 }
 
 /* ---------------------------------------------------------------------------
@@ -226,7 +221,7 @@
    read tables of two hundred documents there; a drawing under dense rows is
    something to see past rather than something to enjoy. */
 .admin-shell {
-  --backdrop-mark-opacity: 0.15;
+  --backdrop-mark-opacity: 0.025;
   --backdrop-c: transparent;
 }
 
@@ -459,23 +454,22 @@
   }
 
   /*
-    An ornament, repeated, rather than one placed mark.
+    The façade lattice, back where it started.
 
-    This has been a 60×60 façade lattice and then a single drawing of the
-    mosque; it is now floral filigree, and that changes the rule. A building
-    cannot tile — repeat it and the domes grow seams — but an allover ornament
-    is nothing else: its whole nature is to carry on past the edge of what you
-    can see, so it repeats and is never positioned.
+    This has been three things: this 60×60 tile, then a single drawing of the
+    mosque, then a floral filigree built out of a photograph. It is the lattice
+    again, byte for byte what it was — a diamond inside a square, one terracotta
+    hairline, the geometry of the terminal's own perforated screens.
 
-    The file behind it is built, not dropped in. `pattern.webp` is the source
-    artwork mirrored into a 2×2 block, so every edge meets its own reflection
-    and the tile wraps by construction: the original does not tile at all, and
-    has no repeat period hiding inside it either. The recipe is in the commit.
+    It is an inline SVG data URI and not a file, which is the whole argument for
+    it: 320 bytes inside the stylesheet, no second request, nothing to cache and
+    nothing to fail. The filigree that replaced it was 53 KB and a network round
+    trip for something nobody is meant to notice.
 
-    `background-size` is in px, not vw. The motif is a physical thing — the
-    same ornament should be the same size on a phone and on a 27-inch monitor,
-    and a viewport-relative size makes it swell into wallpaper on the desk and
-    shrink into noise in the hand.
+    Two strokes at 1px, tiled at 60px, drawn once and repeated. Unlike a
+    building — which grows seams where the domes meet the next copy along — a
+    lattice is a repeat by nature, so this needs no seam-hiding and no
+    mirroring to wrap.
 
     Fixed with the rest of the backdrop, so the page travels over it. That
     relative motion is what makes the frosted header read as a pane of glass
@@ -483,16 +477,15 @@
     still behind the blur and look like a texture baked into it.
 
     `--backdrop-mark-opacity: 0` still removes it entirely for raised contrast
-    and for `prefers-reduced-transparency`, exactly as it removed the lattice.
+    and for `prefers-reduced-transparency`.
   */
   .app-backdrop::before {
     content: '';
     position: absolute;
     inset: 0;
     opacity: var(--backdrop-mark-opacity);
-    background-image: url('/media/pattern.webp');
-    background-repeat: repeat;
-    background-size: 400px auto;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cg fill='none' stroke='%23CE7B44' stroke-width='1'%3E%3Cpath d='M52 30 30 52 8 30 30 8Z'/%3E%3Cpath d='M45.6 14.4v31.2H14.4V14.4z'/%3E%3C/g%3E%3C/svg%3E");
+    background-size: 60px 60px;
   }
 
   /* -------------------------------------------------------------------------
