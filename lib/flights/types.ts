@@ -33,6 +33,36 @@ export interface ParsedFlightEntry {
   sourceRow: number;
 }
 
+/**
+ * One flight as the board renders it.
+ *
+ * Declared here rather than beside the queries that produce it because the
+ * overlay in `current.ts`'s neighbour `overlay.ts` has to name this shape, and
+ * that module is deliberately free of `server-only` so it can be tested on its
+ * own. `queries.ts` re-exports it, so nothing that imported it from there had
+ * to change.
+ *
+ * `actualTime` and `note` never come from the workbook — they are the two
+ * things only a human at the airport can say, and they arrive from
+ * `flight_edits`.
+ */
+export interface BoardFlight {
+  id: string;
+  kind: FlightKind;
+  date: string;
+  flightNo: string;
+  flightNoNorm: string;
+  cityRaw: string;
+  cityKey: string;
+  scheduledTime: string | null;
+  intl: boolean | null;
+  aircraft: string | null;
+  /** `HH:MM` as staff observed it, or null when nobody has said. */
+  actualTime: string | null;
+  /** Short free text shown beside the flight. */
+  note: string | null;
+}
+
 export type DiagnosticSeverity = 'error' | 'warning';
 
 /**

@@ -1,10 +1,11 @@
 import 'server-only';
 
-import { and, asc, count, eq, gte, lte } from 'drizzle-orm';
+import { and, asc, eq, gte, lte } from 'drizzle-orm';
 
 import { getDb } from '../db/index.ts';
-import { flightEntries, scheduleUploads } from '../db/schema.ts';
-import type { FlightKind } from './types.ts';
+import { flightEdits, flightEntries, scheduleUploads } from '../db/schema.ts';
+import { ADDED_ID_PREFIX, applyEdits, type FlightEdit } from './overlay.ts';
+import type { BoardFlight, FlightKind } from './types.ts';
 
 /**
  * Read-side queries for the published schedule.
@@ -47,7 +48,31 @@ export function getActiveSchedule(): ActiveSchedule | null {
   };
 }
 
-export interface BoardFlight {
+/** Re-exported from `types.ts`, where the overlay can name it too. */
+export type { BoardFlight };
+
+/**
+ * The columns every board query selects.
+ *
+ * `actualTime` and `note` are not among them — no workbook supplies either, so
+ * they arrive as constants here and are filled in by the overlay. Naming them
+ * once keeps the four readers below honest about returning the same shape.
+ */
+const BOARD_COLUMNS = {
+  id: flightEntries.id,
+  kind: flightEntries.kind,
+  date: flightEntries.date,
+  flightNo: flightEntries.flightNo,
+  flightNoNorm: flightEntries.flightNoNorm,
+  cityRaw: flightEntries.cityRaw,
+  cityKey: flightEntries.cityKey,
+  scheduledTime: flightEntries.scheduledTime,
+  intl: flightEntries.intl,
+  aircraft: flightEntries.aircraft,
+} as const;
+
+/** The workbook's own columns, before anyone has corrected them. */
+function asBoardFlight(row: {
   id: string;
   kind: FlightKind;
   date: string;
@@ -58,6 +83,70 @@ export interface BoardFlight {
   scheduledTime: string | null;
   intl: boolean | null;
   aircraft: string | null;
+}): BoardFlight {
+  return { ...row, actualTime: null, note: null };
+}
+
+/**
+ * Staff corrections covering a date range.
+ *
+ * Read unconditionally rather than only when the board looks empty: an edit is
+ * a fact about a flight, and there is no cheaper way to know whether one exists
+ * than to ask. A week of them is a few dozen rows on an indexed column.
+ */
+function editsBetween(from: string, to: string): FlightEdit[] {
+  return getDb()
+    .select({
+      id: flightEdits.id,
+      date: flightEdits.date,
+      kind: flightEdits.kind,
+      flightNoNorm: flightEdits.flightNoNorm,
+      isAdded: flightEdits.isAdded,
+      isRemoved: flightEdits.isRemoved,
+      flightNo: flightEdits.flightNo,
+      cityRaw: flightEdits.cityRaw,
+      cityKey: flightEdits.cityKey,
+      scheduledTime: flightEdits.scheduledTime,
+      intl: flightEdits.intl,
+      aircraft: flightEdits.aircraft,
+      actualTime: flightEdits.actualTime,
+      note: flightEdits.note,
+    })
+    .from(flightEdits)
+    .where(and(gte(flightEdits.date, from), lte(flightEdits.date, to)))
+    .all();
+}
+
+/** Every edit for one day, for the admin screen that shows what was changed. */
+export function listFlightEdits(date: string): FlightEdit[] {
+  return editsBetween(date, date);
+}
+
+/** One edit row, for resolving the id of a flight staff added. */
+function editsById(editId: string): FlightEdit | null {
+  return (
+    getDb()
+      .select({
+        id: flightEdits.id,
+        date: flightEdits.date,
+        kind: flightEdits.kind,
+        flightNoNorm: flightEdits.flightNoNorm,
+        isAdded: flightEdits.isAdded,
+        isRemoved: flightEdits.isRemoved,
+        flightNo: flightEdits.flightNo,
+        cityRaw: flightEdits.cityRaw,
+        cityKey: flightEdits.cityKey,
+        scheduledTime: flightEdits.scheduledTime,
+        intl: flightEdits.intl,
+        aircraft: flightEdits.aircraft,
+        actualTime: flightEdits.actualTime,
+        note: flightEdits.note,
+      })
+      .from(flightEdits)
+      .where(eq(flightEdits.id, editId))
+      .limit(1)
+      .all()[0] ?? null
+  );
 }
 
 /**
@@ -79,23 +168,20 @@ export function getFlightsForDate(date: string, kind?: FlightKind): BoardFlight[
       )
     : and(eq(flightEntries.uploadId, active.uploadId), eq(flightEntries.date, date));
 
-  return getDb()
-    .select({
-      id: flightEntries.id,
-      kind: flightEntries.kind,
-      date: flightEntries.date,
-      flightNo: flightEntries.flightNo,
-      flightNoNorm: flightEntries.flightNoNorm,
-      cityRaw: flightEntries.cityRaw,
-      cityKey: flightEntries.cityKey,
-      scheduledTime: flightEntries.scheduledTime,
-      intl: flightEntries.intl,
-      aircraft: flightEntries.aircraft,
-    })
+  const rows = getDb()
+    .select(BOARD_COLUMNS)
     .from(flightEntries)
     .where(where)
     .orderBy(asc(flightEntries.scheduledTime))
-    .all();
+    .all()
+    .map(asBoardFlight);
+
+  // Direction is part of a flight's identity and cannot be edited, so narrowing
+  // the edits by it here is safe — and stops an added arrival being appended to
+  // a query for departures.
+  const edits = editsBetween(date, date).filter((edit) => !kind || edit.kind === kind);
+
+  return applyEdits(rows, edits);
 }
 
 export interface BoardQuery {
@@ -118,34 +204,39 @@ export function getBoardFlights(query: BoardQuery): BoardFlight[] {
   const active = getActiveSchedule();
   if (!active) return [];
 
-  const conditions = [
-    eq(flightEntries.uploadId, active.uploadId),
-    eq(flightEntries.kind, query.kind),
-    gte(flightEntries.date, query.from),
-    lte(flightEntries.date, query.to),
-  ];
+  const rows = getDb()
+    .select(BOARD_COLUMNS)
+    .from(flightEntries)
+    .where(
+      and(
+        eq(flightEntries.uploadId, active.uploadId),
+        eq(flightEntries.kind, query.kind),
+        gte(flightEntries.date, query.from),
+        lte(flightEntries.date, query.to)
+      )
+    )
+    .orderBy(asc(flightEntries.date), asc(flightEntries.scheduledTime))
+    .all()
+    .map(asBoardFlight);
 
+  const edits = editsBetween(query.from, query.to).filter((edit) => edit.kind === query.kind);
+  const merged = applyEdits(rows, edits);
+
+  /*
+   * The DOM/INT filter runs after the merge, not in the WHERE clause it used to
+   * live in.
+   *
+   * A flight staff have corrected from domestic to international has to move
+   * between the two filters with the correction. Filtering in SQL asks the
+   * question of the workbook's value and then applies the edit to whatever
+   * survived — so a mislabelled flight stayed mislabelled in exactly the view a
+   * passenger would use to find it.
+   */
   if (query.intl === true || query.intl === false) {
-    conditions.push(eq(flightEntries.intl, query.intl));
+    return merged.filter((flight) => flight.intl === query.intl);
   }
 
-  return getDb()
-    .select({
-      id: flightEntries.id,
-      kind: flightEntries.kind,
-      date: flightEntries.date,
-      flightNo: flightEntries.flightNo,
-      flightNoNorm: flightEntries.flightNoNorm,
-      cityRaw: flightEntries.cityRaw,
-      cityKey: flightEntries.cityKey,
-      scheduledTime: flightEntries.scheduledTime,
-      intl: flightEntries.intl,
-      aircraft: flightEntries.aircraft,
-    })
-    .from(flightEntries)
-    .where(and(...conditions))
-    .orderBy(asc(flightEntries.date), asc(flightEntries.scheduledTime))
-    .all();
+  return merged;
 }
 
 /** How many flights exist per direction in a range — used for the tab counts. */
@@ -153,49 +244,52 @@ export function getDirectionCounts(
   from: string,
   to: string
 ): { arrival: number; departure: number } {
-  const active = getActiveSchedule();
-  if (!active) return { arrival: 0, departure: 0 };
-
-  const rows = getDb()
-    .select({ kind: flightEntries.kind, count: count() })
-    .from(flightEntries)
-    .where(
-      and(
-        eq(flightEntries.uploadId, active.uploadId),
-        gte(flightEntries.date, from),
-        lte(flightEntries.date, to)
-      )
-    )
-    .groupBy(flightEntries.kind)
-    .all();
-
+  /*
+   * A `COUNT(*)` grouped by direction used to answer this, and cannot any more:
+   * a removed flight still has a row, and an added one has none. The number in
+   * a tab has to be the number of rows in the table under it, so this counts
+   * what the board will actually render.
+   *
+   * Two merges rather than one grouped query, for a day or a week of a dozen
+   * flights each. That is a rounding error against being right.
+   */
   return {
-    arrival: rows.find((r) => r.kind === 'arrival')?.count ?? 0,
-    departure: rows.find((r) => r.kind === 'departure')?.count ?? 0,
+    arrival: getBoardFlights({ kind: 'arrival', from, to }).length,
+    departure: getBoardFlights({ kind: 'departure', from, to }).length,
   };
 }
 
-/** One flight by id, for the calendar export. */
+/**
+ * One flight by id, for the calendar export.
+ *
+ * Two kinds of id arrive here. A plain uuid is a workbook row, and it still has
+ * to go through the overlay — a `.ics` naming the uncorrected time would send
+ * somebody to the airport on the strength of a value the board itself no longer
+ * shows. An `edit:`-prefixed id is a flight staff added, which has no workbook
+ * row at all.
+ *
+ * Either can come back null: a tombstoned flight is not a flight, and its
+ * calendar link correctly 404s.
+ */
 export function getFlightById(id: string): BoardFlight | null {
+  if (id.startsWith(ADDED_ID_PREFIX)) {
+    const added = editsById(id.slice(ADDED_ID_PREFIX.length));
+    if (!added || !added.isAdded || added.isRemoved) return null;
+    return applyEdits([], [added])[0] ?? null;
+  }
+
   const rows = getDb()
-    .select({
-      id: flightEntries.id,
-      kind: flightEntries.kind,
-      date: flightEntries.date,
-      flightNo: flightEntries.flightNo,
-      flightNoNorm: flightEntries.flightNoNorm,
-      cityRaw: flightEntries.cityRaw,
-      cityKey: flightEntries.cityKey,
-      scheduledTime: flightEntries.scheduledTime,
-      intl: flightEntries.intl,
-      aircraft: flightEntries.aircraft,
-    })
+    .select(BOARD_COLUMNS)
     .from(flightEntries)
     .where(eq(flightEntries.id, id))
     .limit(1)
     .all();
 
-  return rows[0] ?? null;
+  const row = rows[0];
+  if (!row) return null;
+
+  const edits = editsBetween(row.date, row.date).filter((edit) => edit.kind === row.kind);
+  return applyEdits([asBoardFlight(row)], edits).find((flight) => flight.id === id) ?? null;
 }
 
 /** Every date the active schedule covers, ascending. */

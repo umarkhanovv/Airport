@@ -78,6 +78,82 @@ export const flightEntries = sqliteTable(
 );
 
 /**
+ * What staff changed on top of the uploaded workbook.
+ *
+ * A patch layer, and it has to be one. `flight_entries` rows belong to a
+ * `schedule_uploads` row and are destroyed with it; `publishSchedule` writes an
+ * entirely fresh set on every upload. A correction stored on a flight row would
+ * therefore vanish the moment anyone re-published that week, silently, which is
+ * the worst way for a correction to disappear. Keeping edits in their own table
+ * also leaves "make an earlier week live again" working, which any design that
+ * made `flight_entries` the editable record would have broken.
+ *
+ * So the workbook stays the record of what flights exist, and this holds what
+ * a human said about them. Three kinds of row live here:
+ *
+ *   - an override: some columns filled, layered onto the matching workbook row;
+ *   - a tombstone (`isRemoved`): hide a workbook row that should not be flying;
+ *   - an addition (`isAdded`): a flight no workbook contains at all.
+ *
+ * A NULL override column means "no opinion, use the workbook's value". That is
+ * why every one of them is nullable and none has a default: the difference
+ * between "staff cleared this field" and "staff never touched it" is a
+ * difference the board depends on.
+ *
+ * `flightNoNorm` here is always the number as the *workbook* prints it, and it
+ * never changes. Editing the displayed number writes `flightNo` only. If the
+ * key could move, an edit would detach from its row on the next upload and
+ * reappear as an orphan — which is precisely the failure this table exists to
+ * prevent.
+ */
+export const flightEdits = sqliteTable(
+  'flight_edits',
+  {
+    id: text('id').primaryKey(),
+    /** `YYYY-MM-DD`, airport-local — same convention as `flight_entries`. */
+    date: text('date').notNull(),
+    kind: text('kind', { enum: ['arrival', 'departure'] }).notNull(),
+    /** Identity within the day. Always the workbook's number. See above. */
+    flightNoNorm: text('flight_no_norm').notNull(),
+
+    /** A flight staff added, which no workbook contains. */
+    isAdded: integer('is_added', { mode: 'boolean' }).notNull().default(false),
+    /** A tombstone over a workbook row. Reversible; nothing is destroyed. */
+    isRemoved: integer('is_removed', { mode: 'boolean' }).notNull().default(false),
+
+    // Overrides. NULL means "use the workbook".
+    flightNo: text('flight_no'),
+    cityRaw: text('city_raw'),
+    cityKey: text('city_key'),
+    scheduledTime: text('scheduled_time'),
+    intl: integer('intl', { mode: 'boolean' }),
+    aircraft: text('aircraft'),
+
+    /**
+     * When it actually went, as staff observed it — `HH:MM`, wall clock, never
+     * an instant, for exactly the reason `flight_entries.scheduledTime` is not
+     * one. This is the only fact on the board the workbook cannot supply.
+     */
+    actualTime: text('actual_time'),
+    /** A short free-text note shown beside the flight. */
+    note: text('note'),
+
+    createdAt: text('created_at')
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    updatedAt: text('updated_at')
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    // One patch per flight per day, so saving twice updates rather than stacks.
+    uniqueIndex('flight_edits_key').on(table.date, table.kind, table.flightNoNorm),
+    // The board reads a date range; the admin screen reads one day.
+    index('flight_edits_date').on(table.date),
+  ]
+);
+
+/**
  * News posts (spec §7).
  *
  * One row per locale, as the spec specifies — the airport publishes some
@@ -231,6 +307,9 @@ export type ScheduleUpload = typeof scheduleUploads.$inferSelect;
 export type NewScheduleUpload = typeof scheduleUploads.$inferInsert;
 export type FlightEntryRow = typeof flightEntries.$inferSelect;
 export type NewFlightEntryRow = typeof flightEntries.$inferInsert;
+
+export type FlightEditRow = typeof flightEdits.$inferSelect;
+export type NewFlightEditRow = typeof flightEdits.$inferInsert;
 
 export type FeedbackSubmission = typeof feedbackSubmissions.$inferSelect;
 export type NewFeedbackSubmission = typeof feedbackSubmissions.$inferInsert;
