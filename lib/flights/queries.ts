@@ -122,6 +122,28 @@ export function listFlightEdits(date: string): FlightEdit[] {
   return editsBetween(date, date);
 }
 
+/**
+ * The workbook's own rows for a day, before any correction.
+ *
+ * Only the editing screen wants these. Everywhere else the merged view is the
+ * truth, but an editor has to show both layers at once — which field the file
+ * said, which field a human overruled, and whether a flight is on the board at
+ * all. `getFlightsForDate` cannot answer the last one: a tombstoned flight is
+ * absent from it by design.
+ */
+export function getWorkbookFlightsForDate(date: string): BoardFlight[] {
+  const active = getActiveSchedule();
+  if (!active) return [];
+
+  return getDb()
+    .select(BOARD_COLUMNS)
+    .from(flightEntries)
+    .where(and(eq(flightEntries.uploadId, active.uploadId), eq(flightEntries.date, date)))
+    .orderBy(asc(flightEntries.kind), asc(flightEntries.scheduledTime))
+    .all()
+    .map(asBoardFlight);
+}
+
 /** One edit row, for resolving the id of a flight staff added. */
 function editsById(editId: string): FlightEdit | null {
   return (

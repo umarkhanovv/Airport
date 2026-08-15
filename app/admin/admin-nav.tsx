@@ -18,6 +18,9 @@ import { logout } from './login/actions';
 const SECTION_PATHS = {
   dashboard: '/admin',
   schedule: '/admin/schedule',
+  // Beside the schedule, because it is the other half of the same job: one
+  // uploads the week, the other corrects the day.
+  flights: '/admin/flights',
   news: '/admin/news',
   documents: '/admin/documents',
   feedback: '/admin/feedback',
