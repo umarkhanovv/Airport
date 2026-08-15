@@ -42,6 +42,75 @@ function weatherGlyph(code: number): string {
 export function BoardEnhancements() {
   const t = useTranslations('Board');
 
+  // --- retiring flights that have gone ------------------------------------
+  useEffect(() => {
+    /*
+     * The server already dropped everything more than fifteen minutes past its
+     * slot when it rendered (`lib/flights/current.ts`). This does it again, in
+     * the browser, for the two cases the server cannot reach:
+     *
+     *   - the page is left open. Someone checks the board at 17:00 and looks
+     *     back at 18:30; without this they are reading 17:00's board.
+     *   - the page is cached. `/` and `/flights` are ISR pages with
+     *     `revalidate = 60`, which is a floor, not a ceiling: a visitor
+     *     arriving after a quiet spell is served the last copy that was built
+     *     and *then* triggers the rebuild. That copy can be an hour old.
+     *
+     * Each row carries `data-expires-at`, an epoch millisecond value resolved
+     * from airport wall-clock time on the server. So this compares two numbers
+     * and never has to know what timezone anybody is in — including a reader
+     * whose own device clock is set wrong, whose flights are still retired on
+     * schedule because the deadline came from the server.
+     *
+     * Rows without the attribute are left alone: that is the week view, a
+     * chosen date, a search result, and any flight the workbook gave no time.
+     */
+    const boards = [...document.querySelectorAll<HTMLElement>('[data-live-board]')];
+    if (boards.length === 0) return;
+
+    function sweep() {
+      const now = Date.now();
+
+      for (const board of boards) {
+        for (const row of board.querySelectorAll<HTMLElement>('[data-expires-at]')) {
+          const deadline = Number(row.dataset.expiresAt);
+          if (Number.isFinite(deadline) && deadline <= now) row.setAttribute('data-retired', '');
+        }
+
+        const left = board.querySelectorAll('[data-flight-row]:not([data-retired])').length;
+        // Reveals "no more flights today", which is in the HTML from the start
+        // precisely so this moment does not leave an empty table behind.
+        board.toggleAttribute('data-board-exhausted', left === 0);
+
+        // Only a count this board can actually prove. On `/flights` the other
+        // direction's rows are not on the page, so its tab keeps the server's
+        // number rather than being given a made-up one.
+        const direction = board.dataset.direction;
+        if (direction) {
+          const label = document.querySelector(`[data-board-count="${direction}"]`);
+          if (label) label.textContent = String(left);
+        }
+      }
+    }
+
+    sweep();
+
+    /*
+     * Half a minute against a fifteen-minute grace: fine-grained enough that
+     * the board is never visibly wrong, coarse enough to be free. The
+     * visibility listener is the one that matters on a phone, where a
+     * backgrounded tab's timers are throttled to nothing — the sweep that
+     * counts is the one when the screen comes back on.
+     */
+    const timer = window.setInterval(sweep, 30_000);
+    document.addEventListener('visibilitychange', sweep);
+
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener('visibilitychange', sweep);
+    };
+  }, []);
+
   // --- pinning ------------------------------------------------------------
   useEffect(() => {
     /*

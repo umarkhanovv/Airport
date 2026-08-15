@@ -1,12 +1,12 @@
 import { getTranslations } from 'next-intl/server';
 
 import { BoardEnhancements } from '@/components/board/board-enhancements';
-import { FlightTable } from '@/components/board/flight-table';
-import { getActiveSchedule, getDirectionCounts, getFlightsForDate } from '@/lib/flights/queries';
+import { LiveBoard } from '@/components/board/live-board';
+import { stillToCome } from '@/lib/flights/current';
+import { getActiveSchedule, getFlightsForDate, getScheduleDates } from '@/lib/flights/queries';
 import { airportNowTime, airportToday, formatLongDate } from '@/lib/date';
 import { env } from '@/lib/env';
 import { Link } from '@/i18n/navigation';
-import type { FlightKind } from '@/lib/flights/types';
 import type { Locale } from '@/i18n/routing';
 
 /**
@@ -27,6 +27,9 @@ import type { Locale } from '@/i18n/routing';
  * The time is the largest element on the page. On a site whose entire job is
  * telling someone when their flight is, the digits are the content; everything
  * else is annotation.
+ *
+ * And it only shows what is still ahead: a flight leaves the board a quarter of
+ * an hour after its slot (`lib/flights/current.ts`).
  */
 export async function FlightPreview({ locale }: { locale: Locale }) {
   const t = await getTranslations('Board');
@@ -87,14 +90,25 @@ export async function FlightPreview({ locale }: { locale: Locale }) {
 
   const now = airportNowTime(env.airportTz);
 
-  /** Still to come; if the day is over, the whole day rather than nothing. */
-  const forDirection = (kind: FlightKind) => {
-    const all = getFlightsForDate(today, kind);
-    const upcoming = all.filter((flight) => (flight.scheduledTime ?? '') >= now);
-    return upcoming.length > 0 ? upcoming : all;
-  };
+  /*
+   * Still to come, and nothing else.
+   *
+   * This used to fall back to the whole day once everything had gone, on the
+   * reasoning that an empty board looks broken. It reads as broken in a worse
+   * way: at 23:00 the morning's departures came back, under a heading that
+   * says Today, and every row of it was a flight nobody could catch. An honest
+   * "no more arrivals today" plus a link to the next day the schedule covers
+   * is shorter and truer — `LiveBoard` renders it.
+   */
+  const arrivals = stillToCome(getFlightsForDate(today, 'arrival'), now);
+  const departures = stillToCome(getFlightsForDate(today, 'departure'), now);
 
-  const counts = getDirectionCounts(today, today);
+  /*
+   * The next day the published schedule actually has flights for. Not
+   * `addDays(today, 1)`: the workbook is a week long and today may be the last
+   * of it, in which case there is no honest link to offer at all.
+   */
+  const nextDate = getScheduleDates().find((date) => date > today) ?? null;
 
   return (
     <section aria-labelledby="home-board" className="home-board space-y-4">
@@ -139,19 +153,31 @@ export async function FlightPreview({ locale }: { locale: Locale }) {
 
         <nav aria-label={t('directionLabel')}>
           <ul className="border-border flex gap-1 border-b">
+            {/*
+              The counts are what is left, not what the day held — a tab
+              reading 8 above three rows is the board contradicting itself.
+              `data-board-count` lets the client keep them honest as it retires
+              rows of its own.
+            */}
             <li>
               <label htmlFor="home-arrivals" className="home-tab home-tab-arrival">
                 {t('arrivals')}
-                <span className="tabular text-text-muted ms-2 text-sm font-normal">
-                  {counts.arrival}
+                <span
+                  data-board-count="arrival"
+                  className="tabular text-text-muted ms-2 text-sm font-normal"
+                >
+                  {arrivals.length}
                 </span>
               </label>
             </li>
             <li>
               <label htmlFor="home-departures" className="home-tab home-tab-departure">
                 {t('departures')}
-                <span className="tabular text-text-muted ms-2 text-sm font-normal">
-                  {counts.departure}
+                <span
+                  data-board-count="departure"
+                  className="tabular text-text-muted ms-2 text-sm font-normal"
+                >
+                  {departures.length}
                 </span>
               </label>
             </li>
@@ -163,22 +189,22 @@ export async function FlightPreview({ locale }: { locale: Locale }) {
             into its own table rather than into the first one it found. */}
         <BoardEnhancements />
 
-        <div className="board-pane home-panel mt-4" data-direction="arrival">
-          <FlightTable
-            flights={forDirection('arrival')}
-            locale={locale}
-            kind="arrival"
-            groupByDate={false}
-          />
-        </div>
-        <div className="board-pane home-panel mt-4" data-direction="departure">
-          <FlightTable
-            flights={forDirection('departure')}
-            locale={locale}
-            kind="departure"
-            groupByDate={false}
-          />
-        </div>
+        <LiveBoard
+          flights={arrivals}
+          locale={locale}
+          kind="arrival"
+          nextDate={nextDate}
+          direction="arrival"
+          className="home-panel mt-4"
+        />
+        <LiveBoard
+          flights={departures}
+          locale={locale}
+          kind="departure"
+          nextDate={nextDate}
+          direction="departure"
+          className="home-panel mt-4"
+        />
       </div>
 
       <Link href="/flights" className="text-brand-text-strong text-sm font-medium hover:underline">

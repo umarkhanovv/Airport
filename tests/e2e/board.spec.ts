@@ -234,3 +234,88 @@ test.describe('the home page direction tabs', () => {
     await expect(page.locator('.home-panel[data-direction="departure"]')).toBeVisible();
   });
 });
+
+/**
+ * Flights leave the board once they have gone (`lib/flights/current.ts`).
+ *
+ * The scope guarantee is tested unconditionally, because getting it wrong is
+ * the expensive failure: a week view or a search that quietly dropped rows
+ * would hide a flight from someone planning a trip, and nothing on screen would
+ * say so.
+ *
+ * The retiring itself can only be watched on a board that is showing today, and
+ * the seeded workbook covers April 2024 on purpose — `never labels another day
+ * as "today"` depends on it. So those tests carry the same self-skip the home
+ * page tabs use above, and run the moment the fixture is current.
+ */
+test.describe('planning views keep every flight', () => {
+  test('the week view and a search never retire a row', async ({ page }) => {
+    // The search is paired with the week view so that there are rows to judge:
+    // the seeded workbook is out of range, so the plain today view is empty
+    // whatever is typed into the box.
+    for (const path of ['/flights?view=week', '/flights?view=week&q=KC']) {
+      await page.goto(path);
+
+      const rows = page.locator('[data-flight-row]');
+      expect(await rows.count(), `no rows to judge on ${path}`).toBeGreaterThan(0);
+
+      // No deadline written means the client can never hide it, whatever the
+      // clock says. That is the whole mechanism, asserted at its source.
+      await expect(page.locator('[data-flight-row][data-expires-at]')).toHaveCount(0);
+      await expect(page.locator('[data-live-board]')).toHaveCount(0);
+    }
+  });
+});
+
+test.describe('the live board empties as the day passes', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/ru');
+    test.skip(
+      (await page.locator('[data-live-board]').count()) === 0,
+      'seeded schedule does not cover today, so there is no live board to empty'
+    );
+  });
+
+  test('a row past its deadline is hidden, and the board says so instead', async ({ page }) => {
+    const board = page.locator('[data-live-board][data-direction="arrival"]');
+    const notice = board.locator('[data-board-empty]');
+
+    /*
+     * Rather than waiting out a real fifteen minutes, the deadlines are moved
+     * into the past and the sweep is poked the way a returning phone pokes it.
+     * What is being tested is the client's half of the rule — that the board
+     * keeps itself right long after the HTML was served, which for an ISR page
+     * can be a very long time.
+     */
+    const hadRows = await board.locator('[data-flight-row][data-expires-at]').count();
+
+    await page.evaluate(() => {
+      for (const row of document.querySelectorAll<HTMLElement>('[data-expires-at]')) {
+        row.dataset.expiresAt = String(Date.now() - 1000);
+      }
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    if (hadRows > 0) {
+      await expect(board.locator('[data-flight-row]').first()).toBeHidden();
+    }
+    await expect(notice).toBeVisible();
+    await expect(notice).toContainText('больше нет');
+
+    // The tab must not still claim flights the table no longer has.
+    await expect(page.locator('[data-board-count="arrival"]')).toHaveText('0');
+  });
+
+  test('a flight still inside its grace period stays', async ({ page }) => {
+    await page.evaluate(() => {
+      // Scheduled a minute ago, so already "departed" but well inside the
+      // quarter hour — the case a naive `time < now` filter gets wrong.
+      for (const row of document.querySelectorAll<HTMLElement>('[data-expires-at]')) {
+        row.dataset.expiresAt = String(Date.now() + 14 * 60_000);
+      }
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+
+    await expect(page.locator('[data-flight-row][data-retired]')).toHaveCount(0);
+  });
+});

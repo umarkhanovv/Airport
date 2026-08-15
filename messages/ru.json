@@ -124,6 +124,7 @@
     "scheduledTimesNote": "время по расписанию",
     "noArrivalsToday": "На сегодня прилётов больше нет.",
     "noDeparturesToday": "На сегодня вылетов больше нет.",
+    "nextFlightDay": "Рейсы {date}",
     "seeFullBoard": "Всё табло",
     "noSchedule": "Расписание пока не загружено",
     "noScheduleHint": "Как только аэропорт загрузит недельное расписание, рейсы появятся здесь.",

@@ -5,6 +5,7 @@ import { BoardControls } from '@/components/board/board-controls';
 import { BoardEnhancements } from '@/components/board/board-enhancements';
 import { BoardSearch } from '@/components/board/board-search';
 import { FlightTable } from '@/components/board/flight-table';
+import { LiveBoard } from '@/components/board/live-board';
 import { SectionPages } from '@/components/section-pages';
 import {
   BOARD_PARAMS,
@@ -18,10 +19,12 @@ import {
   getActiveSchedule,
   getBoardFlights,
   getDirectionCounts,
+  getFlightsForDate,
   getScheduleDates,
 } from '@/lib/flights/queries';
 import { cityDisplayName } from '@/lib/flights/cities';
-import { airportToday, formatLongDate } from '@/lib/date';
+import { stillToCome } from '@/lib/flights/current';
+import { airportNowTime, airportToday, formatLongDate } from '@/lib/date';
 import { env } from '@/lib/env';
 import { Link } from '@/i18n/navigation';
 import type { Locale } from '@/i18n/routing';
@@ -123,8 +126,39 @@ export default async function FlightsPage({
       )
     : allFlights;
 
-  const counts = getDirectionCounts(range.from, range.to);
   const groupByDate = range.from !== range.to;
+
+  /**
+   * Is this the "what is happening now" board, or a planning view?
+   *
+   * Only the first retires flights that have gone (`lib/flights/current.ts`).
+   * The week view and any other day are for planning a trip, and a search is a
+   * lookup — a flight number that vanished because it left twenty minutes ago
+   * would read as a broken search rather than as a helpful one.
+   *
+   * Reaching today through the date picker counts. The day on screen is the
+   * same day either way, and two different boards for it depending on which
+   * link you followed is worse than one rule stated plainly.
+   */
+  const isNowView = !groupByDate && coversToday && focusedDate === today && !needle;
+  const now = airportNowTime(env.airportTz);
+  const visible = isNowView ? stillToCome(flights, now) : flights;
+
+  /*
+   * Tab counts have to agree with the tables under them, so on the live board
+   * they count what is left rather than what the day held. That needs the
+   * other direction's rows too, which is one extra query — for a single day,
+   * on a table indexed by upload and date.
+   */
+  const counts = isNowView
+    ? {
+        arrival: stillToCome(getFlightsForDate(today, 'arrival'), now).length,
+        departure: stillToCome(getFlightsForDate(today, 'departure'), now).length,
+      }
+    : getDirectionCounts(range.from, range.to);
+
+  /** The next day the schedule covers, for the "nothing left today" notice. */
+  const nextDate = dates.find((date) => date > today) ?? null;
 
   // Carried through the search form so a no-JS submit keeps the current view.
   const hiddenParams: Record<string, string> = {};
@@ -195,24 +229,34 @@ export default async function FlightsPage({
       )}
 
       <div className="mt-6">
-        {flights.length === 0 ? (
+        {isNowView ? (
+          <>
+            <p className="text-text-muted mb-3 text-sm">
+              {t('today')} · {formatLongDate(focusedDate, locale)}
+            </p>
+            <BoardEnhancements />
+            <LiveBoard
+              flights={visible}
+              locale={locale as Locale}
+              kind={state.kind}
+              nextDate={nextDate}
+              direction={state.kind}
+            />
+          </>
+        ) : visible.length === 0 ? (
           <p className="panel text-text-muted p-6 text-sm">
             {state.kind === 'arrival' ? t('noArrivalsToday') : t('noDeparturesToday')}
           </p>
         ) : (
           <>
             {!groupByDate && (
-              <p className="text-text-muted mb-3 text-sm">
-                {coversToday && focusedDate === today
-                  ? `${t('today')} · ${formatLongDate(focusedDate, locale)}`
-                  : formatLongDate(focusedDate, locale)}
-              </p>
+              <p className="text-text-muted mb-3 text-sm">{formatLongDate(focusedDate, locale)}</p>
             )}
             <BoardEnhancements />
             {/* A pane of its own from 640px up — see `.board-pane`. */}
             <div className="board-pane">
               <FlightTable
-                flights={flights}
+                flights={visible}
                 locale={locale as Locale}
                 kind={state.kind}
                 groupByDate={groupByDate}

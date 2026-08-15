@@ -124,6 +124,7 @@
     "scheduledTimesNote": "scheduled times",
     "noArrivalsToday": "No more arrivals today.",
     "noDeparturesToday": "No more departures today.",
+    "nextFlightDay": "Flights on {date}",
     "seeFullBoard": "Full board",
     "noSchedule": "No schedule published yet",
     "noScheduleHint": "Flights will appear here once the airport uploads the weekly schedule.",

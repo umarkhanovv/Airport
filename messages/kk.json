@@ -125,6 +125,7 @@
     "scheduledTimesNote": "кесте бойынша уақыт",
     "noArrivalsToday": "Бүгінге басқа қону рейстері жоқ.",
     "noDeparturesToday": "Бүгінге басқа ұшу рейстері жоқ.",
+    "nextFlightDay": "{date} рейстері",
     "seeFullBoard": "Толық тақта",
     "noSchedule": "Кесте әлі жүктелмеген",
     "noScheduleHint": "Әуежай апталық кестені жүктегеннен кейін рейстер осы жерде көрінеді.",

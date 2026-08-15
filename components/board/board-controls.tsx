@@ -58,7 +58,13 @@ export async function BoardControls({
                   ].join(' ')}
                 >
                   {tab.label}
-                  <span className="tabular text-text-muted ms-2 text-sm font-normal">
+                  {/* `data-board-count` lets the client keep this honest as it
+                      retires flights that have gone — but only for the tab
+                      whose rows are actually on the page. */}
+                  <span
+                    data-board-count={tab.kind}
+                    className="tabular text-text-muted ms-2 text-sm font-normal"
+                  >
                     {tab.count}
                   </span>
                 </Link>

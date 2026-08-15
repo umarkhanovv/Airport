@@ -3,7 +3,9 @@ import { getTranslations } from 'next-intl/server';
 
 import { cityDisplayName } from '@/lib/flights/cities';
 import { searchHaystack } from '@/lib/flights/board';
+import { expiresAt } from '@/lib/flights/current';
 import { pinKey } from '@/lib/pinned';
+import { env } from '@/lib/env';
 import type { BoardFlight } from '@/lib/flights/queries';
 import { formatLongDate, formatWeekday } from '@/lib/date';
 import type { Locale } from '@/i18n/routing';
@@ -38,11 +40,22 @@ export async function FlightTable({
   locale,
   kind,
   groupByDate,
+  expires = false,
 }: {
   flights: BoardFlight[];
   locale: Locale;
   kind: FlightKind;
   groupByDate: boolean;
+  /**
+   * Whether these rows retire themselves as the day passes (`lib/flights/current.ts`).
+   *
+   * Off by default, and deliberately opt-in per table rather than global: the
+   * week view and an explicitly chosen date are planning views. Someone who
+   * picked Thursday wants all of Thursday, and a search result that vanished
+   * because the flight left twenty minutes ago would look like a broken search.
+   * Only the two "what is happening now" tables pass this.
+   */
+  expires?: boolean;
 }) {
   const t = await getTranslations('Board');
   const isArrival = kind === 'arrival';
@@ -84,6 +97,17 @@ export async function FlightTable({
           const showDay = groupByDate && flight.date !== flights[index - 1]?.date;
 
           const city = cityDisplayName(flight.cityKey, locale, flight.cityRaw);
+          /*
+           * A real instant, not a wall-clock string, so the browser can retire
+           * the row with one comparison against `Date.now()` — correct whether
+           * the reader is in Türkistan, in Istanbul, or on a laptop whose
+           * timezone is wrong. `null` for a flight with no published time, and
+           * an absent attribute is what tells the client to leave it alone.
+           */
+          const retiresAt = expires
+            ? expiresAt(flight.date, flight.scheduledTime, env.airportTz)
+            : null;
+
           const haystack = searchHaystack({
             flightNo: flight.flightNo,
             flightNoNorm: flight.flightNoNorm,
@@ -99,6 +123,7 @@ export async function FlightTable({
                 className="board-row border-border border-b"
                 data-search={haystack}
                 data-flight-row=""
+                data-expires-at={retiresAt ?? undefined}
                 data-pin-key={pinKey({
                   date: flight.date,
                   kind: flight.kind,
