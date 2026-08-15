@@ -281,7 +281,7 @@ test.describe('the live board empties as the day passes', () => {
     const notice = board.locator('[data-board-empty]');
 
     /*
-     * Rather than waiting out a real fifteen minutes, the deadlines are moved
+     * Rather than waiting out a real half hour, the deadlines are moved
      * into the past and the sweep is poked the way a returning phone pokes it.
      * What is being tested is the client's half of the rule — that the board
      * keeps itself right long after the HTML was served, which for an ISR page
@@ -308,10 +308,10 @@ test.describe('the live board empties as the day passes', () => {
 
   test('a flight still inside its grace period stays', async ({ page }) => {
     await page.evaluate(() => {
-      // Scheduled a minute ago, so already "departed" but well inside the
-      // quarter hour — the case a naive `time < now` filter gets wrong.
+      // Scheduled a minute ago, so already "departed" but well inside the half
+      // hour — the case a naive `time < now` filter gets wrong.
       for (const row of document.querySelectorAll<HTMLElement>('[data-expires-at]')) {
-        row.dataset.expiresAt = String(Date.now() + 14 * 60_000);
+        row.dataset.expiresAt = String(Date.now() + 29 * 60_000);
       }
       document.dispatchEvent(new Event('visibilitychange'));
     });

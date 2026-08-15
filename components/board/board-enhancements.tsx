@@ -45,7 +45,7 @@ export function BoardEnhancements() {
   // --- retiring flights that have gone ------------------------------------
   useEffect(() => {
     /*
-     * The server already dropped everything more than fifteen minutes past its
+     * The server already dropped everything more than half an hour past its
      * slot when it rendered (`lib/flights/current.ts`). This does it again, in
      * the browser, for the two cases the server cannot reach:
      *
@@ -96,7 +96,7 @@ export function BoardEnhancements() {
     sweep();
 
     /*
-     * Half a minute against a fifteen-minute grace: fine-grained enough that
+     * Half a minute against a half-hour grace: fine-grained enough that
      * the board is never visibly wrong, coarse enough to be free. The
      * visibility listener is the one that matters on a phone, where a
      * backgrounded tab's timers are throttled to nothing — the sweep that

@@ -13,12 +13,16 @@ import { zonedWallClockToUtc, DEFAULT_AIRPORT_TZ } from '../date.ts';
  * on every table. A flight that pushes back a few minutes late must not vanish
  * from under the person still walking to the gate.
  *
- * Fifteen minutes is a compromise, and it is worth being honest about which
- * way it fails: a flight delayed by half an hour disappears while it is still
+ * Half an hour is a compromise, and it is worth being honest about which way
+ * it fails: a flight delayed by longer than that disappears while it is still
  * on the ground. There is no fix for that inside this file — it needs a live
  * feed the airport does not publish. What the grace period buys is that the
  * ordinary case, a flight leaving roughly on time, stays visible until it
- * genuinely cannot be caught.
+ * genuinely cannot be caught, and that the common delays are covered too.
+ *
+ * It started at fifteen and was widened deliberately. Erring long is the safe
+ * direction: a flight shown a little past its time costs a reader one row to
+ * scan past, while a flight hidden too early costs them the flight.
  *
  * This module is deliberately pure and free of `server-only`: the same rule has
  * to run in two places. The server applies it when it renders, and the browser
@@ -28,7 +32,7 @@ import { zonedWallClockToUtc, DEFAULT_AIRPORT_TZ } from '../date.ts';
  */
 
 /** How long a flight stays on the board after its scheduled time. */
-export const BOARD_GRACE_MINUTES = 15;
+export const BOARD_GRACE_MINUTES = 30;
 
 /** Minutes past midnight for an `HH:MM` string; `null` if there isn't one. */
 function minutesPastMidnight(hhmm: string | null | undefined): number | null {

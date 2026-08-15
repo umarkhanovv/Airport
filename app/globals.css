@@ -1201,7 +1201,7 @@
 /* ---------------------------------------------------------------------------
    The board empties as the day passes.
 
-   A flight leaves the board fifteen minutes after its scheduled time, so that
+   A flight leaves the board half an hour after its scheduled time, so that
    someone opening the page at 17:09 reads what is still ahead of them instead
    of scrolling past the morning. The rule is in `lib/flights/current.ts`; the
    server applies it when it renders and `board-enhancements.tsx` re-applies it

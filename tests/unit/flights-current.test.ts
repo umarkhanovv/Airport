@@ -8,25 +8,25 @@ const ALMATY = 'Asia/Almaty';
  * Retiring flights that have gone.
  *
  * The property worth protecting is the *grace*, not the hiding: a flight must
- * survive its own scheduled minute and a quarter of an hour after it. Anything
- * that hides a flight the instant its clock ticks over sends someone who is
- * still in the queue to an empty board.
+ * survive its own scheduled minute and the half hour after it. Anything that
+ * hides a flight the instant its clock ticks over sends someone who is still in
+ * the queue to an empty board.
  */
 
 describe('hasSlipped', () => {
   it('keeps a flight through its own minute and the whole grace period', () => {
     expect(hasSlipped('17:05', '17:04')).toBe(false);
     expect(hasSlipped('17:05', '17:05')).toBe(false);
-    expect(hasSlipped('17:05', '17:19')).toBe(false);
+    expect(hasSlipped('17:05', '17:34')).toBe(false);
   });
 
   it('retires it once the grace period is spent', () => {
-    expect(hasSlipped('17:05', '17:20')).toBe(true);
+    expect(hasSlipped('17:05', '17:35')).toBe(true);
     expect(hasSlipped('17:05', '23:59')).toBe(true);
   });
 
-  it('is exactly fifteen minutes', () => {
-    expect(BOARD_GRACE_MINUTES).toBe(15);
+  it('is exactly half an hour', () => {
+    expect(BOARD_GRACE_MINUTES).toBe(30);
   });
 
   /*
@@ -37,8 +37,8 @@ describe('hasSlipped', () => {
    */
   it('treats the small hours as the start of the day, not the end', () => {
     expect(hasSlipped('00:20', '00:05')).toBe(false);
-    expect(hasSlipped('00:00', '00:10')).toBe(false);
-    expect(hasSlipped('00:00', '00:15')).toBe(true);
+    expect(hasSlipped('00:00', '00:25')).toBe(false);
+    expect(hasSlipped('00:00', '00:30')).toBe(true);
   });
 
   it('never retires a flight the workbook gave no time for', () => {
@@ -56,7 +56,7 @@ describe('hasSlipped', () => {
 describe('stillToCome', () => {
   const flights = [
     { flightNo: 'KC 7161', scheduledTime: '08:30' }, // long gone
-    { flightNo: 'KC 7163', scheduledTime: '16:50' }, // grace spent at 17:05
+    { flightNo: 'KC 7163', scheduledTime: '16:35' }, // grace spent at 17:05
     { flightNo: 'KC 7165', scheduledTime: '17:00' }, // gone, but still in grace
     { flightNo: 'FS 7162', scheduledTime: '17:40' }, // ahead
     { flightNo: 'IJ 0001', scheduledTime: null }, // no time in the workbook
@@ -81,8 +81,8 @@ describe('stillToCome', () => {
 
 describe('expiresAt', () => {
   it('resolves the airport wall clock to a real instant, grace included', () => {
-    // 17:05 Almaty on 2026-08-15 is 12:05Z; the row dies fifteen minutes later.
-    expect(expiresAt('2026-08-15', '17:05', ALMATY)).toBe(Date.parse('2026-08-15T12:20:00Z'));
+    // 17:05 Almaty on 2026-08-15 is 12:05Z; the row dies half an hour later.
+    expect(expiresAt('2026-08-15', '17:05', ALMATY)).toBe(Date.parse('2026-08-15T12:35:00Z'));
   });
 
   it('is null for a flight with no time, so no attribute is ever written', () => {
