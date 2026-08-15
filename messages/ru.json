@@ -144,6 +144,7 @@
     "columnOrigin": "Откуда",
     "columnDestination": "Куда",
     "columnFlight": "Рейс",
+    "columnAirline": "Авиакомпания",
     "columnAircraft": "Борт",
     "columnType": "Тип",
     "searchLabel": "Поиск рейса",

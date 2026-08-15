@@ -28,7 +28,9 @@ import type { FlightKind } from '@/lib/flights/types';
 function DayHeading({ date, locale }: { date: string; locale: Locale }) {
   return (
     <tr role="row" className="board-day">
-      <th role="columnheader" scope="colgroup" colSpan={6} className="board-day-cell">
+      {/* Spans every column, airline included — one short of it and the day
+          heading stops covering the table it is heading. */}
+      <th role="columnheader" scope="colgroup" colSpan={7} className="board-day-cell">
         <span className="text-text font-semibold">{formatWeekday(date, locale)}</span>{' '}
         <span className="text-text-muted font-normal">{formatLongDate(date, locale)}</span>
       </th>
@@ -78,6 +80,9 @@ export async function FlightTable({
           </th>
           <th role="columnheader" scope="col" className="board-th">
             {t('columnFlight')}
+          </th>
+          <th role="columnheader" scope="col" className="board-th">
+            {t('columnAirline')}
           </th>
           <th role="columnheader" scope="col" className="board-th board-col-optional">
             {t('columnAircraft')}
@@ -167,19 +172,22 @@ export async function FlightTable({
                       typed with a bracket in it is a note and not markup. */}
                   {flight.note ? <span className="board-note">{flight.note}</span> : null}
                 </td>
+                <td role="cell" className="board-td board-flight">
+                  <span className="tabular text-text-muted">{flight.flightNo}</span>
+                </td>
+
                 {/*
                   Who is flying it, which the workbook never says in words —
                   only in the two characters at the front of the number.
 
-                  The mark takes the place of the printed name rather than
-                  standing beside it. Every carrier here has a wordmark, two to
-                  four times wider than it is tall, so the logo already says
-                  "Air Astana" — printing it again underneath is the same
-                  sentence twice in two typefaces.
+                  Its own column, so the marks line up down the board and can be
+                  scanned as a column rather than hunted for under each flight
+                  number. The mark stands in for the name rather than beside it:
+                  every carrier here has a wordmark, two to four times wider
+                  than tall, so the logo already reads "Air Astana" and setting
+                  it again underneath is the same sentence twice.
                 */}
-                <td role="cell" className="board-td board-flight">
-                  <span className="tabular text-text-muted">{flight.flightNo}</span>
-
+                <td role="cell" className="board-td board-airline">
                   {logo ? (
                     <span className="board-airline-mark">
                       {/* Same call as `components/news-cover.tsx`: a 4 KB mark

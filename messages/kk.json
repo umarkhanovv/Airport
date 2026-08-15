@@ -145,6 +145,7 @@
     "columnOrigin": "Қайдан",
     "columnDestination": "Қайда",
     "columnFlight": "Рейс",
+    "columnAirline": "Әуекомпания",
     "columnAircraft": "Әуе кемесі",
     "columnType": "Түрі",
     "searchLabel": "Рейс іздеу",

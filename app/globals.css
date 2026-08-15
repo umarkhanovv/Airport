@@ -1139,7 +1139,6 @@
      which is the reflow that actually matters. */
   .board-airline-mark {
     display: block;
-    margin-top: 0.25rem;
   }
 
   /* The height is set on the image itself, not inherited as a percentage of
@@ -1161,9 +1160,10 @@
     object-position: left center;
   }
 
+  /* The fallback when a carrier has no mark committed. Sized to the same
+     16px line the marks occupy, so a board mixing the two does not step. */
   .board-airline-name {
     display: block;
-    margin-top: 0.125rem;
     font-size: 0.75rem;
     line-height: 1rem;
     color: var(--text-muted);
@@ -1251,9 +1251,16 @@
       grid-row: 2;
       font-size: 0.875rem;
     }
-    .board .board-type {
+    /* There are no columns on a phone — the row is a card — so the airline
+       becomes the line under the flight number rather than a column of its
+       own. Same reading order, no horizontal scrolling to reach it. */
+    .board .board-airline {
       grid-column: 2;
       grid-row: 3;
+    }
+    .board .board-type {
+      grid-column: 2;
+      grid-row: 4;
       margin-top: 0.375rem;
     }
 
