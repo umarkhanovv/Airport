@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { getTranslations } from 'next-intl/server';
 
+import { airlineLogoSrc, airlineName } from '@/lib/flights/airlines';
 import { cityDisplayName } from '@/lib/flights/cities';
 import { searchHaystack } from '@/lib/flights/board';
 import { expiresAt } from '@/lib/flights/current';
@@ -61,6 +62,16 @@ export async function FlightTable({
   const isArrival = kind === 'arrival';
   const accent = isArrival ? 'text-arrival' : 'text-brand-text-strong';
 
+  /*
+   * Reserve the logo column only when this table has a mark to put in it.
+   *
+   * Reserving it unconditionally would indent every flight number on a board
+   * where no carrier has a logo committed; not reserving it at all would leave
+   * the numbers ragged on a board where only some do. Deciding once per table
+   * gets both cases right, and costs one pass over a dozen rows.
+   */
+  const hasLogos = flights.some((flight) => airlineLogoSrc(flight.flightNoNorm) !== null);
+
   return (
     <table role="table" className="board w-full border-collapse text-left">
       <caption className="sr-only">
@@ -97,6 +108,8 @@ export async function FlightTable({
           const showDay = groupByDate && flight.date !== flights[index - 1]?.date;
 
           const city = cityDisplayName(flight.cityKey, locale, flight.cityRaw);
+          const carrier = airlineName(flight.flightNoNorm, locale);
+          const logo = airlineLogoSrc(flight.flightNoNorm);
           /*
            * A real instant, not a wall-clock string, so the browser can retire
            * the row with one comparison against `Date.now()` — correct whether
@@ -145,8 +158,47 @@ export async function FlightTable({
                 <td role="cell" className="board-td board-city">
                   <span className="text-text font-medium">{city}</span>
                 </td>
+                {/*
+                  Who is flying it, which the workbook never says in words —
+                  only in the two characters at the front of the number. The
+                  name is the part that carries information for a passenger;
+                  the mark is recognition, and appears once a carrier's file is
+                  committed (`lib/flights/airlines.ts` explains the switch).
+                */}
                 <td role="cell" className="board-td board-flight">
-                  <span className="tabular text-text-muted">{flight.flightNo}</span>
+                  <span className="board-flight-line">
+                    {hasLogos ? (
+                      <span className="board-airline-logo">
+                        {logo ? (
+                          /* Same call as `components/news-cover.tsx`: a 20px
+                             mark served straight from `public/` gains nothing
+                             from the optimiser and would cost it a second hop
+                             on a self-hosted single node. */
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={logo}
+                            // The name, not the empty string: this is the only
+                            // place the carrier is stated, so a screen reader
+                            // should read "Air Astana KC 7361" rather than skip
+                            // straight to the number.
+                            alt={carrier ?? ''}
+                            width={20}
+                            height={20}
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : null}
+                      </span>
+                    ) : null}
+                    <span className="tabular text-text-muted">{flight.flightNo}</span>
+                  </span>
+                  {carrier ? (
+                    // Hidden from assistive tech when the logo already carries
+                    // it, so the carrier is announced once rather than twice.
+                    <span className="board-airline-name" aria-hidden={logo ? 'true' : undefined}>
+                      {carrier}
+                    </span>
+                  ) : null}
                 </td>
                 <td role="cell" className="board-td board-col-optional">
                   <span className="text-text-muted">{flight.aircraft ?? '—'}</span>

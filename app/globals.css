@@ -1119,6 +1119,47 @@
     vertical-align: baseline;
   }
 
+  /* -------------------------------------------------------------------------
+     Who is flying it.
+
+     The workbook names no carrier — the two characters at the front of the
+     flight number are the only evidence, which `lib/flights/airlines.ts`
+     reads. The name is the useful half and ships whether or not a mark exists;
+     the logo box appears only on a table that has at least one logo to put in
+     it, so the numbers never sit indented against an empty column.
+     ------------------------------------------------------------------------- */
+  .board-flight-line {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .board-airline-logo {
+    /* Fixed and reserved: a mark that sized itself as it decoded would shunt
+       the flight number sideways after paint, on the one page whose whole
+       argument is that nothing moves while you are reading it. */
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .board-airline-logo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .board-airline-name {
+    display: block;
+    margin-top: 0.125rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+    color: var(--text-muted);
+  }
+
   .board-day-cell {
     padding: 1.25rem 0 0.5rem;
     font-size: 0.95rem;
