@@ -83,5 +83,5 @@ export async function logout(): Promise<void> {
   const store = await cookies();
   store.delete(adminSession.cookieName);
 
-  redirect('/admin/login');
+  redirect('/');
 }

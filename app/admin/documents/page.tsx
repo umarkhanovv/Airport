@@ -117,9 +117,9 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps<'/a
                     key={document.id}
                     data-testid="document-row"
                     data-published={document.isPublished ? 'true' : 'false'}
-                    className="flex flex-wrap items-center gap-3 px-4 py-3"
+                    className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3"
                   >
-                    <form action={renameDocument} className="flex flex-1 items-center gap-2">
+                    <form action={renameDocument} className="flex min-w-0 flex-1 items-center gap-2">
                       <input type="hidden" name="id" value={document.id} />
                       <label className="sr-only" htmlFor={`title-${document.id}`}>
                         {t('titleOf', { filename: document.originalFilename })}
@@ -138,41 +138,43 @@ export default async function AdminDocumentsPage({ searchParams }: PageProps<'/a
                       </button>
                     </form>
 
-                    <span className="text-text-muted tabular text-xs">
-                      {size(document.sizeBytes)} · {document.publishedAt.slice(0, 10)}
-                    </span>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span className="text-text-muted tabular text-xs">
+                        {size(document.sizeBytes)} · {document.publishedAt.slice(0, 10)}
+                      </span>
 
-                    <a
-                      href={`/api/documents/${document.storedName}`}
-                      className="text-brand-text-strong text-xs underline"
-                    >
-                      {t('download')}
-                    </a>
-
-                    <form action={toggleDocumentPublished}>
-                      <input type="hidden" name="id" value={document.id} />
-                      <input
-                        type="hidden"
-                        name="publish"
-                        value={document.isPublished ? 'false' : 'true'}
-                      />
-                      <button
-                        type="submit"
-                        className="border-border-strong focus:ring-focus rounded-md border px-3 py-1 text-xs focus:ring-2 focus:outline-none"
+                      <a
+                        href={`/api/documents/${document.storedName}`}
+                        className="text-brand-text-strong text-xs underline"
                       >
-                        {document.isPublished ? t('unpublish') : t('publish')}
-                      </button>
-                    </form>
+                        {t('download')}
+                      </a>
 
-                    <form action={deleteDocumentAction}>
-                      <input type="hidden" name="id" value={document.id} />
-                      <button
-                        type="submit"
-                        className="focus:ring-focus rounded-md border border-red-700 px-3 py-1 text-xs text-red-700 focus:ring-2 focus:outline-none dark:border-red-400 dark:text-red-400"
-                      >
-                        {t('delete')}
-                      </button>
-                    </form>
+                      <form action={toggleDocumentPublished}>
+                        <input type="hidden" name="id" value={document.id} />
+                        <input
+                          type="hidden"
+                          name="publish"
+                          value={document.isPublished ? 'false' : 'true'}
+                        />
+                        <button
+                          type="submit"
+                          className="border-border-strong focus:ring-focus rounded-md border px-3 py-1 text-xs focus:ring-2 focus:outline-none"
+                        >
+                          {document.isPublished ? t('unpublish') : t('publish')}
+                        </button>
+                      </form>
+
+                      <form action={deleteDocumentAction}>
+                        <input type="hidden" name="id" value={document.id} />
+                        <button
+                          type="submit"
+                          className="focus:ring-focus rounded-md border border-red-700 px-3 py-1 text-xs text-red-700 focus:ring-2 focus:outline-none dark:border-red-400 dark:text-red-400"
+                        >
+                          {t('delete')}
+                        </button>
+                      </form>
+                    </div>
                   </li>
                 ))}
               </ul>

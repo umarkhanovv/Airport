@@ -48,13 +48,16 @@ export async function AdminNav({
       ? 'text-text font-medium'
       : 'text-text-muted hover:text-text hover:bg-surface-sunken rounded-md';
 
+  const sections = (Object.keys(SECTION_PATHS) as Array<keyof typeof SECTION_PATHS>);
+
   return (
     <header className="glass-strong sticky top-0 z-30 border-x-0 border-t-0">
-      <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+      <div className="mx-auto flex w-full max-w-5xl items-center px-4 py-3">
         <span className="font-semibold">{t('brand')}</span>
 
-        <nav aria-label={t('sections')} className="flex items-center gap-1 text-sm">
-          {(Object.keys(SECTION_PATHS) as Array<keyof typeof SECTION_PATHS>).map((section) => (
+        {/* Desktop: inline nav links */}
+        <nav aria-label={t('sections')} className="ms-6 hidden items-center gap-1 text-sm md:flex">
+          {sections.map((section) => (
             <Link
               key={section}
               href={SECTION_PATHS[section]}
@@ -74,16 +77,59 @@ export async function AdminNav({
         </nav>
 
         <div className="ms-auto flex items-center gap-3">
-          <AdminLocaleSwitcher locale={locale} back={back ?? SECTION_PATHS[current]} />
+          {/* Desktop: inline locale switcher and sign-out */}
+          <div className="hidden items-center gap-3 md:flex">
+            <AdminLocaleSwitcher locale={locale} back={back ?? SECTION_PATHS[current]} />
+            <form action={logout}>
+              <button
+                type="submit"
+                className="text-text-muted hover:text-text focus:ring-focus rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
+              >
+                {t('signOut')}
+              </button>
+            </form>
+          </div>
 
-          <form action={logout}>
-            <button
-              type="submit"
-              className="text-text-muted hover:text-text focus:ring-focus rounded-md px-3 py-1.5 text-sm focus:ring-2 focus:outline-none"
-            >
-              {t('signOut')}
-            </button>
-          </form>
+          {/* Mobile: hamburger that opens a drawer with all nav + controls */}
+          <details className="md:hidden">
+            <summary className="nav-toggle">
+              <span className="nav-bars">
+                <span />
+                <span />
+                <span />
+              </span>
+            </summary>
+            <div className="nav-drawer-panel flex flex-col gap-1 p-3">
+              {sections.map((section) => (
+                <Link
+                  key={section}
+                  href={SECTION_PATHS[section]}
+                  className={`nav-row ${linkClass(current === section)}`}
+                >
+                  <span>{t(section)}</span>
+                  {section === 'feedback' && unreadFeedback > 0 ? (
+                    <span
+                      data-testid="unread-badge"
+                      className="bg-brand text-on-brand rounded-full px-1.5 py-0.5 text-xs font-medium"
+                    >
+                      {unreadFeedback}
+                    </span>
+                  ) : null}
+                </Link>
+              ))}
+              <div className="border-border mt-2 border-t pt-3">
+                <AdminLocaleSwitcher locale={locale} back={back ?? SECTION_PATHS[current]} />
+              </div>
+              <form action={logout}>
+                <button
+                  type="submit"
+                  className="nav-row text-text-muted w-full text-left"
+                >
+                  <span>{t('signOut')}</span>
+                </button>
+              </form>
+            </div>
+          </details>
         </div>
       </div>
     </header>
